@@ -217,7 +217,7 @@ struct LinkRow: View {
         CardsiteResourceRow(
             systemImage: "link",
             isLive: link.isEnabled,
-            title: Text(verbatim: app.addresses.display(for: link.slug)),
+            title: Text(verbatim: rowTitle(for: link)),
             subtitle: Text(verbatim: link.destinationHost),
             state: ResourceState(isEnabled: link.isEnabled, isLapsing: link.isLapsing),
             clicks: link.clicks
@@ -257,4 +257,17 @@ extension Resource {
                 setEnabled: { _ in })
     }
     .environment(AppModel(configuration: .preview))
+}
+
+extension LinkRow {
+    /// On the Mac the list is a narrow column beside the detail, so a link
+    /// on the public host shows just its path ("/spring-menu"); the host is
+    /// the same on every row. Elsewhere, the full address.
+    func rowTitle(for link: Resource) -> String {
+        #if os(macOS)
+        return "/\(link.slug)"
+        #else
+        return app.addresses.display(for: link.slug)
+        #endif
+    }
 }

@@ -132,11 +132,9 @@ struct MainView: View {
             WorkspaceSwitcher()
                 .padding(.bottom, StudioSpace.s2)
                 #if os(macOS)
-                // Widens the Mac sidebar toward Studio's full width so titles
-                // such as "Payment Links" aren't truncated (a frame on the
-                // header alone didn't widen the column).
-                .navigationSplitViewColumnWidth(min: StudioLayout.sidebarFull - StudioSpace.s12,
-                                                ideal: StudioLayout.sidebarFull - StudioSpace.s6)
+                // Widens the Mac sidebar so titles such as "Payment Links"
+                // aren't truncated (SwiftUI has no width API for it).
+                .background(MacSidebarWidth())
                 #endif
         }
     }

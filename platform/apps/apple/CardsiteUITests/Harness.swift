@@ -55,7 +55,8 @@ enum Destination: String, CaseIterable {
     /// accepted as proof it opened when `screen.<rawValue>` doesn't surface.
     var markers: [String] {
         switch self {
-        case .links: ["links.create"]
+        // The first row too: at AX5 the toolbar button can be folded away.
+        case .links: ["links.create", "links.row.0"]
         case .qrCodes: ["qr.create"]
         case .pages: ["pages.create"]
         case .account: ["account.delete"]
