@@ -193,7 +193,7 @@ jobs:
           echo "DESTINATION=platform=macOS,arch=arm64" >> "$GITHUB_ENV"
           # Ad hoc, no team; CI-macOS.entitlements drops keychain-access-groups,
           # which macOS won't launch without a provisioning profile.
-          echo "SIGNING=CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= CODE_SIGN_ENTITLEMENTS=CardsiteUITests/Support/CI-macOS.entitlements ENABLE_HARDENED_RUNTIME=NO" >> "$GITHUB_ENV"
+          echo "SIGNING=CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= CODE_SIGN_ENTITLEMENTS=$GITHUB_WORKSPACE/platform/apps/apple/CardsiteUITests/Support/CI-macOS.entitlements ENABLE_HARDENED_RUNTIME=NO" >> "$GITHUB_ENV"
 
       - name: build for testing
         run: |

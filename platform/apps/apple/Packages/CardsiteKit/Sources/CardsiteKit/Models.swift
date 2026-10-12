@@ -163,6 +163,15 @@ public struct Workspace: Decodable, Sendable, Equatable, Identifiable, Hashable 
         case isPersonal = "is_personal"
         case storageBytes = "storage_bytes"
     }
+
+    /// For previews and tests; the app otherwise decodes workspaces.
+    public init(id: Int, name: String, isPersonal: Bool, role: String? = WorkspaceRole.owner.rawValue, storageBytes: Int64? = 0) {
+        self.id = id
+        self.name = name
+        self.isPersonal = isPersonal
+        self.role = role
+        self.storageBytes = storageBytes
+    }
 }
 
 public struct Plan: Decodable, Sendable, Equatable, Identifiable {

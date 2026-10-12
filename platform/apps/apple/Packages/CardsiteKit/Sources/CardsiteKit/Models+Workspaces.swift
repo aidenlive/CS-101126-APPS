@@ -4,15 +4,6 @@ import Foundation
 // 26z7–26z9 and the Go handlers (workspaces.go, activity.go).
 
 public extension Workspace {
-    /// For previews and tests; the app otherwise decodes workspaces.
-    init(id: Int, name: String, isPersonal: Bool, role: String? = WorkspaceRole.owner.rawValue, storageBytes: Int64? = 0) {
-        self.id = id
-        self.name = name
-        self.isPersonal = isPersonal
-        self.role = role
-        self.storageBytes = storageBytes
-    }
-
     /// The caller's role, or `.member` when the server left it out.
     var workspaceRole: WorkspaceRole { role.flatMap(WorkspaceRole.init(rawValue:)) ?? .member }
 }
