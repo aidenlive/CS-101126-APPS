@@ -24,10 +24,17 @@ struct CardsiteApp: App {
                 #endif
                 .tint(.studioAccentLine)
                 .task { await model.restore() }
+                #if os(macOS)
+                // An explicit floor instead of `.contentMinSize`: with data,
+                // the content's own minimum could exceed a small screen and
+                // the window was never shown (the CI Mac is 1024×768).
+                .frame(minWidth: CardsiteMeasure.sheet.width + StudioLayout.sidebarFull,
+                       minHeight: CardsiteMeasure.sheet.width)
+                #endif
         }
         #if os(macOS)
         .defaultSize(width: 1100, height: 760)
-        .windowResizability(.contentMinSize)
+        .windowResizability(.automatic)
         #endif
         .commands {
             CardsiteCommands(model: model)
