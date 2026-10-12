@@ -342,7 +342,7 @@ jobs:
       - name: commit to the screens branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          KEEP_RUNS: "10"
+          KEEP_RUNS: "2"
         run: python3 platform/apps/apple/CardsiteUITests/ci/publish-screens.py screens
 
   apple-summary:
