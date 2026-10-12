@@ -14,7 +14,7 @@ struct DeleteAccountView: View {
 
     @State private var password = ""
     @State private var isConfirming = false
-    @State private var error: String?
+    @State private var error: String? = nil
     @State private var isDeleting = false
     @State private var resetState: ResetState = .idle
 

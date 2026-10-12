@@ -33,6 +33,28 @@
 	<key>CSPublicHost</key>
 	<string>$(CARDSITE_PUBLIC_HOST)</string>
 
+	<!-- Read by SharedSession (CardsiteKit): the App Group and Keychain group
+	     the app shares the session through with its widgets and share
+	     extension. Set in project.yml (CARDSITE_APP_GROUP, CARDSITE_KEYCHAIN_GROUP). -->
+	<key>CSAppGroup</key>
+	<string>$(CARDSITE_APP_GROUP)</string>
+	<key>CSKeychainGroup</key>
+	<string>$(CARDSITE_KEYCHAIN_GROUP)</string>
+
+	<!-- cardsite:// links from the widgets and the share extension
+	     (CardsiteDeepLink in CardsiteKit). -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>cardsite</string>
+			</array>
+		</dict>
+	</array>
+
 	<!-- Only HTTPS/TLS from the OS is used: exempt from export documentation. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>

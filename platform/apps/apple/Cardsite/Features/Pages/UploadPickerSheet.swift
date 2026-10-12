@@ -101,8 +101,8 @@ struct UploadPickerSheet: View {
     let imagesOnly: Bool
     let onPick: (UploadItem) -> Void
 
-    @State private var model: UploadPickerModel?
-    @State private var photo: PhotosPickerItem?
+    @State private var model: UploadPickerModel? = nil
+    @State private var photo: PhotosPickerItem? = nil
     @State private var isImporting = false
     @ScaledMetric(relativeTo: .body) private var tileWidth: CGFloat = 112
 
@@ -218,7 +218,7 @@ struct UploadPickerSheet: View {
                             .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
                     }
                 }
-                .refreshable { await model.list.refresh() }
+                .refreshable { [list = model.list] in await list.refresh() }
             }
         }
     }

@@ -13,13 +13,13 @@ struct LinksScreen: View {
     @Environment(AppModel.self) private var app
     @Environment(LinksModel.self) private var model
     @Environment(\.openURL) private var openURL
-    @State private var selection: Resource.ID?
+    @State private var selection: Resource.ID? = nil
     /// The search text the list was last fetched with.
     @State private var fetchedSearch = ""
     @State private var isComposing = false
-    @State private var pendingDelete: Resource?
-    @State private var statisticsFor: Resource?
-    @State private var actionError: ActionError?
+    @State private var pendingDelete: Resource? = nil
+    @State private var statisticsFor: Resource? = nil
+    @State private var actionError: ActionError? = nil
     @State private var unsaved = UnsavedChangesTracker()
 
     struct ActionError: Identifiable {
@@ -181,7 +181,7 @@ struct LinksScreen: View {
                 .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
             }
         }
-        .refreshable { await model.list.refresh() }
+        .refreshable { [list = model.list] in await list.refresh() }
     }
 
     @ViewBuilder

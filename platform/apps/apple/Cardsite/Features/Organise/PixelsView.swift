@@ -87,8 +87,8 @@ final class PixelsModel {
 struct PixelsView: View {
     @Environment(AppModel.self) private var app
     @State private var model: PixelsModel
-    @State private var editing: PixelEditorTarget?
-    @State private var pendingDelete: TrackingPixel?
+    @State private var editing: PixelEditorTarget? = nil
+    @State private var pendingDelete: TrackingPixel? = nil
 
     init(client: APIClient, onError: @escaping @MainActor (any Error) -> Void) {
         _model = State(initialValue: PixelsModel(client: client, onError: onError))
@@ -153,7 +153,7 @@ struct PixelsView: View {
                     Text("Pixels emit on your public pages as the provider's own no-script beacon. Providers marked “Can't emit yet” have none, so they count nothing for now.")
                 }
             }
-            .refreshable { await model.list.refresh() }
+            .refreshable { [list = model.list] in await list.refresh() }
         }
         .navigationTitle("Pixels")
         .toolbar {
@@ -261,7 +261,7 @@ struct PixelEditorSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var input: PixelInput
-    @State private var error: String?
+    @State private var error: String? = nil
     @State private var isSaving = false
 
     /// The web's default provider for a new pixel.

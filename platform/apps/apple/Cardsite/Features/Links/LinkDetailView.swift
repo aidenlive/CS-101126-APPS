@@ -11,7 +11,7 @@ import CardsiteKit
 /// The enabled switch, delete and the header actions act at once.
 struct LinkDetailView: View {
     @Environment(LinksModel.self) private var links
-    @State private var loadedModel: LinkDetailModel?
+    @State private var loadedModel: LinkDetailModel? = nil
 
     let link: Resource
     var onDeleted: () -> Void
@@ -62,7 +62,7 @@ private struct LinkDetailForm: View {
 
     @State private var isConfirmingDelete = false
     @State private var isDeleting = false
-    @State private var deleteError: String?
+    @State private var deleteError: String? = nil
     @State private var copied = false
 
     var body: some View {

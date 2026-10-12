@@ -24,13 +24,28 @@ final class AppModel {
 
     /// A create sheet, optionally prefilled.
     ///
-    /// `.link`, `.qrCode` and `.bioPage` open an empty editor. Home's paste
+    /// `.link`, `.qrCode`, `.bioPage` and the six resource kinds open an
+    /// empty editor. Home's paste
     /// box opens `.link(destination:)`, and a link's page opens
     /// `composeQRCode(for:)`; `MainView.composerSheet` hands `prefill` to
     /// `LinkEditorView(prefill:)` and `QRCodeEditorView(prefillURL:)`.
     struct Composer: Identifiable, Hashable {
         enum Kind: String, Hashable, Sendable {
             case link, qrCode, bioPage
+            case vcard, event, paymentLink, file, staticPage, splash
+
+            /// The resource editor this kind opens, for the six resource types.
+            var resourceKind: ResourceKind? {
+                switch self {
+                case .link, .qrCode, .bioPage: return nil
+                case .vcard: return .vcard
+                case .event: return .event
+                case .paymentLink: return .paymentLink
+                case .file: return .file
+                case .staticPage: return .staticPage
+                case .splash: return .splash
+                }
+            }
         }
 
         let kind: Kind

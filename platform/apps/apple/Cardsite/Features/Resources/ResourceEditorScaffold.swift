@@ -40,10 +40,10 @@ struct ResourceEditorScaffold<Model: ResourceEditorState, Actions: View, Fields:
     @State private var isConfirmingDelete = false
     @State private var isConfirmingCancel = false
     @State private var isDeleting = false
-    @State private var deleteError: String?
+    @State private var deleteError: String? = nil
     @State private var showsStatistics = false
     @State private var copied = false
-    @State private var toggleError: String?
+    @State private var toggleError: String? = nil
 
     init(kind: ResourceKind, model: Model, list: ResourceListModel,
          onCreated: @escaping (ResourceItem) -> Void = { _ in },
@@ -71,7 +71,8 @@ struct ResourceEditorScaffold<Model: ResourceEditorState, Actions: View, Fields:
                         isDirty: model.isDirty,
                         isSaving: model.isSaving,
                         save: { [model] in await model.save() },
-                        discard: { [model] in model.discard() }
+                        discard: { [model] in model.discard() },
+                        saveIdentifier: "res.editor.save"
                     )
                     .refreshable { [model, list] in
                         async let item: Void = model.refresh()

@@ -1,4 +1,5 @@
-# Cardsite for iPhone, iPad and Mac — one multiplatform SwiftUI target.
+# Cardsite for iPhone, iPad, Mac and Apple Vision Pro — one multiplatform
+# SwiftUI target — with its widgets, share extension and Apple Watch app.
 #
 # Generate the Xcode project (not committed):
 #   brew install xcodegen          # 2.42 or later (multi-destination targets)
@@ -14,6 +15,8 @@ options:
   deploymentTarget:
     iOS: "18.0"
     macOS: "15.0"
+    visionOS: "2.0"
+    watchOS: "11.0"
   createIntermediateGroups: true
   groupSortPosition: top
   generateEmptyDirectories: false
@@ -21,6 +24,16 @@ options:
 configFiles:
   Debug: Config/Debug.xcconfig
   Release: Config/Release.xcconfig
+
+# The session the app shares with its widgets and share extension
+# (SharedSession in CardsiteKit). Every bundle's Info.plist carries both as
+# CSAppGroup / CSKeychainGroup, and the entitlements files list them.
+# AppIdentifierPrefix is the team ID plus a dot, set by signing; an unsigned
+# build leaves it empty and SharedSession then treats sharing as off.
+settings:
+  base:
+    CARDSITE_APP_GROUP: group.$(CARDSITE_BUNDLE_ID)
+    CARDSITE_KEYCHAIN_GROUP: $(AppIdentifierPrefix)$(CARDSITE_BUNDLE_ID).shared
 
 packages:
   StudioKit:
@@ -32,7 +45,8 @@ targets:
   Cardsite:
     type: application
     platform: auto
-    supportedDestinations: [iOS, macOS]
+    # visionOS runs the iPad layout natively (not "Designed for iPad").
+    supportedDestinations: [iOS, macOS, visionOS]
     sources:
       - path: Cardsite
         excludes:
@@ -42,6 +56,14 @@ targets:
     dependencies:
       - package: StudioKit
       - package: CardsiteKit
+      # Embedded where each runs. Widgets and the share extension are
+      # iPhone, iPad and Mac only; the watch app ships inside the iOS app.
+      - target: CardsiteWidgets
+        destinationFilters: [iOS, macOS]
+      - target: CardsiteShare
+        destinationFilters: [iOS, macOS]
+      - target: CardsiteWatch
+        destinationFilters: [iOS]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(CARDSITE_BUNDLE_ID)
@@ -49,7 +71,9 @@ targets:
         INFOPLIST_FILE: Cardsite/Supporting/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-        TARGETED_DEVICE_FAMILY: "1,2"
+        # 1 iPhone, 2 iPad, 7 Apple Vision Pro.
+        TARGETED_DEVICE_FAMILY: "1,2,7"
+        XROS_DEPLOYMENT_TARGET: "2.0"
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
@@ -59,6 +83,11 @@ targets:
         LOCALIZATION_PREFERS_STRING_CATALOGS: YES
         ENABLE_HARDENED_RUNTIME[sdk=macosx*]: YES
         CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: Cardsite/Supporting/Cardsite-macOS.entitlements
+        # App Group + shared Keychain group on iPhone, iPad and Vision Pro.
+        CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]: Cardsite/Supporting/Cardsite-iOS.entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]: Cardsite/Supporting/Cardsite-iOS.entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=xros*]: Cardsite/Supporting/Cardsite-iOS.entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=xrsimulator*]: Cardsite/Supporting/Cardsite-iOS.entitlements
         CODE_SIGN_STYLE: Automatic
         DEAD_CODE_STRIPPING: YES
         ENABLE_USER_SCRIPT_SANDBOXING: YES
@@ -92,6 +121,108 @@ targets:
         SWIFT_STRICT_CONCURRENCY: complete
         CODE_SIGN_STYLE: Automatic
 
+  # "Link traffic" and "My QR code" (WidgetKit). Shares the App Intents
+  # entities and queries with the app: Cardsite/Intents/Shared is compiled
+  # into both targets.
+  CardsiteWidgets:
+    type: app-extension
+    platform: auto
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: CardsiteWidgets
+        excludes:
+          - "Info.plist"
+          - "*.entitlements"
+      - path: Cardsite/Intents/Shared
+    dependencies:
+      - package: StudioKit
+      - package: CardsiteKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(CARDSITE_BUNDLE_ID).widgets
+        PRODUCT_NAME: CardsiteWidgets
+        INFOPLIST_FILE: CardsiteWidgets/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: CardsiteWidgets/CardsiteWidgets.entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: CardsiteWidgets/CardsiteWidgets-macOS.entitlements
+        ENABLE_HARDENED_RUNTIME[sdk=macosx*]: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        SWIFT_EMIT_LOC_STRINGS: YES
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+        CODE_SIGN_STYLE: Automatic
+        DEAD_CODE_STRIPPING: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+
+  # "Shorten with Cardsite" from Safari or any app's share sheet.
+  CardsiteShare:
+    type: app-extension
+    platform: auto
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: CardsiteShare
+        excludes:
+          - "Info.plist"
+          - "*.entitlements"
+    dependencies:
+      - package: StudioKit
+      - package: CardsiteKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(CARDSITE_BUNDLE_ID).share
+        PRODUCT_NAME: CardsiteShare
+        INFOPLIST_FILE: CardsiteShare/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: CardsiteShare/CardsiteShare.entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: CardsiteShare/CardsiteShare-macOS.entitlements
+        ENABLE_HARDENED_RUNTIME[sdk=macosx*]: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        SWIFT_EMIT_LOC_STRINGS: YES
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+        CODE_SIGN_STYLE: Automatic
+        DEAD_CODE_STRIPPING: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+
+  # Apple Watch companion (single-target watchOS app), embedded in the iOS
+  # app's Watch folder. The session arrives from the iPhone over
+  # WatchConnectivity. StudioKit doesn't build for watchOS; see
+  # CardsiteWatch/WatchPalette.swift.
+  CardsiteWatch:
+    type: application
+    platform: watchOS
+    deploymentTarget: "11.0"
+    sources:
+      - path: CardsiteWatch
+        excludes:
+          - "Info.plist"
+    dependencies:
+      - package: CardsiteKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(CARDSITE_BUNDLE_ID).watchkitapp
+        PRODUCT_NAME: CardsiteWatch
+        INFOPLIST_FILE: CardsiteWatch/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "4"
+        SKIP_INSTALL: YES
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        SWIFT_EMIT_LOC_STRINGS: YES
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+        CODE_SIGN_STYLE: Automatic
+        DEAD_CODE_STRIPPING: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+
 schemes:
   Cardsite:
     build:
@@ -105,5 +236,15 @@ schemes:
         - package: CardsiteKit/CardsiteKitTests
         - name: CardsiteUITests
           parallelizable: false
+    archive:
+      config: Release
+
+  # The watch app on its own, for the watchOS Simulator and CI.
+  CardsiteWatch:
+    build:
+      targets:
+        CardsiteWatch: all
+    run:
+      config: Debug
     archive:
       config: Release

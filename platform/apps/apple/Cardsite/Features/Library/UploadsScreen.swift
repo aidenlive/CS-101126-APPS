@@ -20,11 +20,11 @@ struct UploadsScreen: View {
 struct UploadsView: View {
     @Environment(AppModel.self) private var app
     @State private var model: UploadsModel
-    @State private var photoItem: PhotosPickerItem?
+    @State private var photoItem: PhotosPickerItem? = nil
     @State private var isImportingFile = false
     @State private var isPickingPhoto = false
-    @State private var pendingDelete: UploadItem?
-    @State private var errorMessage: String?
+    @State private var pendingDelete: UploadItem? = nil
+    @State private var errorMessage: String? = nil
 
     init(client: APIClient, onError: @escaping @MainActor (any Error) -> Void) {
         _model = State(initialValue: UploadsModel(client: client, onError: onError))
@@ -188,7 +188,7 @@ struct UploadsView: View {
             .readableWidth(960)
         }
         .background(Color.studioBg)
-        .refreshable { await model.refresh() }
+        .refreshable { [model] in await model.refresh() }
     }
 
     @ViewBuilder

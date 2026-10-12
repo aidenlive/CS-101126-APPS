@@ -11,8 +11,8 @@ struct TimezonePickerView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
-    @State private var saving: String?
-    @State private var error: String?
+    @State private var saving: String? = nil
+    @State private var error: String? = nil
 
     private static let zones: [Zone] = TimeZone.knownTimeZoneIdentifiers.sorted().map(Zone.init)
 

@@ -19,9 +19,9 @@ struct TwoFactorSetupView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var setup: Loadable<TwoFactorSetup> = .idle
     @State private var code = ""
-    @State private var error: String?
+    @State private var error: String? = nil
     @State private var isVerifying = false
-    @State private var recoveryCodes: [String]?
+    @State private var recoveryCodes: [String]? = nil
 
     var body: some View {
         NavigationStack {
@@ -182,9 +182,9 @@ struct TwoFactorPasswordView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var password = ""
-    @State private var error: String?
+    @State private var error: String? = nil
     @State private var isWorking = false
-    @State private var recoveryCodes: [String]?
+    @State private var recoveryCodes: [String]? = nil
 
     var body: some View {
         NavigationStack {
@@ -274,7 +274,7 @@ struct RecoveryCodesPanel: View {
     let lead: String
 
     @State private var isExporting = false
-    @State private var saveError: String?
+    @State private var saveError: String? = nil
 
     private var text: String { codes.joined(separator: "\n") }
 

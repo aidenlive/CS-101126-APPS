@@ -47,7 +47,7 @@ struct ResourceComposerSheet: View {
     let kind: ResourceKind
     var onCreated: (ResourceItem) -> Void = { _ in }
 
-    @State private var list: ResourceListModel?
+    @State private var list: ResourceListModel? = nil
 
     var body: some View {
         NavigationStack {

@@ -9,9 +9,9 @@ struct QRCodesScreen: View {
     @Environment(QRCodesModel.self) private var model
     @State private var path: [QRCode.ID] = []
     @State private var isComposing = false
-    @State private var editing: QRCode?
-    @State private var pendingDelete: QRCode?
-    @State private var deleteError: String?
+    @State private var editing: QRCode? = nil
+    @State private var pendingDelete: QRCode? = nil
+    @State private var deleteError: String? = nil
 
     var body: some View {
         @Bindable var bindable = model
@@ -101,7 +101,7 @@ struct QRCodesScreen: View {
                 .frame(maxWidth: 520)
                 .frame(maxWidth: .infinity)
             }
-            .refreshable { await model.list.refresh() }
+            .refreshable { [list = model.list] in await list.refresh() }
         case .loaded:
             codeGrid
         }
@@ -132,7 +132,7 @@ struct QRCodesScreen: View {
             }
             .padding(StudioSpace.s5)
         }
-        .refreshable { await model.list.refresh() }
+        .refreshable { [list = model.list] in await list.refresh() }
     }
 
     private func grid<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {

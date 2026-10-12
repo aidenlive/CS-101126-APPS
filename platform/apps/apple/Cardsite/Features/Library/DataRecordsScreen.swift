@@ -93,8 +93,8 @@ struct DataRecordsScreen: View {
 struct DataRecordsView: View {
     @Environment(AppModel.self) private var app
     @State private var model: DataRecordsModel
-    @State private var pendingDelete: DataRecord?
-    @State private var deleteError: String?
+    @State private var pendingDelete: DataRecord? = nil
+    @State private var deleteError: String? = nil
 
     init(client: APIClient, onError: @escaping @MainActor (any Error) -> Void) {
         _model = State(initialValue: DataRecordsModel(client: client, onError: onError))
@@ -146,7 +146,7 @@ struct DataRecordsView: View {
                     .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
                 }
             }
-            .refreshable { await model.list.refresh() }
+            .refreshable { [list = model.list] in await list.refresh() }
         }
         .navigationTitle("Data Records")
         .toolbar {

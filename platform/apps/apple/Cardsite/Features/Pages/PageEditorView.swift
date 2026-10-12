@@ -17,7 +17,7 @@ struct BlockListColumn: View {
     @State private var isAddingBlock = false
     @State private var isEditingSettings = false
     @State private var isPreviewing = false
-    @State private var pendingDelete: BioBlock?
+    @State private var pendingDelete: BioBlock? = nil
     @State private var isTogglingPage = false
 
     var body: some View {

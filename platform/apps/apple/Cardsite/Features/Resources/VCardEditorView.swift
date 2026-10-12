@@ -64,7 +64,7 @@ struct VCardEditorView: View {
 
     @State private var isAddingContact = false
     @State private var isExporting = false
-    @State private var exportError: String?
+    @State private var exportError: String? = nil
 
     init(item: ResourceItem?, list: ResourceListModel, onCreated: @escaping (ResourceItem) -> Void = { _ in }) {
         self.list = list

@@ -20,7 +20,7 @@ struct QRCodeEditorView: View {
 
     private let mode: QRCodeBuilderModel.Mode
     private let onSaved: (QRCode) -> Void
-    @State private var builder: QRCodeBuilderModel?
+    @State private var builder: QRCodeBuilderModel? = nil
 
     /// A new code. A `prefillURL` on the public short-link host starts as a
     /// dynamic code for that link; any other URL starts as a URL code.

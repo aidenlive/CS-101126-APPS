@@ -14,12 +14,12 @@ struct PagesScreen: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     #endif
 
-    @State private var selection: BioPage.ID?
-    @State private var editor: PageEditorModel?
+    @State private var selection: BioPage.ID? = nil
+    @State private var editor: PageEditorModel? = nil
     @State private var columns: NavigationSplitViewVisibility = .all
     @State private var isCreating = false
-    @State private var pendingDelete: BioPage?
-    @State private var actionError: String?
+    @State private var pendingDelete: BioPage? = nil
+    @State private var actionError: String? = nil
     @StateObject private var toasts = StudioToastCenter()
 
     private var isCompact: Bool {
@@ -368,8 +368,8 @@ struct CreatePageSheet: View {
     @State private var name = ""
     @State private var slug = ""
     @State private var slugIsEdited = false
-    @State private var slugError: String?
-    @State private var formError: String?
+    @State private var slugError: String? = nil
+    @State private var formError: String? = nil
     @State private var isSaving = false
     @FocusState private var focus: Field?
 

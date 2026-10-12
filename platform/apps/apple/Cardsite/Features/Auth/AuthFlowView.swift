@@ -63,7 +63,7 @@ private struct SignInForm: View {
     @Binding var mode: AuthFlowView.Mode
     @State private var email = ""
     @State private var password = ""
-    @State private var error: String?
+    @State private var error: String? = nil
     @State private var isWorking = false
 
     var body: some View {
@@ -121,7 +121,7 @@ private struct TwoFactorForm: View {
     @Binding var mode: AuthFlowView.Mode
     @State private var code = ""
     @State private var useRecoveryCode = false
-    @State private var error: String?
+    @State private var error: String? = nil
     @State private var isWorking = false
 
     var body: some View {
@@ -188,7 +188,7 @@ private struct RegisterForm: View {
     @State private var name = ""
     @State private var email = ""
     @State private var password = ""
-    @State private var error: String?
+    @State private var error: String? = nil
     @State private var isWorking = false
 
     private var passwordProblem: String? {
@@ -265,7 +265,7 @@ private struct ForgotPasswordForm: View {
     @Binding var mode: AuthFlowView.Mode
     @State private var email = ""
     @State private var sent = false
-    @State private var error: String?
+    @State private var error: String? = nil
     @State private var isWorking = false
 
     var body: some View {
@@ -335,7 +335,12 @@ struct PasswordField: View {
                 }
                 .textFieldStyle(.plain)
                 .plainEntry()
+                #if os(iOS)
                 .textContentType(isNew ? .newPassword : .password)
+                #else
+                // AppKit's NSTextContentType has no new-password type.
+                .textContentType(.password)
+                #endif
                 .labelsHidden()
                 Button {
                     isRevealed.toggle()

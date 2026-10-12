@@ -99,7 +99,7 @@ struct PreferencesScreen: View {
 
 struct PreferencesView: View {
     @State private var model: PreferencesModel
-    @State private var saveError: String?
+    @State private var saveError: String? = nil
     /// The Mac Settings window has no navigation toolbar, so Save sits at
     /// the foot of the form there.
     private let inlineSave: Bool
@@ -195,8 +195,8 @@ struct PreferencesView: View {
             Section("Default sort field per resource") {
                 ForEach(Self.orderFields) { field in
                     Picker(field.title, selection: Binding(
-                        get: { model.draft.orderBy(field.id) },
-                        set: { model.draft.setOrderBy($0, for: field.id) }
+                        get: { [model] in model.draft.orderBy(field.id) },
+                        set: { [model] in model.draft.setOrderBy($0, for: field.id) }
                     )) {
                         Text("Date created").tag("datetime")
                         Text("Date updated").tag("last_datetime")
@@ -239,7 +239,7 @@ struct PreferencesView: View {
                 }
             }
         }
-        .refreshable { await model.refresh() }
+        .refreshable { [model] in await model.refresh() }
     }
 
     @ViewBuilder

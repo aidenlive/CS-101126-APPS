@@ -118,9 +118,9 @@ struct DomainsView: View {
     @Environment(AppModel.self) private var app
     @State private var model: DomainsModel
     @State private var isAdding = false
-    @State private var pendingDelete: CustomDomain?
+    @State private var pendingDelete: CustomDomain? = nil
     /// A check started from a row, reported in an alert.
-    @State private var rowCheck: RowCheck?
+    @State private var rowCheck: RowCheck? = nil
 
     struct RowCheck: Identifiable {
         let domain: CustomDomain
@@ -195,7 +195,7 @@ struct DomainsView: View {
                     Text("Serve links from your own branded domains.")
                 }
             }
-            .refreshable { await model.list.refresh() }
+            .refreshable { [list = model.list] in await list.refresh() }
         }
         .navigationTitle("Domains")
         .toolbar {

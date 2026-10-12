@@ -18,9 +18,9 @@ struct DisplayRulesForm: View {
 
     @State private var options: Loadable<TargetingOptions> = .idle
     /// Rules picked but not saved yet; nil once the server has them.
-    @State private var draft: DisplayRules?
+    @State private var draft: DisplayRules? = nil
     @State private var isSaving = false
-    @State private var saveError: String?
+    @State private var saveError: String? = nil
 
     private var saved: DisplayRules { DisplayRules(json: editor.page?.displayRules ?? [:]) }
     private var rules: DisplayRules { draft ?? saved }
@@ -116,8 +116,8 @@ struct PixelsForm: View {
 
     @State private var pixels: Loadable<[BioPixel]> = .idle
     @State private var types: [String: BioPixelType] = [:]
-    @State private var savingID: BioPixel.ID?
-    @State private var saveError: String?
+    @State private var savingID: BioPixel.ID? = nil
+    @State private var saveError: String? = nil
 
     private var attached: [Int] { editor.page?.pixelIDs ?? [] }
 
@@ -187,8 +187,9 @@ struct PixelsForm: View {
     private func load() async {
         if pixels.value == nil { pixels = .loading }
         do {
-            async let list = pages.client.bioPixels()
-            async let kinds = pages.client.bioPixelTypes()
+            let client = pages.client
+            async let list = client.bioPixels()
+            async let kinds = client.bioPixelTypes()
             let loaded = try await list
             // The provider list only adds the "can't emit" note; without it
             // the pixels are still listed and attachable.

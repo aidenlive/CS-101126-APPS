@@ -10,7 +10,7 @@ struct PageSettingsView: View {
     let editor: PageEditorModel
 
     @Environment(\.dismiss) private var dismiss
-    @State private var settings: PageSettingsModel?
+    @State private var settings: PageSettingsModel? = nil
 
     enum Pane: String, CaseIterable, Identifiable, Hashable {
         case page, seo, theme, branding, targeting, pixels
@@ -207,7 +207,7 @@ private struct PageSection: View {
     let showUnwired: Bool
 
     @State private var slug = ""
-    @State private var slugError: String?
+    @State private var slugError: String? = nil
     @State private var isChangingSlug = false
 
     var body: some View {

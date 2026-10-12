@@ -19,7 +19,7 @@ struct StatisticsRoute: Hashable {
 /// Push it in a navigation stack, or present it in a sheet wrapped in one.
 struct StatisticsScreen: View {
     @Environment(AppModel.self) private var app
-    @State private var loadedModel: StatisticsModel?
+    @State private var loadedModel: StatisticsModel? = nil
 
     let linkID: Int?
     var subtitle: String?

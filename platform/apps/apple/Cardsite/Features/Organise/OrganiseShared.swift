@@ -31,7 +31,7 @@ struct ProjectColorDot: View {
 
     var body: some View {
         Circle()
-            .fill(QRHexColor.color(hex) ?? Color.studioText3)
+            .fill(HexColor.color(from: hex) ?? Color.studioText3)
             .overlay(Circle().strokeBorder(Color.studioBorder, lineWidth: 1))
             .frame(width: size, height: size)
             .accessibilityHidden(true)
@@ -44,12 +44,12 @@ enum ProjectPalette {
     static var presets: [String] {
         var seen = Set<String>()
         return [Color.studioAccent, .studioViz1, .studioViz2, .studioViz3, .studioViz4, .studioViz5, .studioViz6]
-            .map { QRHexColor.hex($0) }
+            .map { HexColor.hex(from: $0) }
             .filter { seen.insert($0).inserted }
     }
 
     /// A new project's colour: the accent, as the web's default lime.
-    static var defaultHex: String { QRHexColor.hex(Color.studioAccent) }
+    static var defaultHex: String { HexColor.hex(from: Color.studioAccent) }
 }
 
 // MARK: - Rows
@@ -88,7 +88,7 @@ struct OrganiseDeleteFlow<Item: Identifiable & Sendable>: ViewModifier {
     let message: String
     let delete: @MainActor (Item) async throws -> Void
 
-    @State private var failure: String?
+    @State private var failure: String? = nil
 
     func body(content: Content) -> some View {
         content

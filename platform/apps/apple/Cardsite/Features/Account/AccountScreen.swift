@@ -22,7 +22,7 @@ struct AccountView: View {
     @Environment(AppModel.self) private var app
     @State private var settings: AccountSettingsModel
     @State private var plan: Loadable<(AccountPlan, Plan?)> = .idle
-    @State private var sheet: Sheet?
+    @State private var sheet: Sheet? = nil
     @State private var confirmSignOut = false
 
     enum Sheet: String, Identifiable {
@@ -81,13 +81,7 @@ struct AccountView: View {
             await loadPlan()
         }
         .task { [settings] in await settings.loadTwoFactor() }
-        .refreshable {
-            // Not refreshUser(): the server caches GET /user for ~10 min
-            // and would bring back a name the user just changed.
-            if app.needsProfile { await app.refreshUser() }
-            await loadPlan(force: true)
-            await settings.loadTwoFactor(force: true)
-        }
+        .refreshable { await refresh() }
         .sheet(item: $sheet) { sheet in
             switch sheet {
             case .editName: AccountNameEditor()
@@ -102,6 +96,15 @@ struct AccountView: View {
         .confirmationDialog("Sign out of Cardsite?", isPresented: $confirmSignOut, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) { Task { await app.signOut() } }
         }
+    }
+
+    /// Pull to refresh. Not an unconditional `refreshUser()`: the server
+    /// caches GET /user for ~10 min and would bring back a name the user
+    /// just changed.
+    private func refresh() async {
+        if app.needsProfile { await app.refreshUser() }
+        await loadPlan(force: true)
+        await settings.loadTwoFactor(force: true)
     }
 
     private var currentTimezone: String {
@@ -242,7 +245,7 @@ struct AccountNameEditor: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
-    @State private var error: String?
+    @State private var error: String? = nil
     @State private var isSaving = false
 
     var body: some View {

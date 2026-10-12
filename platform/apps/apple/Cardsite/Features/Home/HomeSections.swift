@@ -129,8 +129,9 @@ struct HomeCreateSection: View {
     let columns: Int
 
     private var tiles: [CreateAction] {
-        // The short link has the paste card; every other type gets a tile.
-        CreateAction.allCases.filter { $0 != .shortLink }
+        // The most-used types only; the New menu and the palette list
+        // them all. The short link has the paste card instead of a tile.
+        CreateAction.featured.filter { $0 != .shortLink }
     }
 
     var body: some View {

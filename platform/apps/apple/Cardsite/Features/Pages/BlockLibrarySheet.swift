@@ -12,7 +12,7 @@ struct BlockLibrarySheet: View {
     let onAdd: (BlockType) async -> Bool
 
     @State private var query = ""
-    @State private var adding: BlockType.ID?
+    @State private var adding: BlockType.ID? = nil
 
     var body: some View {
         NavigationStack {

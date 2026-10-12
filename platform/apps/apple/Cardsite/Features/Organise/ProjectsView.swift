@@ -62,8 +62,8 @@ struct ProjectsView: View {
     @Environment(AppModel.self) private var app
     @State private var model: ProjectsModel
     /// The editor sheet: a new project, or one to edit.
-    @State private var editing: ProjectEditorTarget?
-    @State private var pendingDelete: Project?
+    @State private var editing: ProjectEditorTarget? = nil
+    @State private var pendingDelete: Project? = nil
 
     init(client: APIClient, onError: @escaping @MainActor (any Error) -> Void) {
         _model = State(initialValue: ProjectsModel(client: client, onError: onError))
@@ -123,7 +123,7 @@ struct ProjectsView: View {
                     Text("Group resources into color-coded projects.")
                 }
             }
-            .refreshable { await model.list.refresh() }
+            .refreshable { [list = model.list] in await list.refresh() }
         }
         .navigationTitle("Projects")
         .toolbar {
@@ -207,7 +207,7 @@ struct ProjectEditorSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var input: ProjectInput
-    @State private var error: String?
+    @State private var error: String? = nil
     @State private var isSaving = false
 
     init(model: ProjectsModel, project: Project?) {
@@ -239,7 +239,7 @@ struct ProjectEditorSheet: View {
 
                 Section {
                     swatches
-                    ColorPicker(selection: QRHexColor.binding($input.color, fallback: Color.studioAccent),
+                    ColorPicker(selection: HexColor.binding($input.color, fallback: Color.studioAccent),
                                 supportsOpacity: false) {
                         HStack(spacing: StudioSpace.s2) {
                             Text("Custom colour")
@@ -309,7 +309,7 @@ struct ProjectEditorSheet: View {
                     input.color = hex
                 } label: {
                     Circle()
-                        .fill(QRHexColor.color(hex) ?? Color.studioText3)
+                        .fill(HexColor.color(from: hex) ?? Color.studioText3)
                         .frame(width: StudioSpace.s8, height: StudioSpace.s8)
                         .overlay {
                             Circle()

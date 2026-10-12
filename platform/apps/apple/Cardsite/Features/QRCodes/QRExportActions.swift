@@ -13,7 +13,7 @@ struct QRExportActions: View {
 
     @State private var isExporting = false
     @State private var copied = false
-    @State private var exportError: String?
+    @State private var exportError: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioSpace.s2) {

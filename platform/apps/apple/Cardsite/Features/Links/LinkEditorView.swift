@@ -21,9 +21,9 @@ struct LinkEditorView: View {
 
     @State private var destination: String
     @State private var slug = Slug.random()
-    @State private var destinationError: String?
-    @State private var slugError: String?
-    @State private var formError: String?
+    @State private var destinationError: String? = nil
+    @State private var slugError: String? = nil
+    @State private var formError: String? = nil
     @State private var isSaving = false
     @FocusState private var focus: Field?
 

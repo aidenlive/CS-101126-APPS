@@ -29,9 +29,10 @@ import CardsiteKit
  already ship both shapes (`WorkspaceScreen` wraps `WorkspaceView`); register
  the inner one.
 
- Planned, once their screens exist (one case each):
-   content   · vCards, events, paymentLinks, files, staticPages, splashPages
-   organise  · projects, domains, pixels
+ ORDER. `allCases` order is sidebar order within a group, and the groups
+ run Overview, Content, Organise, Account, as on the web. Content follows
+ the web's order (navigation.ts): vCards, payment links, events, splash
+ pages, static pages, file links, then uploads and data records.
 
  IDENTIFIERS. Each sidebar item, tab and More row carries `nav.<rawValue>`
  and each destination's root `screen.<rawValue>`, which CardsiteUITests
@@ -43,8 +44,17 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
     case pages
     case qrCodes
     case statistics
+    case vcards
+    case paymentLinks
+    case events
+    case splashPages
+    case staticPages
+    case fileLinks
     case uploads
     case data
+    case projects
+    case domains
+    case pixels
     case workspace
     case inbox
     case activity
@@ -93,7 +103,9 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
     var group: Group {
         switch self {
         case .home, .links, .pages, .qrCodes, .statistics: return .overview
-        case .uploads, .data: return .content
+        case .vcards, .paymentLinks, .events, .splashPages, .staticPages, .fileLinks, .uploads, .data:
+            return .content
+        case .projects, .domains, .pixels: return .organise
         case .workspace, .inbox, .activity, .account, .preferences: return .account
         }
     }
@@ -106,8 +118,13 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .pages: return String(localized: "Pages")
         case .qrCodes: return String(localized: "QR Codes")
         case .statistics: return String(localized: "Statistics")
+        case .vcards, .paymentLinks, .events, .splashPages, .staticPages, .fileLinks:
+            return resourceKind?.pluralTitle ?? ""
         case .uploads: return String(localized: "Uploads")
         case .data: return String(localized: "Data Records")
+        case .projects: return String(localized: "Projects")
+        case .domains: return String(localized: "Domains")
+        case .pixels: return String(localized: "Pixels")
         case .workspace: return String(localized: "Workspace")
         case .inbox: return String(localized: "Inbox")
         case .activity: return String(localized: "Activity Logs")
@@ -131,6 +148,11 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .pages: return "person.crop.square"
         case .qrCodes: return "qrcode"
         case .statistics: return "chart.bar.xaxis"
+        case .vcards, .paymentLinks, .events, .splashPages, .staticPages, .fileLinks:
+            return resourceKind?.systemImage ?? "square.dashed"
+        case .projects: return "folder"
+        case .domains: return "globe"
+        case .pixels: return "scope"
         case .uploads: return "square.and.arrow.up.on.square"
         case .data: return "tablecells"
         case .workspace: return "person.2"
@@ -144,7 +166,10 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
     var iPhoneTab: IPhonePlacement {
         switch self {
         case .home, .links, .pages, .qrCodes: return .tab
-        case .statistics, .uploads, .data, .workspace, .inbox, .activity, .account, .preferences: return .more
+        case .statistics, .vcards, .paymentLinks, .events, .splashPages, .staticPages, .fileLinks,
+             .uploads, .data, .projects, .domains, .pixels,
+             .workspace, .inbox, .activity, .account, .preferences:
+            return .more
         }
     }
 
@@ -159,7 +184,9 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .statistics: return "5"
         case .inbox: return "6"
         case .workspace: return "7"
-        case .uploads, .data, .activity, .account, .preferences: return nil
+        case .vcards, .paymentLinks, .events, .splashPages, .staticPages, .fileLinks,
+             .uploads, .data, .projects, .domains, .pixels, .activity, .account, .preferences:
+            return nil
         }
     }
 
@@ -172,6 +199,15 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .qrCodes: return [String(localized: "codes"), String(localized: "scan")]
         case .statistics: return [String(localized: "analytics"), String(localized: "traffic"),
                                   String(localized: "clicks")]
+        case .vcards: return [String(localized: "contact cards"), String(localized: "business cards")]
+        case .paymentLinks: return [String(localized: "checkout"), String(localized: "payments")]
+        case .events: return [String(localized: "calendar"), String(localized: "invitations")]
+        case .splashPages: return [String(localized: "interstitial"), String(localized: "redirect page")]
+        case .staticPages: return [String(localized: "HTML"), String(localized: "website"), String(localized: "hosting")]
+        case .fileLinks: return [String(localized: "files"), String(localized: "downloads"), String(localized: "documents")]
+        case .projects: return [String(localized: "folders"), String(localized: "organise")]
+        case .domains: return [String(localized: "custom domains"), String(localized: "DNS"), String(localized: "branded")]
+        case .pixels: return [String(localized: "tracking"), String(localized: "retargeting"), String(localized: "analytics")]
         case .uploads: return [String(localized: "files"), String(localized: "images"), String(localized: "media")]
         case .data: return [String(localized: "form submissions"), String(localized: "records")]
         case .workspace: return [String(localized: "team"), String(localized: "members"), String(localized: "invite")]
@@ -181,6 +217,31 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
                                String(localized: "password"), String(localized: "sign out")]
         case .preferences: return [String(localized: "settings"), String(localized: "defaults"),
                                    String(localized: "options")]
+        }
+    }
+
+    /// The resource type a Content destination lists, nil for the rest.
+    var resourceKind: ResourceKind? {
+        switch self {
+        case .vcards: return .vcard
+        case .paymentLinks: return .paymentLink
+        case .events: return .event
+        case .splashPages: return .splash
+        case .staticPages: return .staticPage
+        case .fileLinks: return .file
+        default: return nil
+        }
+    }
+
+    /// The list a resource type lives in.
+    init(resourceKind: ResourceKind) {
+        switch resourceKind {
+        case .vcard: self = .vcards
+        case .paymentLink: self = .paymentLinks
+        case .event: self = .events
+        case .splash: self = .splashPages
+        case .staticPage: self = .staticPages
+        case .file: self = .fileLinks
         }
     }
 
@@ -220,8 +281,17 @@ struct DestinationView: View {
         case .pages: PagesScreen()
         case .qrCodes: QRCodesScreen()
         case .statistics: StatisticsScreen(linkID: nil)
+        case .vcards: ResourceListScreen(kind: .vcard)
+        case .paymentLinks: ResourceListScreen(kind: .paymentLink)
+        case .events: ResourceListScreen(kind: .event)
+        case .splashPages: ResourceListScreen(kind: .splash)
+        case .staticPages: ResourceListScreen(kind: .staticPage)
+        case .fileLinks: ResourceListScreen(kind: .file)
         case .uploads: UploadsView(client: app.client, onError: onError)
         case .data: DataRecordsView(client: app.client, onError: onError)
+        case .projects: ProjectsView(client: app.client, onError: onError)
+        case .domains: DomainsView(client: app.client, onError: onError)
+        case .pixels: PixelsView(client: app.client, onError: onError)
         case .workspace: WorkspaceView(client: app.client, onError: onError)
         case .inbox: InboxView(model: inbox)
         case .activity: ActivityLogsView(client: app.client, onError: onError)
@@ -254,14 +324,36 @@ struct DestinationRoot: View {
 
 /// Everything the app can create, for the File menu, the New menus, the
 /// palette, search and Home's quick-create tiles. Add a case when a new
-/// editor lands (bio page, vCard, event, file link…), with the composer
-/// that opens it.
+/// editor lands, with the composer that opens it.
 enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
     case shortLink
     case qrCode
     case bioPage
+    case vcard
+    case event
+    case paymentLink
+    case file
+    case staticPage
+    case splash
 
     var id: String { rawValue }
+
+    /// The most-used types, for Home's quick-create tiles. The New menus,
+    /// the File menu and the palette list every case.
+    static let featured: [CreateAction] = [.shortLink, .qrCode, .bioPage, .vcard, .file]
+
+    /// The resource type this action creates, for the six resource kinds.
+    var resourceKind: ResourceKind? {
+        switch self {
+        case .shortLink, .qrCode, .bioPage: return nil
+        case .vcard: return .vcard
+        case .event: return .event
+        case .paymentLink: return .paymentLink
+        case .file: return .file
+        case .staticPage: return .staticPage
+        case .splash: return .splash
+        }
+    }
 
     /// The menu command: "New Short Link".
     var title: String {
@@ -269,6 +361,12 @@ enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .shortLink: return String(localized: "New Short Link")
         case .qrCode: return String(localized: "New QR Code")
         case .bioPage: return String(localized: "New Bio Page")
+        case .vcard: return String(localized: "New vCard")
+        case .event: return String(localized: "New Event")
+        case .paymentLink: return String(localized: "New Payment Link")
+        case .file: return String(localized: "New File Link")
+        case .staticPage: return String(localized: "New Static Page")
+        case .splash: return String(localized: "New Splash Page")
         }
     }
 
@@ -278,6 +376,8 @@ enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .shortLink: return String(localized: "Short link")
         case .qrCode: return String(localized: "QR code")
         case .bioPage: return String(localized: "Bio page")
+        case .vcard, .event, .paymentLink, .file, .staticPage, .splash:
+            return resourceKind?.title ?? ""
         }
     }
 
@@ -287,6 +387,8 @@ enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .shortLink: return String(localized: "Paste a long URL, get a short one")
         case .qrCode: return String(localized: "Scannable, fully styled")
         case .bioPage: return String(localized: "A page in minutes")
+        case .vcard, .event, .paymentLink, .file, .staticPage, .splash:
+            return resourceKind?.blurb ?? ""
         }
     }
 
@@ -295,6 +397,8 @@ enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .shortLink: return "link.badge.plus"
         case .qrCode: return "qrcode"
         case .bioPage: return "person.crop.square"
+        case .vcard, .event, .paymentLink, .file, .staticPage, .splash:
+            return resourceKind?.systemImage ?? "plus"
         }
     }
 
@@ -303,23 +407,32 @@ enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .shortLink: return .link
         case .qrCode: return .qrCode
         case .bioPage: return .bioPage
+        case .vcard: return AppModel.Composer(kind: .vcard)
+        case .event: return AppModel.Composer(kind: .event)
+        case .paymentLink: return AppModel.Composer(kind: .paymentLink)
+        case .file: return AppModel.Composer(kind: .file)
+        case .staticPage: return AppModel.Composer(kind: .staticPage)
+        case .splash: return AppModel.Composer(kind: .splash)
         }
     }
 
-    var shortcut: KeyboardShortcut {
+    /// ⌘N, ⇧⌘N and ⌥⌘N; the resource types have none.
+    var shortcut: KeyboardShortcut? {
         switch self {
         case .shortLink: return KeyboardShortcut("n", modifiers: .command)
         case .qrCode: return KeyboardShortcut("n", modifiers: [.command, .shift])
         case .bioPage: return KeyboardShortcut("n", modifiers: [.command, .option])
+        case .vcard, .event, .paymentLink, .file, .staticPage, .splash: return nil
         }
     }
 
     /// The shortcut as the palette prints it.
-    var shortcutLabel: String {
+    var shortcutLabel: String? {
         switch self {
         case .shortLink: return "⌘N"
         case .qrCode: return "⇧⌘N"
         case .bioPage: return "⌥⌘N"
+        case .vcard, .event, .paymentLink, .file, .staticPage, .splash: return nil
         }
     }
 

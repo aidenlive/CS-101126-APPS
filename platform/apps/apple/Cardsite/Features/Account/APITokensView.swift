@@ -8,8 +8,8 @@ struct APITokensView: View {
     let model: AccountSettingsModel
 
     @State private var isCreating = false
-    @State private var pendingRevoke: APIToken?
-    @State private var revokeError: String?
+    @State private var pendingRevoke: APIToken? = nil
+    @State private var revokeError: String? = nil
 
     var body: some View {
         ListStateView(
@@ -50,7 +50,7 @@ struct APITokensView: View {
                     Text("Scopes are deny-by-default; a write scope implies its read scope. Revoked tokens stay listed as a record.")
                 }
             }
-            .refreshable { await model.loadTokens(force: true) }
+            .refreshable { [model] in await model.loadTokens(force: true) }
         }
         .navigationTitle("API Tokens")
         .toolbar {
@@ -158,9 +158,9 @@ struct CreateAPITokenView: View {
     @State private var access: [String: ScopeAccess] = [:]
     @State private var expires = false
     @State private var expiry = Calendar.current.date(byAdding: .day, value: 90, to: .now) ?? .now
-    @State private var error: String?
+    @State private var error: String? = nil
     @State private var isSaving = false
-    @State private var created: CreatedAPIToken?
+    @State private var created: CreatedAPIToken? = nil
 
     enum ScopeAccess: Hashable { case off, read, write }
 

@@ -21,6 +21,7 @@ struct ResourceListScreen: View {
 
     init(kind: ResourceKind) {
         self.kind = kind
+        _model = State(initialValue: nil)
     }
 
     /// Preview seam: a model already holding rows.
@@ -56,10 +57,10 @@ private struct ResourceListView: View {
     @Bindable var model: ResourceListModel
 
     @State private var isComposing = false
-    @State private var opened: ResourceItem?
-    @State private var pendingDelete: ResourceItem?
-    @State private var statisticsFor: ResourceItem?
-    @State private var actionError: ActionError?
+    @State private var opened: ResourceItem? = nil
+    @State private var pendingDelete: ResourceItem? = nil
+    @State private var statisticsFor: ResourceItem? = nil
+    @State private var actionError: ActionError? = nil
     /// The search text the list was last fetched with.
     @State private var fetchedSearch = ""
 

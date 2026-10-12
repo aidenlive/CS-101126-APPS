@@ -151,9 +151,9 @@ struct DomainDetailView: View {
     @State private var domain: CustomDomain
     @State private var draft: CustomDomainInput
     @State private var isSaving = false
-    @State private var saveError: String?
-    @State private var hostError: String?
-    @State private var pendingDelete: CustomDomain?
+    @State private var saveError: String? = nil
+    @State private var hostError: String? = nil
+    @State private var pendingDelete: CustomDomain? = nil
 
     init(model: DomainsModel, domain: CustomDomain) {
         self.model = model
@@ -286,10 +286,10 @@ struct DomainCreateSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var input = CustomDomainInput()
-    @State private var hostError: String?
-    @State private var error: String?
+    @State private var hostError: String? = nil
+    @State private var error: String? = nil
     @State private var isSaving = false
-    @State private var created: CustomDomain?
+    @State private var created: CustomDomain? = nil
 
     private var isDirty: Bool { input != CustomDomainInput() }
     private var canSave: Bool { !input.normalizedHost.isEmpty && !isSaving }

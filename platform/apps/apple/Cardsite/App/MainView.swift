@@ -125,8 +125,8 @@ struct MainView: View {
         // A view presents one sheet at a time: while a link from the
         // palette is up, its own sheet presents the composer instead (its
         // "Create QR code"), so this one stands down.
-        .sheet(item: Binding(get: { router.presentedLink == nil ? app.composer : nil },
-                             set: { app.composer = $0 })) { composer in
+        .sheet(item: Binding(get: { [router, model] in router.presentedLink == nil ? model.composer : nil },
+                             set: { [model] in model.composer = $0 })) { composer in
             composerSheet(composer)
         }
         .sheet(item: $nav.presentedLink) { link in
@@ -213,6 +213,13 @@ struct MainView: View {
                 Task { [home] in await home.refresh() }
             }
             .environment(pages)
+        case .vcard, .event, .paymentLink, .file, .staticPage, .splash:
+            if let kind = composer.kind.resourceKind {
+                ResourceComposerSheet(kind: kind) { _ in
+                    router.open(AppDestination(resourceKind: kind))
+                    Task { [home] in await home.refresh() }
+                }
+            }
         }
     }
 }

@@ -38,7 +38,7 @@ struct InboxView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.openURL) private var openURL
     let model: InboxModel
-    @State private var actionError: String?
+    @State private var actionError: String? = nil
 
     var body: some View {
         @Bindable var model = model
@@ -132,7 +132,7 @@ struct InboxView: View {
                 .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
             }
         }
-        .refreshable { await model.refresh() }
+        .refreshable { [model] in await model.refresh() }
         .animation(StudioAnimation.base, value: model.filter)
     }
 

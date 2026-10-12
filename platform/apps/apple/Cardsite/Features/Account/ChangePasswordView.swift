@@ -12,7 +12,7 @@ struct ChangePasswordView: View {
     @State private var current = ""
     @State private var new = ""
     @State private var confirm = ""
-    @State private var error: String?
+    @State private var error: String? = nil
     @State private var isSaving = false
     @State private var didChange = false
 
@@ -35,9 +35,13 @@ struct ChangePasswordView: View {
                         SecureField("Current Password", text: $current)
                             .textContentType(.password)
                         SecureField("New Password", text: $new)
+                            #if os(iOS)
                             .textContentType(.newPassword)
+                            #endif
                         SecureField("Confirm New Password", text: $confirm)
+                            #if os(iOS)
                             .textContentType(.newPassword)
+                            #endif
                             .onSubmit { Task { await submit() } }
                     } footer: {
                         VStack(alignment: .leading, spacing: StudioSpace.s2) {

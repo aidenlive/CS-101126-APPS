@@ -37,7 +37,7 @@ struct ListStateView<Item, Content: View>: View {
                 .frame(maxWidth: 520)
                 .frame(maxWidth: .infinity)
             }
-            .refreshable { await retry() }
+            .refreshable { [retry] in await retry() }
         case .loaded(let items):
             content(items)
         }
@@ -70,7 +70,7 @@ struct ErrorStateView: View {
             .frame(maxWidth: 520)
             .frame(maxWidth: .infinity)
         }
-        .refreshable { await retry() }
+        .refreshable { [retry] in await retry() }
     }
 }
 

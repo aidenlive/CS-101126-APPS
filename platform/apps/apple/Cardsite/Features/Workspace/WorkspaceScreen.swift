@@ -20,9 +20,9 @@ struct WorkspaceView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.switchWorkspace) private var switchWorkspace
     @State private var model: WorkspaceModel
-    @State private var sheet: Sheet?
-    @State private var confirm: Confirmation?
-    @State private var actionError: String?
+    @State private var sheet: Sheet? = nil
+    @State private var confirm: Confirmation? = nil
+    @State private var actionError: String? = nil
 
     enum Sheet: Identifiable {
         case create, rename(String), invite
@@ -202,7 +202,7 @@ struct WorkspaceView: View {
             }
         }
         .studioForm()
-        .refreshable { await model.refresh() }
+        .refreshable { [model] in await model.refresh() }
     }
 
     typealias Snapshot = WorkspaceModel.Snapshot
@@ -426,7 +426,7 @@ private struct WorkspaceNameSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
-    @State private var error: String?
+    @State private var error: String? = nil
     @State private var isSaving = false
 
     private var isCreate: Bool { if case .create = mode { return true } else { return false } }
@@ -496,7 +496,7 @@ private struct InviteMemberSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var email = ""
     @State private var role: WorkspaceRole = .member
-    @State private var error: String?
+    @State private var error: String? = nil
     @State private var isSaving = false
 
     private var trimmed: String { email.trimmingCharacters(in: .whitespacesAndNewlines) }

@@ -12,7 +12,7 @@ struct PagePreviewPane: View {
     var isFramed = true
 
     @State private var isLoading = false
-    @State private var failure: String?
+    @State private var failure: String? = nil
     @State private var manualReloads = 0
 
     var body: some View {
@@ -87,6 +87,11 @@ struct PagePreviewPane: View {
 
 /// A WKWebView that loads `url` whenever `url` or `revision` changes,
 /// bypassing the cache so a save shows at once.
+///
+/// Main-actor isolated in its primary declaration: the representable
+/// conformance lives in a platform extension, which would not isolate
+/// `makeCoordinator()` (it builds the main-actor `Coordinator`).
+@MainActor
 struct PageWebView {
     let url: URL
     let revision: Int

@@ -142,7 +142,7 @@ struct ActivityLogsView: View {
                     .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
                 }
             }
-            .refreshable { await model.list.refresh() }
+            .refreshable { [list = model.list] in await list.refresh() }
         }
         .navigationTitle("Activity Logs")
         .searchable(text: $model.searchText, prompt: Text("Search by IP, city, browser..."))
@@ -155,8 +155,8 @@ struct ActivityLogsView: View {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
                     Picker("Filter by device type", selection: Binding(
-                        get: { model.device },
-                        set: { device in Task { await model.setDevice(device) } }
+                        get: { [model] in model.device },
+                        set: { [model] device in Task { await model.setDevice(device) } }
                     )) {
                         Text("All Devices").tag(LogDeviceType?.none)
                         Text("Desktop").tag(LogDeviceType?.some(.desktop))

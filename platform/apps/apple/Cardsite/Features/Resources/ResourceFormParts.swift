@@ -92,9 +92,9 @@ struct ResourceFileRows: View {
 
     @State private var isImporting = false
     @State private var isPickingPhoto = false
-    @State private var photoItem: PhotosPickerItem?
+    @State private var photoItem: PhotosPickerItem? = nil
     @State private var isReading = false
-    @State private var pickError: String?
+    @State private var pickError: String? = nil
 
     var body: some View {
         LabeledContent {

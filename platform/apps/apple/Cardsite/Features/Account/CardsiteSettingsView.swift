@@ -122,9 +122,9 @@ private struct SecuritySettingsPane: View {
         var id: String { rawValue }
     }
 
-    @State private var sheet: Sheet?
-    @State private var pendingRevoke: APIToken?
-    @State private var revokeError: String?
+    @State private var sheet: Sheet? = nil
+    @State private var pendingRevoke: APIToken? = nil
+    @State private var revokeError: String? = nil
 
     var body: some View {
         Form {
