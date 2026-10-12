@@ -5,20 +5,15 @@
 
 ## 1. Bottom line
 
-**Status on 12 Oct 2026.** Cardsite® for Apple platforms is written to web parity: waves 0–3 are code complete. It is one multiplatform SwiftUI target for iPhone, iPad, Mac and Apple Vision Pro, plus the widgets, a share extension and an Apple Watch app. In all, about 37,500 lines of Swift sit under `platform/apps/apple`, plus StudioKit. **None of it has been compiled.**
+**Status on 12 Oct 2026 (evening).** Cardsite® for Apple platforms is written to web parity: waves 0–3 are code complete, in one multiplatform SwiftUI target for iPhone, iPad, Mac and Apple Vision Pro, plus widgets, a share extension and an Apple Watch app (about 44,000 lines of Swift with StudioKit).
 
-- **Verified:**
-  - the contract harness against a locally built live API: 316/316, then 332/332 with the organise steps;
-  - tree-sitter syntax checks;
-  - the design lint;
-  - `project.yml` and the workflow parse with PyYAML.
-- **Not verified:**
-  - the compile, for every target;
-  - `swift test` (113 CardsiteKit tests and 16 StudioKit tests);
-  - the UI tests and screenshots;
-  - anything on a device.
-- **Why:** GitHub Actions refuses to start any job on this repository ("recent account payments have failed or your spending limit needs to be increased"). The gate below has therefore never run for any wave, so no wave has formally exited. Fixing billing is owner item A23 in `native-apple.md`.
-- **Design review:** source-only ([`DESIGN-REVIEW.md`](DESIGN-REVIEW.md)), with no rendered screens. Its fixes are in progress.
+- **Verified on CI** (macOS 26 runners, since the repo went public):
+  - every target compiles: iOS (with widgets, share extension and watch app), macOS, visionOS, watchOS;
+  - `swift test`: all CardsiteKit and StudioKit tests pass;
+  - UI tests: **Mac all green** (every screen, light/dark/AX5, and all 5 journeys); **iPad and iPhone** every screen and every journey pass except the AX5 Links capture, where the screen renders correctly but the harness can't confirm it (open item);
+  - about 160 screenshots per run on the `screens` branch, reviewed screen by screen; the fixes from each review are in (see §12).
+- **Also verified:** the contract harness against a live API built from source (332/332), the design lint.
+- **Not verified:** a signed Release archive, the extensions and the watch app on devices, and the device checklist in `native-apple.md`. Those need a Mac with the Cardsite developer account (owner items A1–A3, A25).
 
 This plan brings the app to parity with every web feature that belongs in an Apple app, in four waves, run by a group of agents working on separate directories in parallel. Every wave ends at the same gate:
 
@@ -206,3 +201,13 @@ Each entry is labelled _verified_ (it was run) or _not verified_.
 - **Server issues found** (A26 in `native-apple.md`). The most serious is that `/spotlight` searches across all accounts, which is a **security** issue. Also: list handlers ignore `search=`; `/statistics` is cached per user, not per workspace; `scheduled_at: null` is ignored; a QR PUT ignores content edits; the web's Data filter values are wrong; `password_protection` isn't enforced; and an expiration URL can't be removed from file and static links. Reported, not fixed: this repository doesn't own the API.
 - **Docs and store** (12 Oct). Rewrote `native-apple.md`, adding the device checklist 1–23 and A23–A28. Updated the App Store metadata, review notes, privacy label and screenshot plan. Added UserDefaults reason 1C8F.1 (App Group) and the Photos data type to the app's privacy manifest, which is _verified_ as a valid plist. Added the root `README.md`.
 - **CI.** `project.yml` and `apple.yml` parse: _verified_ (PyYAML). Every Actions job is refused for billing: _verified_ (observed). Owner item A23.
+
+### 12 Oct, after CI came up
+
+| What | Result |
+|---|---|
+| First compile | 4 fixes (duplicate memberwise init, a type-checker time-out and a nested `ForEach` crash in the tab builder, a visionOS-unavailable API). **Verified**: every target green since |
+| Unit tests | **Verified**: CardsiteKit and StudioKit pass |
+| UI test harness | Reworked for each platform's navigation; relaunch onto any screen (`-CardsiteOpen`); Mac recovers a window from File ▸ New Window (A29) |
+| Visual reviews of rendered screens (iPhone, iPad, Mac; light, dark, AX5) | Fixed: AX5 headlines breaking mid-word (StudioKit caps display growth); address wrapping; header actions on one line; chart's clipped last label; one sheet background; page heads in every state with inline titles on scroll; consistent account rows; no switch beside a chevron on iPhone; the matching password field; the Mac workspace switcher, sidebar width, Pages column width, doubled split-view titles, and middle-truncated rows |
+
