@@ -126,6 +126,11 @@ struct MainView: View {
         .tabViewSidebarHeader {
             WorkspaceSwitcher()
                 .padding(.bottom, StudioSpace.s2)
+                #if os(macOS)
+                // Widens the Mac sidebar to Studio's full width so titles
+                // such as "Payment Links" aren't truncated.
+                .frame(minWidth: StudioLayout.sidebarFull - StudioSpace.s8)
+                #endif
         }
     }
 

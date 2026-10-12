@@ -73,9 +73,8 @@ The tests find things by accessibility identifier first. If an identifier is mis
 
 | Identifier | On |
 |---|---|
-| `nav.<destination>` | The sidebar row, tab or "More" row for a destination. Destinations: `home`, `links`, `statistics`, `qrCodes`, `pages`, `account`, `settings`, `workspace`, `inbox`, `uploads`. |
-| `nav.more` | The iPhone "More" tab, if secondary destinations live there. |
-| `screen.<destination>` | The root view of each destination. |
+| `nav.<destination>` | The iPhone "More" row for a destination. Destinations: `home`, `links`, `statistics`, `qrCodes`, `pages`, `account`, `settings`, `workspace`, `inbox`, `uploads`. Sidebar items and tabs are system-drawn `Tab`s with no identifier: the harness finds them by title (`Destination.title` / `tabTitle`, which mirror `AppDestination`). |
+| `screen.<destination>` | The root content of each destination. `DestinationView` stamps it for More/sidebar destinations; the four tab roots (Home, Links, Pages, QR Codes) stamp it on their primary content, because an identifier on a `NavigationStack`/`NavigationSplitView` doesn't surface. A destination also counts as open when its navigation title shows (navigation bar on iOS, window title on Mac), a marker only it has (`links.create`, `qr.create`, `pages.create`, `account.delete`) exists, or its sidebar row is selected. |
 | `auth.signIn`, `auth.signUp` | The sign-in and sign-up forms. |
 | `auth.toSignUp` | The "Create an account" button. |
 | `links.row.<n>` | Rows of the Links list. `n` is 0 for the newest. |
@@ -117,9 +116,9 @@ The screens:
 
 The journeys also attach their end state, as `journey-*`.
 
-Every screen gets its own launch. A screen that can't be reached is captured as `<screen>-unreached` and recorded as a failure, and the walk carries on.
+Screens that follow on from each other share a launch: signed out (`sign-in`, `sign-up`); the top-level destinations; `links`, `link-create`, `link-detail`; `qr-codes`, `qr-builder`; `pages`, `page-editor`. The empty states are one launch. A screen that can't be reached from where the previous one left off is retried once on a fresh launch. If it still can't be reached, it is captured as `<screen>-unreached` and recorded as a failure, and the next screen starts on a fresh launch.
 
-To add a screen, add a case to `ScreenshotTests.Screen` and a branch to `show(_:in:)`.
+To add a screen, add a case to `ScreenshotTests.Screen`, put it in one of `ScreenshotTests.launches`, and add a branch to `show(_:in:)` (and to `tidy(after:in:)` if it leaves a sheet open).
 
 ## CI
 

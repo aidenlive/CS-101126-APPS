@@ -14,14 +14,17 @@ final class JourneyTests: XCTestCase {
         let ui = Harness(test: self)
         XCTAssertTrue(ui.open(.links), "Links didn't open")
 
-        if !ui.tap("links.create", labels: ["New Short Link", "New Link", "Add"]) {
+        if !ui.tap("links.create", labels: ["New Short Link"], timeout: 3) {
             #if os(macOS)
             ui.app.typeKey("n", modifierFlags: .command)
             #else
             XCTFail("No create button (links.create)")
             #endif
         }
-        XCTAssertNotNil(ui.find("link.editor", labels: ["New Short Link", "New Link"]), "The link editor didn't open")
+        // The editor's own fields, not its title: "New Short Link" is also
+        // the create button's label, so it would match with no editor open.
+        XCTAssertNotNil(ui.findAny(["link.editor.slug", "link.editor.destination", "link.editor"]),
+                        "The link editor didn't open")
 
         let slug = try XCTUnwrap(ui.textField("link.editor.slug", labels: ["Address", "Slug", "your-name"]), "No address field")
         ui.replaceText(in: slug, with: "journey-link")
@@ -114,16 +117,28 @@ final class JourneyTests: XCTestCase {
     func testDeleteAccountWrongPasswordShowsError() throws {
         let ui = Harness(test: self)
         XCTAssertTrue(ui.open(.account), "Account didn't open")
-        XCTAssertTrue(ui.tap("account.delete", labels: ["Delete Account…", "Delete Account"]), "No delete account button")
+        // The last row of a lazy Form: it only exists once scrolled to.
+        XCTAssertTrue(ui.tap("account.delete", labels: ["Delete Account…", "Delete Account"], scrolling: true),
+                      "No delete account button")
 
         let password = try XCTUnwrap(ui.textField("account.delete.password", labels: ["Your Cardsite password", "Password"]),
                                      "No password field")
         ui.replaceText(in: password, with: "wrong-password")
         XCTAssertTrue(ui.tap("account.delete.confirm", labels: ["Delete My Account"]), "No confirm button")
 
-        // A second confirmation, if the app asks for one.
-        let confirm = ui.app.alerts.buttons["Delete"]
-        if confirm.waitForExistence(timeout: 2) { confirm.tap() }
+        // The second confirmation: an alert on iOS, a sheet or dialog on Mac.
+        let delete = Harness.text("Delete")
+        let confirms = [
+            ui.app.alerts.buttons.matching(delete).firstMatch,
+            ui.app.sheets.buttons.matching(delete).firstMatch,
+            ui.app.dialogs.buttons.matching(delete).firstMatch,
+        ]
+        var confirm: XCUIElement?
+        ui.poll(3) {
+            confirm = confirms.first { $0.exists }
+            return confirm != nil
+        }
+        if let confirm { ui.press(confirm) }
 
         let shown = ui.element("account.delete.error").waitForExistence(timeout: 10) || ui.waitForText("Password is incorrect")
         XCTAssertTrue(shown, "No error for a wrong password")

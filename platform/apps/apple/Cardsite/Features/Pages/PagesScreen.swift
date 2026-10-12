@@ -61,6 +61,7 @@ struct PagesScreen: View {
                 SplitPlaceholder(systemImage: "person.crop.square",
                                  title: String(localized: "Select a page"),
                                  message: String(localized: "Its blocks appear here, ready to edit."))
+                    .navigationTitle("Pages")
             }
         } detail: {
             if let editor {
@@ -70,6 +71,7 @@ struct PagesScreen: View {
                 SplitPlaceholder(systemImage: "rectangle.and.pencil.and.ellipsis",
                                  title: String(localized: "No page open"),
                                  message: String(localized: "Choose a page, then a block, to edit it here."))
+                    .navigationTitle("Pages")
             }
         }
         .task { [list = model.list] in await list.loadIfNeeded() }
@@ -214,6 +216,8 @@ private struct PagesListColumn: View {
         ) { _ in
             pageList
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AppDestination.pages.screenIdentifier)
         .background(Color.studioBg)
         .navigationTitle("Pages")
         .searchable(text: $bindable.searchText, prompt: Text("Search names and addresses"))

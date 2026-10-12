@@ -43,6 +43,8 @@ struct LinksScreen: View {
             ) { _ in
                 linkList
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier(AppDestination.links.screenIdentifier)
             .navigationTitle("Links")
             .searchable(text: $bindable.searchText, prompt: Text("Search addresses and destinations"))
             .task(id: model.searchText) { [model] in
@@ -76,6 +78,7 @@ struct LinksScreen: View {
                     SplitPlaceholder(systemImage: "link",
                                      title: String(localized: "Select a link"),
                                      message: String(localized: "Its address, destination, settings and traffic appear here."))
+                    .navigationTitle("Links")
                 }
             }
         }

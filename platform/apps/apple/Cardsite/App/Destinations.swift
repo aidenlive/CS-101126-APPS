@@ -34,9 +34,11 @@ import CardsiteKit
  the web's order (navigation.ts): vCards, payment links, events, splash
  pages, static pages, file links, then uploads and data records.
 
- IDENTIFIERS. Each sidebar item, tab and More row carries `nav.<rawValue>`
- and each destination's root `screen.<rawValue>`, which CardsiteUITests
- finds them by (CardsiteUITests/Harness.swift). Keep raw values stable.
+ IDENTIFIERS. Each More row carries `nav.<rawValue>` and each destination's
+ root content `screen.<rawValue>`, which CardsiteUITests finds them by
+ (CardsiteUITests/Harness.swift). Sidebar items and tabs are system-drawn
+ and carry no identifier; the tests find them by `title` and `tabTitle`, so
+ keep those and the raw values in step with the harness's `Destination`.
  */
 enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
     case home
@@ -268,9 +270,16 @@ struct DestinationView: View {
     let destination: AppDestination
 
     var body: some View {
-        root
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier(destination.screenIdentifier)
+        if destination.ownsNavigation {
+            // A tab root is a NavigationStack or NavigationSplitView, and an
+            // identifier on that container doesn't surface to XCUITest. Those
+            // screens stamp `screen.<rawValue>` on their own primary content.
+            root
+        } else {
+            root
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier(destination.screenIdentifier)
+        }
     }
 
     @ViewBuilder

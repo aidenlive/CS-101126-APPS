@@ -12,7 +12,33 @@ struct WorkspaceSwitcher: View {
     @Environment(AppModel.self) private var app
     @ScaledMetric(relativeTo: .body) private var tileSize: CGFloat = 32
 
+    #if os(macOS)
+    @State private var isPickerShown = false
+    #endif
+
     var body: some View {
+        picker
+            .accessibilityLabel("Workspace")
+        .accessibilityValue(app.currentWorkspace?.name ?? String(localized: "Loading"))
+        .accessibilityHint("Switches whose links, pages and codes you see")
+    }
+
+    // On the Mac a `Menu` label is flattened into a pop-up button title,
+    // which drops the workspace name and meta line, so the Mac shows the
+    // full label as a button with a popover list instead.
+    @ViewBuilder
+    private var picker: some View {
+        #if os(macOS)
+        Button {
+            isPickerShown.toggle()
+        } label: {
+            label
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $isPickerShown, arrowEdge: .bottom) {
+            WorkspacePopoverList { isPickerShown = false }
+        }
+        #else
         Menu {
             WorkspaceMenuItems()
         } label: {
@@ -21,9 +47,7 @@ struct WorkspaceSwitcher: View {
         .menuStyle(.button)
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
-        .accessibilityLabel("Workspace")
-        .accessibilityValue(app.currentWorkspace?.name ?? String(localized: "Loading"))
-        .accessibilityHint("Switches whose links, pages and codes you see")
+        #endif
     }
 
     private var label: some View {
@@ -211,5 +235,55 @@ struct WorkspacePickerRow: View {
         Section { WorkspacePickerRow() }
     }
     .environment(AppModel.preview())
+}
+#endif
+
+#if os(macOS)
+/// The Mac workspace list: one row per workspace, the current one checked.
+private struct WorkspacePopoverList: View {
+    @Environment(AppModel.self) private var app
+    let dismiss: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: StudioSpace.s1) {
+            switch app.workspaces {
+            case .loaded(let workspaces):
+                ForEach(workspaces) { workspace in
+                    Button {
+                        dismiss()
+                        Task { await app.selectWorkspace(workspace.id) }
+                    } label: {
+                        HStack(spacing: StudioSpace.s2) {
+                            Image(systemName: workspace.isPersonal ? "person" : "person.2")
+                                .foregroundStyle(Color.studioText3)
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(verbatim: workspace.name)
+                                    .studioText(.ui)
+                                    .foregroundStyle(Color.studioText)
+                                Text(WorkspaceMenuItems.describe(workspace))
+                                    .studioText(.uiSm)
+                                    .foregroundStyle(Color.studioText3)
+                            }
+                            Spacer(minLength: StudioSpace.s4)
+                            if workspace.id == app.currentWorkspace?.id {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(Color.studioAccentLine)
+                            }
+                        }
+                        .padding(.horizontal, StudioSpace.s2)
+                        .padding(.vertical, StudioSpace.s1)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            case .failed:
+                Button("Try Again") { Task { await app.loadWorkspaces() } }
+            case .idle, .loading:
+                ProgressView().controlSize(.small)
+            }
+        }
+        .padding(StudioSpace.s2)
+        .frame(minWidth: StudioLayout.sidebarFull)
+    }
 }
 #endif

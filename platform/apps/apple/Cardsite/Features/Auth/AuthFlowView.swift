@@ -323,10 +323,16 @@ struct PasswordField: View {
     var help: String?
     var errorMessage: String?
     @State private var isRevealed = false
+    @FocusState private var isFocused: Bool
 
+    // Mirrors StudioTextField (label, fill, hairline, focus ring) so the
+    // email and password fields read as one set.
     var body: some View {
         VStack(alignment: .leading, spacing: StudioSpace.s2) {
-            Text(title).studioText(.uiSm)
+            Text(title)
+                .studioText(.uiSm)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.studioText)
             HStack(spacing: StudioSpace.s2) {
                 Group {
                     if isRevealed {
@@ -336,6 +342,8 @@ struct PasswordField: View {
                     }
                 }
                 .textFieldStyle(.plain)
+                .studioText(.ui)
+                .focused($isFocused)
                 .plainEntry()
                 #if os(iOS) || os(visionOS)
                 .textContentType(isNew ? .newPassword : .password)
@@ -349,15 +357,30 @@ struct PasswordField: View {
                 } label: {
                     Image(systemName: isRevealed ? "eye.slash" : "eye")
                         .foregroundStyle(Color.studioText3)
+                        .frame(minWidth: StudioLayout.tapTarget, maxHeight: .infinity)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(isRevealed ? Text("Hide Password") : Text("Show Password"))
             }
-            .padding(.horizontal, StudioSpace.s3)
-            .frame(minHeight: 42)
-            .background(RoundedRectangle(cornerRadius: StudioRadius.sm, style: .continuous).fill(Color.studioSurface))
-            .overlay(RoundedRectangle(cornerRadius: StudioRadius.sm, style: .continuous)
-                .strokeBorder(errorMessage == nil ? Color.studioBorder : Color.studioError, lineWidth: 1))
+            .padding(.leading, StudioSpace.s3)
+            // StudioTextField's 42 pt field height (control height + 6).
+            .frame(minHeight: StudioLayout.controlHeight + StudioSpace.s1 + StudioSpace.s1 / 2)
+            .background(
+                RoundedRectangle(cornerRadius: StudioRadius.md, style: .continuous)
+                    .fill(isFocused ? Color.studioSurface : Color.studioSurface2)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioRadius.md, style: .continuous)
+                    .strokeBorder(errorMessage == nil ? (isFocused ? Color.studioBorderStrong : Color.studioBorder) : Color.studioError,
+                                  lineWidth: isFocused || errorMessage != nil ? 1 : 0.5)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioRadius.md, style: .continuous)
+                    .strokeBorder(Color.studioAccentGlow, lineWidth: isFocused && errorMessage == nil ? 3 : 0)
+                    .padding(-StudioSpace.s1 / 2)
+            )
+            .animation(StudioAnimation.base, value: isFocused)
             if let errorMessage {
                 Text(errorMessage).studioText(.uiSm).foregroundStyle(Color.studioError)
             } else if let help {

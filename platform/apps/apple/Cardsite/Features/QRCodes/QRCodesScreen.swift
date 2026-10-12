@@ -26,6 +26,8 @@ struct QRCodesScreen: View {
         @Bindable var bindable = model
         NavigationStack(path: $path) {
             content
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier(AppDestination.qrCodes.screenIdentifier)
                 .background(Color.studioBg)
                 .navigationTitle("QR Codes")
                 .searchable(text: $bindable.searchText, prompt: Text("Search QR codes"))

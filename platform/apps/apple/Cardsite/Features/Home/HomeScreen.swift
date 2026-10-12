@@ -29,6 +29,8 @@ struct HomeScreen: View {
                     content
                 }
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier(AppDestination.home.screenIdentifier)
             .navigationTitle("Home")
             #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
