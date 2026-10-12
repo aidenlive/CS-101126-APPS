@@ -1,3 +1,22 @@
-// Copy to Signing.xcconfig (git-ignored) and fill in.
-// The Apple Developer team that owns the Cardsite, Inc. account.
+// Copy to Config/Signing.xcconfig (git-ignored), fill in, then run
+// `xcodegen generate`. Every target (app, widgets, share extension, watch
+// app, UI tests) picks these up, so don't set the team per target in Xcode:
+// `xcodegen generate` would discard it.
+
+// Your Apple Developer team ID (developer.apple.com → Membership details).
 DEVELOPMENT_TEAM = XXXXXXXXXX
+
+// ── Local development only (leave commented for release builds) ──
+
+// 1. If com.cardsite.app isn't registered to your team, use your own prefix.
+//    Extensions and the watch app follow (….widgets, ….share, ….watchkitapp).
+// CARDSITE_BUNDLE_ID = com.yourname.cardsite
+
+// 2. Sign without the App Group and shared keychain group. Use this with a
+//    free Personal Team (no App Groups), or until the App IDs and the group
+//    exist in your account. The app works normally; the widgets, share
+//    extension and Siri then show "Sign in to Cardsite first", because they
+//    can't read the app's session.
+// CARDSITE_ENTITLEMENTS_SUFFIX = -Local
+// CARDSITE_APP_GROUP =
+// CARDSITE_KEYCHAIN_GROUP =

@@ -38,6 +38,15 @@ provisioned (`native-apple.md` A25).
 Tests: `swift test --package-path Packages/CardsiteKit`, or ⌘U in Xcode, which
 also runs the UI tests.
 
+## Signing on your Mac
+
+1. **Accept Apple's latest Program License Agreement** at developer.apple.com → Account (the Account Holder must do this). Until then Xcode reports "PLA Update available" and can't create App IDs or the App Group, and falls back to the wildcard profile, which can't carry App Groups.
+2. `cp Config/Signing.example.xcconfig Config/Signing.xcconfig`, set `DEVELOPMENT_TEAM`, then `xcodegen generate`. The team then applies to every target (app, widgets, share extension, watch app). Don't set it per target in Xcode, because the next `xcodegen generate` discards it.
+3. If `com.cardsite.app` isn't registered to your team, set `CARDSITE_BUNDLE_ID` to your own prefix in the same file.
+4. On a free Personal Team, or before the App Group exists, uncomment the **local signing** block in that file. It signs without the App Group and the shared keychain group. The app itself works normally, but the widgets and share extension can't see your session.
+
+With a paid team and automatic signing, Xcode registers the App IDs (`…`, `….widgets`, `….share`, `….watchkitapp`) and the `group.<bundle id>` App Group on the first build.
+
 ## Layout
 
 | Path | What |

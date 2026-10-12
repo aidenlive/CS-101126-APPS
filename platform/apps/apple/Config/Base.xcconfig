@@ -14,4 +14,14 @@ CARDSITE_PUBLIC_HOST = card.site
 // Web app and marketing site; legal pages and contact live here.
 CARDSITE_WEB_URL = https:/$()/cardsite.com
 
+// Shared session between the app, widgets and share extension (SharedSession
+// in CardsiteKit). AppIdentifierPrefix is the team ID plus a dot, set by
+// signing. Empty values turn sharing off.
+CARDSITE_APP_GROUP = group.$(CARDSITE_BUNDLE_ID)
+CARDSITE_KEYCHAIN_GROUP = $(AppIdentifierPrefix)$(CARDSITE_BUNDLE_ID).shared
+// "" signs with the App Group and keychain group; "-Local" signs without
+// them (see Signing.example.xcconfig).
+CARDSITE_ENTITLEMENTS_SUFFIX =
+
+// Per-developer: team, and optionally a local bundle ID or local signing.
 #include? "Signing.xcconfig"

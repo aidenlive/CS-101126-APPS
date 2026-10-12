@@ -30,10 +30,8 @@ configFiles:
 # CSAppGroup / CSKeychainGroup, and the entitlements files list them.
 # AppIdentifierPrefix is the team ID plus a dot, set by signing; an unsigned
 # build leaves it empty and SharedSession then treats sharing as off.
-settings:
-  base:
-    CARDSITE_APP_GROUP: group.$(CARDSITE_BUNDLE_ID)
-    CARDSITE_KEYCHAIN_GROUP: $(AppIdentifierPrefix)$(CARDSITE_BUNDLE_ID).shared
+# The group values live in Config/Base.xcconfig, so Config/Signing.xcconfig
+# can override them (a project-level setting here would win over it).
 
 packages:
   StudioKit:
@@ -87,12 +85,12 @@ targets:
         SWIFT_EMIT_LOC_STRINGS: YES
         LOCALIZATION_PREFERS_STRING_CATALOGS: YES
         ENABLE_HARDENED_RUNTIME[sdk=macosx*]: YES
-        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: Cardsite/Supporting/Cardsite-macOS.entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: Cardsite/Supporting/Cardsite-macOS$(CARDSITE_ENTITLEMENTS_SUFFIX).entitlements
         # App Group + shared Keychain group on iPhone, iPad and Vision Pro.
-        CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]: Cardsite/Supporting/Cardsite-iOS.entitlements
-        CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]: Cardsite/Supporting/Cardsite-iOS.entitlements
-        CODE_SIGN_ENTITLEMENTS[sdk=xros*]: Cardsite/Supporting/Cardsite-iOS.entitlements
-        CODE_SIGN_ENTITLEMENTS[sdk=xrsimulator*]: Cardsite/Supporting/Cardsite-iOS.entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]: Cardsite/Supporting/Cardsite-iOS$(CARDSITE_ENTITLEMENTS_SUFFIX).entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]: Cardsite/Supporting/Cardsite-iOS$(CARDSITE_ENTITLEMENTS_SUFFIX).entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=xros*]: Cardsite/Supporting/Cardsite-iOS$(CARDSITE_ENTITLEMENTS_SUFFIX).entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=xrsimulator*]: Cardsite/Supporting/Cardsite-iOS$(CARDSITE_ENTITLEMENTS_SUFFIX).entitlements
         CODE_SIGN_STYLE: Automatic
         DEAD_CODE_STRIPPING: YES
         ENABLE_USER_SCRIPT_SANDBOXING: YES
@@ -151,8 +149,8 @@ targets:
         PRODUCT_NAME: CardsiteWidgets
         INFOPLIST_FILE: CardsiteWidgets/Info.plist
         GENERATE_INFOPLIST_FILE: NO
-        CODE_SIGN_ENTITLEMENTS: CardsiteWidgets/CardsiteWidgets.entitlements
-        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: CardsiteWidgets/CardsiteWidgets-macOS.entitlements
+        CODE_SIGN_ENTITLEMENTS: CardsiteWidgets/CardsiteWidgets$(CARDSITE_ENTITLEMENTS_SUFFIX).entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: CardsiteWidgets/CardsiteWidgets-macOS$(CARDSITE_ENTITLEMENTS_SUFFIX).entitlements
         ENABLE_HARDENED_RUNTIME[sdk=macosx*]: YES
         APPLICATION_EXTENSION_API_ONLY: YES
         SKIP_INSTALL: YES
@@ -188,8 +186,8 @@ targets:
         PRODUCT_NAME: CardsiteShare
         INFOPLIST_FILE: CardsiteShare/Info.plist
         GENERATE_INFOPLIST_FILE: NO
-        CODE_SIGN_ENTITLEMENTS: CardsiteShare/CardsiteShare.entitlements
-        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: CardsiteShare/CardsiteShare-macOS.entitlements
+        CODE_SIGN_ENTITLEMENTS: CardsiteShare/CardsiteShare$(CARDSITE_ENTITLEMENTS_SUFFIX).entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: CardsiteShare/CardsiteShare-macOS$(CARDSITE_ENTITLEMENTS_SUFFIX).entitlements
         ENABLE_HARDENED_RUNTIME[sdk=macosx*]: YES
         APPLICATION_EXTENSION_API_ONLY: YES
         SKIP_INSTALL: YES
