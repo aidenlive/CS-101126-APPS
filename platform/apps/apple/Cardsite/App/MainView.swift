@@ -65,12 +65,6 @@ struct MainView: View {
         #endif
     }
 
-    /// Sidebar sections after the lead group, skipping any with nothing in
-    /// them yet.
-    private var sectionGroups: [AppDestination.Group] {
-        AppDestination.Group.allCases.filter { $0 != .overview && !$0.destinations.isEmpty }
-    }
-
     var body: some View {
         presented
             .environment(router)
@@ -137,14 +131,9 @@ struct MainView: View {
 
     @TabContentBuilder<MainTab>
     private var overviewTabs: some TabContent<MainTab> {
-        ForEach(AppDestination.Group.overview.destinations) { destination in
-            Tab(isCompact ? destination.tabTitle : destination.title,
-                systemImage: destination.systemImage,
-                value: MainTab.destination(destination)) {
-                DestinationRoot(destination: destination)
-            }
-            .badge(badgeCount(for: destination))
-            .hidden(isCompact && destination.iPhoneTab == .more)
+        ForEach(AppDestination.Group.overview.destinations) { (destination: AppDestination) in
+            destinationTab(destination, title: isCompact ? destination.tabTitle : destination.title)
+                .hidden(isCompact && destination.iPhoneTab == .more)
         }
     }
 
@@ -159,19 +148,28 @@ struct MainView: View {
 
     @TabContentBuilder<MainTab>
     private var sectionTabs: some TabContent<MainTab> {
-        ForEach(sectionGroups) { group in
-            TabSection(group.title) {
-                ForEach(group.destinations) { destination in
-                    Tab(destination.title,
-                        systemImage: destination.systemImage,
-                        value: MainTab.destination(destination)) {
-                        DestinationRoot(destination: destination)
-                    }
-                    .badge(badgeCount(for: destination))
-                }
+        section(.content)
+        section(.organise)
+        section(.account)
+    }
+
+    /// One sidebar section. Sections are spelled out rather than built with
+    /// a `ForEach` over groups: nested `ForEach` in a tab builder crashed the
+    /// type checker on Xcode 26.
+    private func section(_ group: AppDestination.Group) -> some TabContent<MainTab> {
+        TabSection(group.title) {
+            ForEach(group.destinations) { (destination: AppDestination) in
+                destinationTab(destination, title: destination.title)
             }
-            .hidden(isCompact)
         }
+        .hidden(isCompact || group.destinations.isEmpty)
+    }
+
+    private func destinationTab(_ destination: AppDestination, title: String) -> some TabContent<MainTab> {
+        Tab(title, systemImage: destination.systemImage, value: MainTab.destination(destination)) {
+            DestinationRoot(destination: destination)
+        }
+        .badge(badgeCount(for: destination))
     }
 
     private var withPalette: some View {
