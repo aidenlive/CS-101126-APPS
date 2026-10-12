@@ -72,19 +72,34 @@ struct Harness {
     // MARK: Finding things
 
     func element(_ identifier: String) -> XCUIElement {
-        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+        // `<prefix>.row.<n>` means the n-th row on screen: the app keys rows
+        // by resource id (`links.row.42`), so match the prefix and index.
+        if let range = identifier.range(of: ".row."),
+           let index = Int(identifier[range.upperBound...]) {
+            let prefix = String(identifier[..<range.upperBound])
+            let rows = app.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix))
+            let exact = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+            return exact.exists ? exact : rows.element(boundBy: index)
+        }
+        return app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
     /// Candidates for a visible label, most specific first: tab and sidebar
     /// items, then buttons and cells, then anything.
     private func labelled(_ label: String) -> [XCUIElement] {
-        [
-            app.tabBars.buttons[label],
-            app.outlines.staticTexts[label],
-            app.buttons[label],
-            app.cells.staticTexts[label],
-            app.menuItems[label],
-            app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch,
+        // `firstMatch` everywhere: a label such as "Links" can appear in
+        // the sidebar and in the content at once, and a bare subscript
+        // fails when it matches more than one element.
+        let named = NSPredicate(format: "label == %@", label)
+        return [
+            app.tabBars.buttons.matching(named).firstMatch,
+            app.outlines.staticTexts.matching(named).firstMatch,
+            app.outlines.cells.matching(named).firstMatch,
+            app.buttons.matching(named).firstMatch,
+            app.cells.staticTexts.matching(named).firstMatch,
+            app.menuItems.matching(named).firstMatch,
+            app.descendants(matching: .any).matching(named).firstMatch,
         ]
     }
 
@@ -98,7 +113,8 @@ struct Harness {
             if found { return byID }
             first = false
             for label in labels {
-                if let match = labelled(label).first(where: { $0.exists }) {
+                let candidates = labelled(label).filter { $0.exists }
+                if let match = candidates.first(where: { $0.isHittable }) ?? candidates.first {
                     Self.missingIdentifiers.insert(identifier)
                     return match
                 }
