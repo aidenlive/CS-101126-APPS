@@ -35,6 +35,11 @@ struct CardsiteApp: App {
         #if os(macOS)
         .defaultSize(width: 1100, height: 760)
         .windowResizability(.automatic)
+        // Always open the main window. AppKit restored a saved state with
+        // no windows (CI log: "Restoring windows … shouldRestoreState=1"),
+        // which left the app running with nothing on screen.
+        .defaultLaunchBehavior(.presented)
+        .restorationBehavior(Self.restoration)
         #endif
         .commands {
             CardsiteCommands(model: model)
@@ -55,6 +60,19 @@ struct CardsiteApp: App {
         #endif
     }
 }
+
+#if os(macOS)
+extension CardsiteApp {
+    /// Fixture runs (UI tests) start clean every launch; users keep the
+    /// system's window restoration.
+    static var restoration: SceneRestorationBehavior {
+        #if DEBUG
+        if FixtureMode.isEnabled { return .disabled }
+        #endif
+        return .automatic
+    }
+}
+#endif
 
 /// Menu-bar commands on Mac; keyboard shortcuts on iPad with a hardware
 /// keyboard (hold ⌘ to see them). Built from the registry, so a new

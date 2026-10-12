@@ -559,7 +559,10 @@ struct Harness {
         return app.windows.matching(NSPredicate(format: "title == %@", title)).firstMatch.exists
             || app.toolbars.staticTexts.matching(Self.text(title)).firstMatch.exists
         #else
+        // At accessibility sizes the bar's identifier can drop the title;
+        // the large title is still a static text inside the bar.
         return app.navigationBars.matching(identifier: title).firstMatch.exists
+            || app.navigationBars.staticTexts.matching(Self.text(title)).firstMatch.exists
         #endif
     }
 
