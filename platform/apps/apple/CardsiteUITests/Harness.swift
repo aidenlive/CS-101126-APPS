@@ -150,8 +150,24 @@ struct Harness {
     /// take several seconds; every later lookup can then use short timeouts.
     private func waitForLaunch(timeout: TimeInterval = 25) {
         #if os(macOS)
-        if !app.windows.firstMatch.waitForExistence(timeout: 10) {
+        // On the CI Mac a launch sometimes comes up with no window at all
+        // (the app runs, the AX tree has no Window). Bring the app forward,
+        // then open one from File ▸ New Window, as a user would.
+        if !app.windows.firstMatch.waitForExistence(timeout: 8) {
             app.activate()
+            if !app.windows.firstMatch.waitForExistence(timeout: 3) {
+                let file = app.menuBars.menuBarItems["File"]
+                if file.exists {
+                    file.click()
+                    let newWindow = app.menuItems.matching(NSPredicate(format: "title BEGINSWITH 'New Window'")).firstMatch
+                    if newWindow.waitForExistence(timeout: 2) {
+                        newWindow.click()
+                    } else {
+                        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
+                    }
+                }
+                _ = app.windows.firstMatch.waitForExistence(timeout: 8)
+            }
         }
         #endif
         _ = poll(timeout) {
