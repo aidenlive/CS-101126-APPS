@@ -62,7 +62,9 @@ enum ResourceVerb: CaseIterable {
         }
     }
 
-    /// The verb as a `Label`, for menus, swipes and form rows.
+    /// The verb as a `Label`, for menus, swipes and form rows. Main-actor
+    /// isolated: views are, and this enum isn't.
+    @MainActor
     var label: some View {
         Label(title, systemImage: systemImage)
     }
@@ -106,6 +108,8 @@ enum ResourceState: Equatable {
         }
     }
 
+    /// Main-actor isolated: `StudioStatusPill` is a view.
+    @MainActor
     var pill: StudioStatusPill {
         StudioStatusPill(title, tone: tone)
     }

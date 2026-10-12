@@ -53,6 +53,11 @@ targets:
           - "**/.DS_Store"
           - "Supporting/Info.plist"
           - "Supporting/*.entitlements"
+          - "Resources/PrivacyInfo.xcprivacy"
+      # Each bundle carries its own privacy manifest, listed explicitly so
+      # it lands in Copy Bundle Resources whatever XcodeGen infers.
+      - path: Cardsite/Resources/PrivacyInfo.xcprivacy
+        buildPhase: resources
     dependencies:
       - package: StudioKit
       - package: CardsiteKit
@@ -133,6 +138,9 @@ targets:
         excludes:
           - "Info.plist"
           - "*.entitlements"
+          - "PrivacyInfo.xcprivacy"
+      - path: CardsiteWidgets/PrivacyInfo.xcprivacy
+        buildPhase: resources
       - path: Cardsite/Intents/Shared
     dependencies:
       - package: StudioKit
@@ -168,6 +176,9 @@ targets:
         excludes:
           - "Info.plist"
           - "*.entitlements"
+          - "PrivacyInfo.xcprivacy"
+      - path: CardsiteShare/PrivacyInfo.xcprivacy
+        buildPhase: resources
     dependencies:
       - package: StudioKit
       - package: CardsiteKit
@@ -204,6 +215,9 @@ targets:
       - path: CardsiteWatch
         excludes:
           - "Info.plist"
+          - "PrivacyInfo.xcprivacy"
+      - path: CardsiteWatch/PrivacyInfo.xcprivacy
+        buildPhase: resources
     dependencies:
       - package: CardsiteKit
     settings:

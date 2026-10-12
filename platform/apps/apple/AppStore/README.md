@@ -16,7 +16,7 @@ built (`docs/launch/native-apple.md`, A4 and A23).
 |---|---|---|
 | Name, subtitle, promotional text, keywords, description, URLs, release notes | `metadata/en-US/*.txt` | Updated 12 Oct to the full feature set. Lengths are within limits: name 8/30, subtitle 28/30, promotional text 146/170, keywords 100/100, description 2,430/4,000, release notes 519/4,000 |
 | App icon (iOS light, dark and tinted; macOS 16–1024; visionOS solid image stack; watchOS) | `../Cardsite/Resources/Assets.xcassets`, `../CardsiteWatch/Assets.xcassets` | Generated from the Brand Kit mark by `../scripts/make-icons.mjs`. The light 1024 px icon is flattened (no alpha). Preview: `icon-preview.png` |
-| Privacy manifest | `../Cardsite/Resources/PrivacyInfo.xcprivacy` | Updated 12 Oct: UserDefaults CA92.1 and 1C8F.1, and Photos or Videos collected. A valid plist (`plistlib`). **The widget, share and watch bundles need their own manifests** (A27) |
+| Privacy manifest | `../Cardsite/Resources/PrivacyInfo.xcprivacy`, plus `../CardsiteWidgets/`, `../CardsiteShare/` and `../CardsiteWatch/PrivacyInfo.xcprivacy` | Updated 12 Oct: UserDefaults CA92.1 and 1C8F.1 in every bundle, Photos or Videos collected (app). The extension and watch manifests (A27) declare no tracking and no data beyond the app's; each is listed in its target's `project.yml` sources as a resource. Valid plists (`plistlib`); not yet checked by an App Store Connect upload |
 | Privacy label answers | [Privacy label](#privacy-label) | Drafted. It must match the Privacy Policy, which is still **Draft** (launch gate G7) |
 | Age rating answers | [Age rating](#age-rating) | Drafted |
 | Review notes and demo account | [App Review notes](#app-review-notes) | Drafted. **The demo account must be created and seeded** |

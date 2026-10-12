@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Privacy manifest for the CardsiteWatch app (native-apple.md A27).
+  App Store Connect checks required-reason APIs per bundle.
+  No tracking. The watch shows the signed-in user's own links and codes and
+  collects nothing beyond what the app's manifest declares
+  (Cardsite/Resources/PrivacyInfo.xcprivacy).
+  Required-reason APIs: UserDefaults only. File timestamps, disk space,
+  system boot time and active keyboards: not used.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<!-- CA92.1: the watch's own defaults (WatchSession keeps the session context relayed from the iPhone). 1C8F.1: declared with the app's reasons so the bundles agree; the watch does not read App Group defaults today. -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+				<string>1C8F.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

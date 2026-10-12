@@ -14,8 +14,8 @@
     Disk space (volumeAvailableCapacity*, systemFreeSize, statfs): not used.
     System boot time (systemUptime, mach_absolute_time): not used.
     Active keyboards: not used.
-  The widget, share extension and watch bundles need manifests of their own
-  (native-apple.md A27).
+  The widget, share extension and watch bundles carry manifests of their own
+  (CardsiteWidgets/, CardsiteShare/, CardsiteWatch/; native-apple.md A27).
 -->
 <plist version="1.0">
 <dict>

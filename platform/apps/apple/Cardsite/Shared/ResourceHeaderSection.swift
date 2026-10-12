@@ -84,7 +84,9 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
             .padding(.vertical, StudioSpace.s2)
 
             if let toggle {
-                Toggle(isOn: Binding(get: { toggle.isOn }, set: { toggle.set($0) })) {
+                // Captures values, not the struct: the house pattern for
+                // Binding closures under strict concurrency (LiveSwitch).
+                Toggle(isOn: Binding(get: { [isOn = toggle.isOn] in isOn }, set: { [set = toggle.set] in set($0) })) {
                     VStack(alignment: .leading, spacing: StudioSpace.s1) {
                         Text(toggle.isOn ? ResourceState.live.title : ResourceState.off.title)
                         Text(toggle.isOn
