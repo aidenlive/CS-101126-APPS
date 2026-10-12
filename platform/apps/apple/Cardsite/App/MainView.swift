@@ -72,63 +72,137 @@ struct MainView: View {
     }
 
     var body: some View {
+        presented
+            .environment(router)
+            .environment(links)
+            .environment(qrCodes)
+            .environment(pages)
+            .environment(home)
+            .environment(search)
+            .environment(inbox)
+            .studioToasts(toasts)
+            .environment(\.toasts, toasts)
+            // The Workspace screen calls this after creating, leaving or
+            // deleting a workspace; the reload drops a workspace that is gone.
+            .environment(\.switchWorkspace, SwitchWorkspaceAction { [model] id in
+                await model.selectWorkspace(id)
+                await model.loadWorkspaces()
+            })
+            .focusedSceneValue(\.shellRouter, router)
+            .task { [model] in
+                // After an offline launch the profile is a placeholder.
+                if model.needsProfile { await model.refreshUser() }
+                await model.loadWorkspaces()
+            }
+            .task { [inbox] in await inbox.pollUnreadCount() }
+            .onAppear {
+                links.onError = model.handle
+                qrCodes.onError = model.handle
+                pages.onError = model.handle
+                home.onError = model.handle
+                search.onError = model.handle
+                inbox.onError = model.handle
+                router.tab = MainTab(storageKey: storedTab)
+                router.adapt(isCompact: isCompact)
+            }
+            .onChange(of: isCompact) { _, compact in
+                router.adapt(isCompact: compact)
+            }
+            .onChange(of: router.storageKey) { _, key in
+                storedTab = key
+            }
+            .onChange(of: model.pendingDeepLink, initial: true) { _, link in
+                guard let link else { return }
+                model.pendingDeepLink = nil
+                route(link)
+            }
+    }
+
+    // The body is split into stages so the type checker handles each one
+    // separately (one long chain timed out on Xcode 26).
+
+    private var tabs: some View {
         @Bindable var nav = router
-        @Bindable var app = model
-
-        TabView(selection: $nav.tab) {
-            ForEach(AppDestination.Group.overview.destinations) { destination in
-                Tab(isCompact ? destination.tabTitle : destination.title,
-                    systemImage: destination.systemImage,
-                    value: MainTab.destination(destination)) {
-                    DestinationRoot(destination: destination)
-                }
-                .badge(badgeCount(for: destination))
-                .accessibilityIdentifier(destination.navIdentifier)
-                .hidden(isCompact && destination.iPhoneTab == .more)
-            }
-
-            Tab(String(localized: "More"), systemImage: "ellipsis.circle", value: MainTab.more) {
-                MoreScreen()
-            }
-            .badge(isCompact ? inbox.unreadCount : 0)
-            .accessibilityIdentifier("nav.more")
-            .hidden(!isCompact)
-
-            ForEach(sectionGroups) { group in
-                TabSection(group.title) {
-                    ForEach(group.destinations) { destination in
-                        Tab(destination.title,
-                            systemImage: destination.systemImage,
-                            value: MainTab.destination(destination)) {
-                            DestinationRoot(destination: destination)
-                        }
-                        .badge(badgeCount(for: destination))
-                        .accessibilityIdentifier(destination.navIdentifier)
-                    }
-                }
-                .hidden(isCompact)
-            }
+        return TabView(selection: $nav.tab) {
+            overviewTabs
+            moreTab
+            sectionTabs
         }
         .tabViewStyle(.sidebarAdaptable)
         .tabViewSidebarHeader {
             WorkspaceSwitcher()
                 .padding(.bottom, StudioSpace.s2)
         }
-        .overlay {
-            if router.isPalettePresented {
-                CommandPalette()
-                    .transition(reduceMotion
-                                ? AnyTransition.opacity
-                                : AnyTransition.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
-                    .zIndex(1)
+    }
+
+    @TabContentBuilder<MainTab>
+    private var overviewTabs: some TabContent<MainTab> {
+        ForEach(AppDestination.Group.overview.destinations) { destination in
+            Tab(isCompact ? destination.tabTitle : destination.title,
+                systemImage: destination.systemImage,
+                value: MainTab.destination(destination)) {
+                DestinationRoot(destination: destination)
             }
+            .badge(badgeCount(for: destination))
+            .hidden(isCompact && destination.iPhoneTab == .more)
         }
-        .animation(reduceMotion ? StudioAnimation.base : StudioAnimation.spring, value: router.isPalettePresented)
-        // A view presents one sheet at a time: while a link from the
-        // palette is up, its own sheet presents the composer instead (its
-        // "Create QR code"), so this one stands down.
-        .sheet(item: Binding(get: { [router, model] in router.presentedLink == nil ? model.composer : nil },
-                             set: { [model] in model.composer = $0 })) { composer in
+    }
+
+    @TabContentBuilder<MainTab>
+    private var moreTab: some TabContent<MainTab> {
+        Tab(String(localized: "More"), systemImage: "ellipsis.circle", value: MainTab.more) {
+            MoreScreen()
+        }
+        .badge(isCompact ? inbox.unreadCount : 0)
+        .hidden(!isCompact)
+    }
+
+    @TabContentBuilder<MainTab>
+    private var sectionTabs: some TabContent<MainTab> {
+        ForEach(sectionGroups) { group in
+            TabSection(group.title) {
+                ForEach(group.destinations) { destination in
+                    Tab(destination.title,
+                        systemImage: destination.systemImage,
+                        value: MainTab.destination(destination)) {
+                        DestinationRoot(destination: destination)
+                    }
+                    .badge(badgeCount(for: destination))
+                }
+            }
+            .hidden(isCompact)
+        }
+    }
+
+    private var withPalette: some View {
+        tabs
+            .overlay {
+                if router.isPalettePresented {
+                    CommandPalette()
+                        .transition(paletteTransition)
+                        .zIndex(1)
+                }
+            }
+            .animation(reduceMotion ? StudioAnimation.base : StudioAnimation.spring,
+                       value: router.isPalettePresented)
+    }
+
+    private var paletteTransition: AnyTransition {
+        reduceMotion
+            ? AnyTransition.opacity
+            : AnyTransition.opacity.combined(with: .scale(scale: 0.98, anchor: .top))
+    }
+
+    private var composerBinding: Binding<AppModel.Composer?> {
+        Binding(get: { [router, model] in router.presentedLink == nil ? model.composer : nil },
+                set: { [model] in model.composer = $0 })
+    }
+
+    private var presented: some View {
+        @Bindable var nav = router
+        @Bindable var app = model
+        return withPalette
+        .sheet(item: composerBinding) { composer in
             composerSheet(composer)
         }
         .sheet(item: $nav.presentedLink) { link in
@@ -145,49 +219,6 @@ struct MainView: View {
             }
             .environment(links)
             .cardsiteSheet(.page)
-        }
-        .environment(router)
-        .environment(links)
-        .environment(qrCodes)
-        .environment(pages)
-        .environment(home)
-        .environment(search)
-        .environment(inbox)
-        .studioToasts(toasts)
-        .environment(\.toasts, toasts)
-        // The Workspace screen calls this after creating, leaving or
-        // deleting a workspace; the reload drops a workspace that is gone.
-        .environment(\.switchWorkspace, SwitchWorkspaceAction { [model] id in
-            await model.selectWorkspace(id)
-            await model.loadWorkspaces()
-        })
-        .focusedSceneValue(\.shellRouter, router)
-        .task { [model] in
-            // After an offline launch the profile is a placeholder.
-            if model.needsProfile { await model.refreshUser() }
-            await model.loadWorkspaces()
-        }
-        .task { [inbox] in await inbox.pollUnreadCount() }
-        .onAppear {
-            links.onError = model.handle
-            qrCodes.onError = model.handle
-            pages.onError = model.handle
-            home.onError = model.handle
-            search.onError = model.handle
-            inbox.onError = model.handle
-            router.tab = MainTab(storageKey: storedTab)
-            router.adapt(isCompact: isCompact)
-        }
-        .onChange(of: isCompact) { _, compact in
-            router.adapt(isCompact: compact)
-        }
-        .onChange(of: router.storageKey) { _, key in
-            storedTab = key
-        }
-        .onChange(of: model.pendingDeepLink, initial: true) { _, link in
-            guard let link else { return }
-            model.pendingDeepLink = nil
-            route(link)
         }
     }
 

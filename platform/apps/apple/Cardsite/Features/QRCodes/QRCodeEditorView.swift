@@ -254,7 +254,7 @@ private struct QRCodeBuilderView: View {
             }
         }
         .studioForm()
-        .scrollDismissesKeyboard(.interactively)
+        .dismissesKeyboardOnScroll()
     }
 
     @ViewBuilder

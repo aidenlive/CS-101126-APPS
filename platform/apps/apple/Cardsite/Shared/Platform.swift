@@ -125,3 +125,16 @@ struct RelativeTimeText: View {
         }
     }
 }
+
+extension View {
+    /// `.scrollDismissesKeyboard(.interactively)` where it exists (not on
+    /// visionOS, where it is unavailable).
+    @ViewBuilder
+    func dismissesKeyboardOnScroll() -> some View {
+        #if os(visionOS)
+        self
+        #else
+        scrollDismissesKeyboard(.interactively)
+        #endif
+    }
+}

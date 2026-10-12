@@ -50,7 +50,7 @@ struct AuthFlowView: View {
             .padding(.vertical, StudioSpace.s10)
             .readableWidth(.narrow)
         }
-        .scrollDismissesKeyboard(.interactively)
+        .dismissesKeyboardOnScroll()
         .background(Color.studioBg.ignoresSafeArea())
         // A short ease (a cross-fade in effect) as the forms swap, so the
         // card's height change never springs, with or without Reduce Motion.
