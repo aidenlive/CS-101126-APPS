@@ -314,6 +314,9 @@ struct Harness {
         target.click()
         #else
         reveal(target)
+        // A split view's selected row can report "not hittable" while its
+        // detail is already showing; tapping it again would fail the test.
+        if !target.isHittable && target.isSelected { return }
         target.tap()
         #endif
     }
