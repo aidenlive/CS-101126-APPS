@@ -38,6 +38,17 @@ provisioned (`native-apple.md` A25).
 Tests: `swift test --package-path Packages/CardsiteKit`, or ⌘U in Xcode, which
 also runs the UI tests.
 
+## Which server the app talks to
+
+- **No server: the `Cardsite Demo` scheme.** It runs a Debug build on the built-in demo account (fixture mode: about 20 resources, QR codes, bio pages, inbox, statistics), already signed in. This is the quickest way to see the app on a Simulator, an iPhone or the Mac.
+- **Debug (`Cardsite` scheme)** talks to `CARDSITE_API_BASE_URL`, which defaults to `http://localhost:8080`, the Cardsite API from the CS-CORE repository (`make -C platform up`).
+  - On the **Simulator and the Mac**, `localhost` works once the API is running.
+  - On an **iPhone or iPad**, `localhost` is the device itself. Instead, copy `Config/Local.example.xcconfig` to `Config/Local.xcconfig` and set your Mac's `.local` name: `http:/$()/Your-Mac.local:8080`. Keep both on the same Wi-Fi, and allow the Local Network prompt on the device.
+  - Or point it at a deployed API: `CARDSITE_API_BASE_URL = https:/$()/your-api-host`.
+- **Release** talks to `https://cardsite.com` (owner decision N2).
+
+"Could not connect to the server" in Debug means nothing is answering at that address.
+
 ## Signing on your Mac
 
 1. **Accept Apple's latest Program License Agreement** at developer.apple.com → Account (the Account Holder must do this). Until then Xcode reports "PLA Update available" and can't create App IDs or the App Group, and falls back to the wildcard profile, which can't carry App Groups.

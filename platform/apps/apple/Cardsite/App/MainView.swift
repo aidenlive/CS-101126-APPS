@@ -131,11 +131,6 @@ struct MainView: View {
         .tabViewSidebarHeader {
             WorkspaceSwitcher()
                 .padding(.bottom, StudioSpace.s2)
-                #if os(macOS)
-                // Widens the Mac sidebar so titles such as "Payment Links"
-                // aren't truncated (SwiftUI has no width API for it).
-                .background(MacSidebarWidth())
-                #endif
         }
     }
 

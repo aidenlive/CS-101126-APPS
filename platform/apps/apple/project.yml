@@ -252,6 +252,16 @@ schemes:
       config: Release
 
   # The watch app on its own, for the watchOS Simulator and CI.
+  # Runs the app on its built-in demo account (Debug only): no server,
+  # no sign-in. Same as passing -CardsiteFixtures.
+  Cardsite Demo:
+    build:
+      targets:
+        Cardsite: all
+    run:
+      config: Debug
+      commandLineArguments:
+        "-CardsiteFixtures": true
   CardsiteWatch:
     build:
       targets:
