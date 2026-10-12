@@ -274,7 +274,7 @@ struct ProjectEditorSheet: View {
             }
             .resourceEditorForm()
             .navigationTitle(project == nil ? String(localized: "Create project") : String(localized: "Edit project"))
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

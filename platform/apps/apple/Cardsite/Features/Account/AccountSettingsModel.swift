@@ -11,6 +11,8 @@ import CardsiteKit
 @MainActor
 @Observable
 final class AccountSettingsModel {
+    /// The plan, shown read-only, with its details when the plan list has it.
+    private(set) var plan: Loadable<(AccountPlan, Plan?)> = .idle
     private(set) var twoFactor: Loadable<TwoFactorStatus> = .idle
     private(set) var tokens: Loadable<APITokenList> = .idle
     private(set) var tokensRefreshError: APIError?
@@ -24,6 +26,24 @@ final class AccountSettingsModel {
     init(client: APIClient, onError: @escaping @MainActor (any Error) -> Void = { _ in }) {
         self.client = client
         self.onError = onError
+    }
+
+    // MARK: Plan
+
+    func loadPlan(force: Bool = false) async {
+        if !force, plan.value != nil { return }
+        if plan.value == nil { plan = .loading }
+        do {
+            async let account = client.accountPlan()
+            async let plans = client.plans()
+            let (a, all) = try await (account, plans)
+            plan = .loaded((a, all.first { $0.id == a.planID }))
+        } catch is CancellationError {
+            if case .loading = plan { plan = .idle }
+        } catch {
+            onError(error)
+            if plan.value == nil { plan = .failed(error.asAPIError) }
+        }
     }
 
     // MARK: Profile

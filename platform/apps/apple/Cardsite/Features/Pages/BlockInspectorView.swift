@@ -71,7 +71,7 @@ struct BlockInspectorView: View {
         .scrollContentBackground(.hidden)
         .background(Color.studioBg)
         .navigationTitle(type?.name ?? BlockFieldInference.humanized(block.type))
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {

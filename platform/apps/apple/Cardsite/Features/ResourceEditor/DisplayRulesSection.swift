@@ -197,7 +197,7 @@ struct MultiSelectSheet: View {
             .background(Color.studioBg)
             .searchable(text: $query, prompt: Text("Search \(title.lowercased())"))
             .navigationTitle(title)
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

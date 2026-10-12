@@ -327,7 +327,7 @@ struct ResourceRow: View {
     let item: ResourceItem
     let address: String?
     var isToggling = false
-    var setEnabled: ((Bool) -> Void)?
+    var setEnabled: (@MainActor (Bool) -> Void)?
 
     var body: some View {
         HStack(spacing: StudioSpace.s3) {
@@ -374,7 +374,7 @@ struct ResourceRow: View {
             .accessibilityElement(children: .combine)
 
             if kind.hasAddress, let setEnabled {
-                Toggle(isOn: Binding(get: { item.isEnabled }, set: { setEnabled($0) })) {
+                Toggle(isOn: Binding(get: { [isOn = item.isEnabled] in isOn }, set: { [setEnabled] in setEnabled($0) })) {
                     Text("Active")
                 }
                 .labelsHidden()

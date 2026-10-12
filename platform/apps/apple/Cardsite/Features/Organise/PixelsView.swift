@@ -323,7 +323,7 @@ struct PixelEditorSheet: View {
             }
             .resourceEditorForm()
             .navigationTitle(pixel == nil ? String(localized: "Create pixel") : String(localized: "Edit pixel"))
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

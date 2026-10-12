@@ -51,7 +51,7 @@ struct LinkEditorView: View {
                     .accessibilityIdentifier("link.editor.destination")
                     .focused($focus, equals: .destination)
                     .plainEntry()
-                    #if os(iOS)
+                    #if os(iOS) || os(visionOS)
                     .keyboardType(.URL)
                     .textContentType(.URL)
                     #endif
@@ -99,7 +99,7 @@ struct LinkEditorView: View {
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("link.editor")
             .navigationTitle("New Short Link")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

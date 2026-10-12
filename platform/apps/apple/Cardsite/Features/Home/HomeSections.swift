@@ -211,7 +211,7 @@ struct HomePasteCard: View {
             .studioText(.ui)
             .focused($isFocused)
             .plainEntry()
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .keyboardType(.URL)
             .textContentType(.URL)
             #endif

@@ -48,7 +48,7 @@ struct QRCodeEditorView: View {
                 builder = QRCodeBuilderModel(mode: mode, codes: codes, addresses: app.addresses)
             }
         }
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         .presentationSizing(.page)
         #else
         .frame(minWidth: 720, idealWidth: 980, minHeight: 560, idealHeight: 760)
@@ -77,7 +77,7 @@ private struct QRCodeBuilderView: View {
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("qr.editor")
                 .navigationTitle(builder.isEditing ? Text("Edit QR Code") : Text("New QR Code"))
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .navigationBarTitleDisplayMode(.inline)
                 #endif
                 .toolbar { toolbar }

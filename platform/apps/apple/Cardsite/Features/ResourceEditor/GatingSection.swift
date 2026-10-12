@@ -90,7 +90,7 @@ struct GatingSection: View {
                                          ? String(localized: "Set — enter a new password to replace it")
                                          : String(localized: "Leave empty to disable")))
                     .labelsHidden()
-                    #if os(iOS)
+                    #if os(iOS) || os(visionOS)
                     .textContentType(.newPassword)
                     #endif
                     .studioText(.ui)

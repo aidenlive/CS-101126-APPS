@@ -123,7 +123,7 @@ struct EventEditorView: View {
                                 prompt: String(localized: "My Event"), error: model.errors[.name])
                 EditorTextField(String(localized: "Location"), text: $model.form.event.location,
                                 prompt: String(localized: "Event venue or address"))
-                    #if os(iOS)
+                    #if os(iOS) || os(visionOS)
                     .textContentType(.fullStreetAddress)
                     #endif
                 EditorTextField(String(localized: "Event URL"), text: $model.form.event.url,

@@ -19,6 +19,11 @@ import SwiftUI
    panel, never edge-to-edge, never the content layer.
  · The sidebar is not glass. It is a flush edge panel.
 
+ visionOS has no Liquid Glass API (`glassEffect`, `Glass` and
+ `GlassEffectContainer` are unavailable there). Its windows already sit on
+ the system glass, so chrome uses `glassBackgroundEffect(in:)`, the
+ platform's own material, and the container and morph helpers pass through.
+
  Reduce Transparency wins over every path, including Liquid Glass: with it
  on, the shape is filled with the opaque `surface` token and drawn with the
  `border` hairline, so text over it keeps full contrast whatever scrolls
@@ -105,6 +110,13 @@ private struct StudioGlassModifier<S: InsettableShape>: ViewModifier {
 
     @ViewBuilder
     private func translucent(_ content: Content) -> some View {
+        #if os(visionOS)
+        // The tint sits on the platform glass as a wash, as on the
+        // pre-26 fallback, so a create affordance still reads as accent.
+        content
+            .background(shape.fill(tint?.opacity(0.85) ?? Color.clear))
+            .glassBackgroundEffect(in: shape)
+        #else
         if #available(iOS 26.0, macOS 26.0, *) {
             content.glassEffect(glass, in: shape)
         } else {
@@ -128,8 +140,10 @@ private struct StudioGlassModifier<S: InsettableShape>: ViewModifier {
                 .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                 .shadow(color: glow, radius: 6, x: 0, y: 3)
         }
+        #endif
     }
 
+    #if !os(visionOS)
     @available(iOS 26.0, macOS 26.0, *)
     private var glass: Glass {
         var g: Glass = .regular
@@ -137,6 +151,7 @@ private struct StudioGlassModifier<S: InsettableShape>: ViewModifier {
         if interactive { g = g.interactive() }
         return g
     }
+    #endif
 }
 
 // MARK: - Grouping and morphing
@@ -163,11 +178,15 @@ public struct StudioGlassContainer<Content: View>: View {
     }
 
     public var body: some View {
+        #if os(visionOS)
+        content
+        #else
         if #available(iOS 26.0, macOS 26.0, *) {
             GlassEffectContainer(spacing: spacing) { content }
         } else {
             content
         }
+        #endif
     }
 }
 
@@ -177,11 +196,15 @@ public extension View {
     /// across renders.
     @ViewBuilder
     func studioGlassMorph(id: some Hashable & Sendable, in namespace: Namespace.ID) -> some View {
+        #if os(visionOS)
+        self
+        #else
         if #available(iOS 26.0, macOS 26.0, *) {
             glassEffectID(id, in: namespace)
         } else {
             self
         }
+        #endif
     }
 }
 

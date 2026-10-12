@@ -272,7 +272,7 @@ struct LinkRow: View {
     @Environment(AppModel.self) private var app
     let link: Resource
     var isToggling = false
-    var setEnabled: ((Bool) -> Void)?
+    var setEnabled: (@MainActor (Bool) -> Void)?
 
     var body: some View {
         HStack(spacing: StudioSpace.s3) {
@@ -307,7 +307,7 @@ struct LinkRow: View {
             .accessibilityElement(children: .combine)
 
             if let setEnabled {
-                Toggle(isOn: Binding(get: { link.isEnabled }, set: { setEnabled($0) })) {
+                Toggle(isOn: Binding(get: { [isOn = link.isEnabled] in isOn }, set: { [setEnabled] in setEnabled($0) })) {
                     Text("Active")
                 }
                 .labelsHidden()

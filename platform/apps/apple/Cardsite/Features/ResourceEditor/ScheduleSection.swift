@@ -142,7 +142,7 @@ struct TimeZonePickerSheet: View {
             .background(Color.studioBg)
             .searchable(text: $query, prompt: Text("Search time zones"))
             .navigationTitle("Timezone")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

@@ -279,7 +279,7 @@ struct DataRecordDetailView: View {
         }
         .studioForm()
         .navigationTitle(record.kindTitle)
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
     }

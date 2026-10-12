@@ -216,7 +216,7 @@ struct CreateAPITokenView: View {
                 }
             }
             .navigationTitle("Create API Token")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

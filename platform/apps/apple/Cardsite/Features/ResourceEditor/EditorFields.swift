@@ -74,13 +74,13 @@ struct EditorTextField: View {
         case .url:
             base
                 .plainEntry()
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .keyboardType(.URL)
                 .textContentType(.URL)
                 #endif
         case .number:
             base
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .keyboardType(.numberPad)
                 #endif
         }

@@ -104,7 +104,7 @@ extension View {
     /// Keyboard, autofill and correction for a kind of entry.
     @ViewBuilder
     func qrEntry(_ entry: QRField.Entry) -> some View {
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         switch entry {
         case .words:
             self
@@ -172,7 +172,7 @@ struct QRTypePicker: View {
     let types: [QRCodeTypeInfo]
     let selection: String
     let label: String
-    let select: (String) -> Void
+    let select: @MainActor (String) -> Void
 
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -192,7 +192,7 @@ struct QRTypePicker: View {
     }
 
     private var menu: some View {
-        Picker(selection: Binding(get: { selection }, set: select)) {
+        Picker(selection: Binding(get: { [selection] in selection }, set: { [select] in select($0) })) {
             if !types.contains(where: { $0.value == selection }) {
                 Label(label, systemImage: QRCodeCatalog.symbol(for: selection)).tag(selection)
             }
@@ -241,7 +241,7 @@ struct QRTypePicker: View {
 struct QRTypeSheet: View {
     let types: [QRCodeTypeInfo]
     let selection: String
-    let select: (String) -> Void
+    let select: @MainActor (String) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
@@ -286,7 +286,7 @@ struct QRTypeSheet: View {
             }
             .searchable(text: $query, prompt: Text("Search types"))
             .navigationTitle("QR Code Type")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

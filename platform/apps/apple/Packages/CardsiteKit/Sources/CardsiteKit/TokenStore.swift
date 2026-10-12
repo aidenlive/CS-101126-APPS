@@ -52,19 +52,30 @@ public struct KeychainTokenStore: TokenStore {
     public enum KeychainError: Error { case status(OSStatus) }
 
     private let service: String
+    /// The Keychain access group shared with the app's extensions, or nil
+    /// for the app's default group. A read without a group matches every
+    /// group the app is entitled to; a write without one lands in the
+    /// default group.
+    private let accessGroup: String?
     private let account = "session-token"
 
-    public init(service: String = "com.cardsite.app.session") {
+    public init(service: String = "com.cardsite.app.session", accessGroup: String? = nil) {
         self.service = service
+        self.accessGroup = accessGroup
     }
 
     private var baseQuery: [String: Any] {
-        [
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
+            // The iOS-style keychain on macOS too, so access groups apply.
             kSecUseDataProtectionKeychain as String: true,
         ]
+        if let accessGroup {
+            query[kSecAttrAccessGroup as String] = accessGroup
+        }
+        return query
     }
 
     public func load() -> String? {

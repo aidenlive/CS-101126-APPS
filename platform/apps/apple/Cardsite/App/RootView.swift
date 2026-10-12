@@ -25,6 +25,15 @@ struct RootView: View {
         .animation(.default, value: model.phase == .signedOut)
         .animation(.default, value: model.workspaceScope)
         .background(Color.studioBg.ignoresSafeArea())
+        // Widgets, the share extension and Siri open `cardsite://` links.
+        // Held on the model so one that arrives at launch, or before
+        // sign-in (the share extension's "Open Cardsite"), is routed once
+        // the signed-in shell is up.
+        .onOpenURL { url in
+            if let link = CardsiteDeepLink(url: url) {
+                model.pendingDeepLink = link
+            }
+        }
     }
 }
 

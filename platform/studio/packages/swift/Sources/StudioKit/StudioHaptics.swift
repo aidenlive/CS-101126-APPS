@@ -13,6 +13,7 @@ import AppKit
  user's action and never stacked. Call sites need no platform checks:
 
  · iPhone / iPad: UIKit feedback generators.
+ · Apple Vision Pro: a no-op (UIKit's feedback generators aren't there).
  · Mac: `NSHapticFeedbackManager`, which plays on a Force Touch trackpad
    and is silent everywhere else (the system decides, not us).
  · Anything without haptic hardware: a no-op.
@@ -74,7 +75,7 @@ public final class StudioHaptics: ObservableObject, @unchecked Sendable {
 
     @MainActor
     private static func fire(_ feedback: Feedback) {
-        #if canImport(UIKit) && !os(watchOS) && !os(tvOS)
+        #if canImport(UIKit) && !os(watchOS) && !os(tvOS) && !os(visionOS)
         switch feedback {
         case .selection:
             UISelectionFeedbackGenerator().selectionChanged()

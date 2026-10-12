@@ -1,6 +1,10 @@
 import Foundation
 import Observation
+import AppIntents
 import CardsiteKit
+#if canImport(WidgetKit) && (os(iOS) || os(macOS))
+import WidgetKit
+#endif
 
 /// Session state for the whole app. Owns the API client and the token store;
 /// feature models get the client from here.
@@ -21,6 +25,10 @@ final class AppModel {
     var composer: Composer?
     /// The token couldn't be stored, so the next launch starts signed out.
     private(set) var sessionIsEphemeral = false
+    /// A `cardsite://` link from a widget, the share extension or Siri,
+    /// held until the signed-in shell can route it. Set by `RootView`, so
+    /// a link that arrives at launch or while signed out isn't lost.
+    var pendingDeepLink: CardsiteDeepLink?
 
     /// A create sheet, optionally prefilled.
     ///
@@ -74,6 +82,13 @@ final class AppModel {
     let configuration: AppConfiguration
     private let tokens: TokenStore
     private let defaults: UserDefaults
+    /// The App Group and Keychain group the widgets, the share extension
+    /// and App Intents read the session from. Nil in fixture mode, in
+    /// previews and in unsigned builds, where nothing is shared.
+    let sharedSession: SharedSession?
+    /// The token in use, for the watch (which can't read the shared
+    /// Keychain group). Set even when the Keychain save failed.
+    @ObservationIgnored private var sessionToken: String?
 
     // MARK: Workspace scope
 
@@ -99,6 +114,7 @@ final class AppModel {
             let fixtureDefaults = UserDefaults(suiteName: suite) ?? defaults
             fixtureDefaults.removePersistentDomain(forName: suite)
             self.defaults = fixtureDefaults
+            self.sharedSession = nil
             self.tokens = FixtureMode.tokenStore()
             self.client = APIClient(baseURL: configuration.apiBaseURL, transport: FixtureTransport(),
                                     userAgent: configuration.userAgent)
@@ -106,9 +122,21 @@ final class AppModel {
         }
         #endif
         #if canImport(Security)
-        self.tokens = tokens ?? KeychainTokenStore()
+        // An injected store (previews, tests) shares nothing. Otherwise the
+        // token lives in the shared Keychain group when the build is
+        // signed with one; a token saved by an earlier version, in the
+        // app's own group, moves there first.
+        let shared = tokens == nil ? SharedSession.current : nil
+        if let shared {
+            shared.adoptLegacyToken()
+            self.tokens = shared.tokenStore
+        } else {
+            self.tokens = tokens ?? KeychainTokenStore()
+        }
+        self.sharedSession = shared
         #else
         self.tokens = tokens ?? MemoryTokenStore()
+        self.sharedSession = nil
         #endif
         self.defaults = defaults
         self.client = APIClient(baseURL: configuration.apiBaseURL, userAgent: configuration.userAgent)
@@ -128,8 +156,12 @@ final class AppModel {
         guard let token = tokens.load(), !JWT.isExpired(token) else {
             tokens.clear()
             phase = .signedOut
+            // Signs the extensions and the watch out too, if the token
+            // expired or was removed while the app wasn't running.
+            await shareSession()
             return
         }
+        sessionToken = token
         await client.setToken(token)
         // The workspace chosen last time. Validated against the list once
         // it loads; a workspace the user has left falls back to personal.
@@ -139,10 +171,12 @@ final class AppModel {
             phase = .signedIn(try await client.currentUser())
         } catch APIError.sessionExpired {
             await endSession(notice: nil)
+            return
         } catch {
             // Keep the token; screens will show their own retry state.
             phase = .signedIn(User(id: 0, email: "", name: ""))
         }
+        await shareSession()
     }
 
     /// True after an offline launch, until the profile has been fetched.
@@ -189,10 +223,12 @@ final class AppModel {
         } catch {
             sessionIsEphemeral = true
         }
+        sessionToken = session.token
         await client.setToken(session.token)
         await resetWorkspace()
         signOutNotice = nil
         phase = .signedIn(session.user)
+        await shareSession()
     }
 
     func signOut() async {
@@ -231,11 +267,46 @@ final class AppModel {
 
     private func endSession(notice: String?) async {
         tokens.clear()
+        sessionToken = nil
         await client.setToken(nil)
         await resetWorkspace()
         composer = nil
         signOutNotice = notice
         phase = .signedOut
+        await shareSession()
+    }
+
+    // MARK: Sharing the session
+
+    /// Tells the extensions, the watch, the widgets and Siri about the
+    /// session: on restore, sign-in, sign-out and workspace switch. The
+    /// token itself is already in the shared Keychain group (`tokens`);
+    /// this mirrors where to send it. Skipped when nothing is shared
+    /// (fixture mode, previews, unsigned builds).
+    private func shareSession() async {
+        guard let sharedSession else { return }
+        let snapshot: SessionSnapshot?
+        if user != nil, let token = sessionToken {
+            let context = SessionContext(baseURL: configuration.apiBaseURL,
+                                         publicHost: configuration.publicHost,
+                                         workspaceID: workspaceID)
+            sharedSession.publish(context)
+            snapshot = SessionSnapshot(token: token, context: context)
+        } else {
+            sharedSession.clear()
+            snapshot = nil
+        }
+        #if os(iOS)
+        WatchSessionRelay.shared.send(snapshot)
+        #else
+        _ = snapshot // Only the iPhone has a paired watch.
+        #endif
+        #if canImport(WidgetKit) && (os(iOS) || os(macOS))
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
+        // Siri and Spotlight suggest the new account's or workspace's
+        // links and codes.
+        CardsiteShortcuts.updateAppShortcutParameters()
     }
 
     // MARK: Workspaces
@@ -288,6 +359,7 @@ final class AppModel {
         await client.setWorkspace(id)
         composer = nil
         workspaceScope += 1
+        await shareSession()
     }
 
     private func resetWorkspace() async {
@@ -341,6 +413,8 @@ struct AppConfiguration: Sendable {
         let build = info["CFBundleVersion"] as? String ?? "0"
         #if os(macOS)
         let platform = "macOS"
+        #elseif os(visionOS)
+        let platform = "visionOS"
         #else
         let platform = "iOS"
         #endif

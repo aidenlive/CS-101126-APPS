@@ -5,8 +5,9 @@ name: apple
 # design lint and the screens publish.
 #
 # What a green run proves: CardsiteKit's unit tests pass against fixtures
-# captured from a live API; the app compiles for the iOS Simulator and for
-# macOS with signing off; and the UI tests (screenshots + journeys) pass
+# captured from a live API; CardsiteKit builds for watchOS; the app compiles
+# for the iOS Simulator (with its embedded watch app), macOS and the visionOS
+# Simulator, and the watch app on its own, with signing off; and the UI tests (screenshots + journeys) pass
 # against the in-app fixture server on iPhone, iPad and Mac. It does not
 # prove the app works against the real API on a device; see
 # docs/launch/native-apple.md → Verification for the device checks.
@@ -85,6 +86,20 @@ jobs:
           set -o pipefail
           swift test --package-path ../../studio/packages/swift 2>&1 | tee studio.log \
             || { python3 "$ANNOTATE" studio.log; exit 1; }
+      - name: watchOS platform
+        run: xcodebuild -showsdks | grep -q -- "-sdk watchsimulator" || xcodebuild -downloadPlatform watchOS
+      # The watch app links CardsiteKit, so every kit source must build
+      # without UIKit, CoreImage or WatchConnectivity's iOS-only API.
+      - name: build CardsiteKit (watchOS)
+        working-directory: platform/apps/apple/Packages/CardsiteKit
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -scheme CardsiteKit \
+            -destination 'generic/platform=watchOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee ../../kit-watch.log \
+            || { python3 "../../$ANNOTATE" ../../kit-watch.log; exit 1; }
 
   app:
     name: app builds (${{ matrix.destination.name }})
@@ -93,11 +108,31 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # `platforms`: the Xcode platforms the build needs beyond iOS and
+        # macOS. The iOS app embeds the watch app, so it needs watchOS.
         destination:
-          - { name: iOS Simulator, value: "generic/platform=iOS Simulator" }
-          - { name: macOS, value: "generic/platform=macOS" }
+          - { name: iOS Simulator, value: "generic/platform=iOS Simulator", scheme: Cardsite, platforms: "watchOS" }
+          - { name: macOS, value: "generic/platform=macOS", scheme: Cardsite, platforms: "" }
+          - { name: visionOS Simulator, value: "generic/platform=visionOS Simulator", scheme: Cardsite, platforms: "visionOS" }
+          - { name: watchOS Simulator, value: "generic/platform=watchOS Simulator", scheme: CardsiteWatch, platforms: "watchOS" }
     steps:
       - uses: actions/checkout@v4
+      - run: xcodebuild -version
+      - name: download missing platforms
+        if: matrix.destination.platforms != ''
+        run: |
+          for platform in ${{ matrix.destination.platforms }}; do
+            case "$platform" in
+              watchOS) sdk=watchsimulator ;;
+              visionOS) sdk=xrsimulator ;;
+              *) sdk="" ;;
+            esac
+            if [ -n "$sdk" ] && xcodebuild -showsdks | grep -q -- "-sdk $sdk"; then
+              echo "$platform is installed"
+            else
+              xcodebuild -downloadPlatform "$platform"
+            fi
+          done
       - run: brew install xcodegen
       - run: xcodegen generate
       - name: xcodebuild
@@ -105,7 +140,7 @@ jobs:
           set -o pipefail
           xcodebuild build \
             -project Cardsite.xcodeproj \
-            -scheme Cardsite \
+            -scheme "${{ matrix.destination.scheme }}" \
             -configuration Debug \
             -destination "${{ matrix.destination.value }}" \
             CODE_SIGNING_ALLOWED=NO \
@@ -129,6 +164,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: xcodebuild -version
+      # The iOS app embeds the watch app, so its build needs watchOS.
+      - name: watchOS platform
+        if: matrix.device.platform == 'iOS'
+        run: xcodebuild -showsdks | grep -q -- "-sdk watchsimulator" || xcodebuild -downloadPlatform watchOS
       - run: brew install xcodegen
       - run: xcodegen generate
 

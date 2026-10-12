@@ -4,9 +4,9 @@ import AppIntents
 /// names the app (`.applicationName`), as App Shortcuts require.
 ///
 /// The parameterised phrases ("Show Spring menu in Cardsite") use the
-/// entity queries' suggestions. The app refreshes them with
-/// `CardsiteShortcuts.updateAppShortcutParameters()` after its link and QR
-/// code lists load (see the integration notes).
+/// entity queries' suggestions. `AppModel.shareSession()` refreshes them
+/// with `CardsiteShortcuts.updateAppShortcutParameters()` whenever the
+/// session or the workspace changes.
 struct CardsiteShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(

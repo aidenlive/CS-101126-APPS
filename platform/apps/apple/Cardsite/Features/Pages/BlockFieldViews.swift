@@ -19,7 +19,7 @@ struct BlockFieldView: View {
             EditorFieldRow(label: field.label) {
                 EditorTextInput(label: field.label, text: text, prompt: "https://…")
                     .plainEntry()
-                    #if os(iOS)
+                    #if os(iOS) || os(visionOS)
                     .keyboardType(.URL)
                     .textContentType(.URL)
                     #endif
@@ -81,7 +81,7 @@ struct NumberFieldRow: View {
     var body: some View {
         EditorFieldRow(label: label, help: isInvalid ? String(localized: "Enter a number.") : nil) {
             EditorTextInput(label: label, text: $text)
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .keyboardType(.decimalPad)
                 #endif
         }

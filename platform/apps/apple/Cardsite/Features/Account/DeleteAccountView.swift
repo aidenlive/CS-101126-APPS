@@ -62,7 +62,7 @@ struct DeleteAccountView: View {
             }
             .background(Color.studioBg)
             .navigationTitle("Delete Account")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

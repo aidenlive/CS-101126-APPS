@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 // Rasterises the Brand Kit icon mark into the app's asset catalog:
-// the iOS/iPadOS app icon (light, dark, tinted, 1024 px) and the macOS
-// app icon (16–1024 px), plus the vector BrandMark image set.
+// the iOS/iPadOS app icon (light, dark, tinted, 1024 px), the macOS
+// app icon (16–1024 px) and the visionOS solid image stack, plus the
+// vector BrandMark image set.
 //
 // Source: internal/@csxbase/brand-kit/assets/logos/cardsite-icon-mark.svg.
 // The mark is placed, not redrawn (Brand Kit → Logo → Misuse).
 //
 //   npm i --no-save @resvg/resvg-js@2.6.2
 //   node platform/apps/apple/scripts/make-icons.mjs
-//   python3 -c "from PIL import Image; p='platform/apps/apple/Cardsite/Resources/Assets.xcassets/AppIcon.appiconset/icon-ios-light.png'; Image.open(p).convert('RGB').save(p)"
+//   python3 -c "from PIL import Image; [Image.open(p).convert('RGB').save(p) for p in ['platform/apps/apple/Cardsite/Resources/Assets.xcassets/AppIcon.appiconset/icon-ios-light.png', 'platform/apps/apple/Cardsite/Resources/Assets.xcassets/AppIcon.solidimagestack/Back.solidimagestacklayer/Content.imageset/icon-vision-back.png']]"
 //
 // The last step matters: App Store Connect rejects a primary app icon that
 // has an alpha channel, and resvg always writes RGBA.
@@ -84,6 +85,29 @@ write(join(ios, 'Contents.json'), JSON.stringify({
     ...macImages,
   ],
   info: { author: 'xcode', version: 1 },
+}, null, 2) + '\n');
+
+// visionOS: a solid image stack (Front over Back). The system crops it to
+// a circle and gives the layers depth, so the mark floats over a flat
+// light background. Back must be opaque (flatten it like the iOS light
+// icon below); Front keeps its transparency.
+const vision = join(assets, 'AppIcon.solidimagestack');
+const visionLayers = [
+  ['Front', 'icon-vision-front.png', svg({ size: 1024, background: null, markScale: 0.62 })],
+  ['Back', 'icon-vision-back.png', `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="${LIGHT_BG}"/></svg>`],
+];
+for (const [layer, file, source] of visionLayers) {
+  const dir = join(vision, `${layer}.solidimagestacklayer`);
+  write(join(dir, 'Content.imageset', file), png(source, 1024));
+  write(join(dir, 'Content.imageset', 'Contents.json'), JSON.stringify({
+    images: [{ filename: file, idiom: 'vision', scale: '2x' }],
+    info: { author: 'xcode', version: 1 },
+  }, null, 2) + '\n');
+  write(join(dir, 'Contents.json'), JSON.stringify({ info: { author: 'xcode', version: 1 } }, null, 2) + '\n');
+}
+write(join(vision, 'Contents.json'), JSON.stringify({
+  info: { author: 'xcode', version: 1 },
+  layers: visionLayers.map(([layer]) => ({ filename: `${layer}.solidimagestacklayer` })),
 }, null, 2) + '\n');
 
 // Vector mark for in-app use.

@@ -221,7 +221,7 @@ struct OptionPickerSheet: View {
             .background(Color.studioBg)
             .searchable(text: $query, prompt: Text("Search"))
             .navigationTitle(title)
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

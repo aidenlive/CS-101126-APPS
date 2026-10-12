@@ -416,7 +416,7 @@ struct CreatePageSheet: View {
             }
             .background(Color.studioBg)
             .navigationTitle("New Bio Page")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

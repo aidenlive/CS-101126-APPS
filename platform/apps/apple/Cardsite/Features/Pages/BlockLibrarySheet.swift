@@ -31,7 +31,7 @@ struct BlockLibrarySheet: View {
             }
             .background(Color.studioBg)
             .navigationTitle("Add a Block")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .searchable(text: $query, prompt: Text("Search blocks"))

@@ -71,7 +71,7 @@ private struct SignInForm: View {
             Text("Sign in").studioText(.title)
             StudioTextField(String(localized: "Email"), text: $email, placeholder: "you@example.com")
                 .plainEntry()
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .keyboardType(.emailAddress)
                 #endif
                 .textContentType(.username)
@@ -135,7 +135,7 @@ private struct TwoFactorForm: View {
             StudioTextField(useRecoveryCode ? String(localized: "Recovery code") : String(localized: "Code"),
                             text: $code, placeholder: useRecoveryCode ? "xxxx-xxxx" : "123456")
                 .plainEntry()
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .keyboardType(useRecoveryCode ? .asciiCapable : .numberPad)
                 .textContentType(.oneTimeCode)
                 #endif
@@ -202,12 +202,12 @@ private struct RegisterForm: View {
         VStack(alignment: .leading, spacing: StudioSpace.s4) {
             Text("Create your account").studioText(.title)
             StudioTextField(String(localized: "Name"), text: $name, placeholder: String(localized: "Alex Morgan"))
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .textContentType(.name)
                 #endif
             StudioTextField(String(localized: "Email"), text: $email, placeholder: "you@example.com")
                 .plainEntry()
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .keyboardType(.emailAddress)
                 .textContentType(.emailAddress)
                 #endif
@@ -280,7 +280,7 @@ private struct ForgotPasswordForm: View {
                     .studioText(.uiSm).studioMuted()
                 StudioTextField(String(localized: "Email"), text: $email, placeholder: "you@example.com")
                     .plainEntry()
-                    #if os(iOS)
+                    #if os(iOS) || os(visionOS)
                     .keyboardType(.emailAddress)
                     .textContentType(.emailAddress)
                     #endif
@@ -335,7 +335,7 @@ struct PasswordField: View {
                 }
                 .textFieldStyle(.plain)
                 .plainEntry()
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .textContentType(isNew ? .newPassword : .password)
                 #else
                 // AppKit's NSTextContentType has no new-password type.

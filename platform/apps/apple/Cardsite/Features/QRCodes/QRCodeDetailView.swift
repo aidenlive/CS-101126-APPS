@@ -57,7 +57,7 @@ struct QRCodeDetailView: View {
         }
         .background(Color.studioBg)
         .navigationTitle(code.name)
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {

@@ -36,7 +36,7 @@ struct BlockListColumn: View {
         }
         .background(Color.studioBg)
         .navigationTitle(title)
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar { toolbar }
@@ -56,7 +56,7 @@ struct BlockListColumn: View {
                 NavigationStack {
                     PagePreviewPane(page: page, revision: editor.previewRevision, isFramed: false)
                         .navigationTitle("Preview")
-                        #if os(iOS)
+                        #if os(iOS) || os(visionOS)
                         .navigationBarTitleDisplayMode(.inline)
                         #endif
                         .toolbar {
@@ -256,7 +256,7 @@ private struct PageStatusRow: View {
     @Environment(AppModel.self) private var app
     let page: BioPage
     let isToggling: Bool
-    let setEnabled: (Bool) -> Void
+    let setEnabled: @MainActor (Bool) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioSpace.s3) {
@@ -284,7 +284,7 @@ private struct PageStatusRow: View {
                 help: page.isEnabled
                     ? String(localized: "Anyone with the address can open this page.")
                     : String(localized: "Off: visitors get a not-found page."),
-                isOn: Binding(get: { page.isEnabled }, set: { setEnabled($0) })
+                isOn: Binding(get: { [isOn = page.isEnabled] in isOn }, set: { [setEnabled] in setEnabled($0) })
             )
             .disabled(isToggling)
         }

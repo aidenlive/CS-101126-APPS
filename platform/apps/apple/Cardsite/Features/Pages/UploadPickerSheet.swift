@@ -117,7 +117,7 @@ struct UploadPickerSheet: View {
             }
             .background(Color.studioBg)
             .navigationTitle(imagesOnly ? Text("Choose an Image") : Text("Choose a File"))
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

@@ -165,7 +165,7 @@ struct PageWebView {
     }
 }
 
-#if os(iOS)
+#if os(iOS) || os(visionOS)
 extension PageWebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView { makeWebView(context) }
     func updateUIView(_ webView: WKWebView, context: Context) { updateWebView(webView, context) }

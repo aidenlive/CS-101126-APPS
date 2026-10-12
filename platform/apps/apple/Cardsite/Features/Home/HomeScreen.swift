@@ -30,7 +30,7 @@ struct HomeScreen: View {
                 }
             }
             .navigationTitle("Home")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar { toolbar }

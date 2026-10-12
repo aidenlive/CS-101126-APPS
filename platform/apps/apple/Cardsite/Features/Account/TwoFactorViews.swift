@@ -51,7 +51,7 @@ struct TwoFactorSetupView: View {
             }
             .background(Color.studioBg)
             .navigationTitle("Enable 2FA")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
@@ -116,7 +116,7 @@ struct TwoFactorSetupView: View {
                             .textContentType(.oneTimeCode)
                             .font(.system(.title3, design: .monospaced))
                             .plainEntry()
-                            #if os(iOS)
+                            #if os(iOS) || os(visionOS)
                             .keyboardType(.numberPad)
                             #endif
                             .textFieldStyle(.roundedBorder)
@@ -227,7 +227,7 @@ struct TwoFactorPasswordView: View {
                 }
             }
             .navigationTitle(purpose == .disable ? "Disable 2FA" : "Recovery Codes")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

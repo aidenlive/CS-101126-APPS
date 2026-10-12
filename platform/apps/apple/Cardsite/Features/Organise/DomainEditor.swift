@@ -227,7 +227,7 @@ struct DomainDetailView: View {
         }
         .resourceEditorForm()
         .navigationTitle(domain.host)
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .unsavedChanges(isDirty: isDirty, isSaving: isSaving, save: { await save() }, discard: {
@@ -318,7 +318,7 @@ struct DomainCreateSheet: View {
                 }
             }
             .navigationTitle(created == nil ? String(localized: "Add domain") : (created?.host ?? ""))
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

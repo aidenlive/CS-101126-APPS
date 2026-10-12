@@ -182,6 +182,37 @@ struct MainView: View {
         .onChange(of: router.storageKey) { _, key in
             storedTab = key
         }
+        .onChange(of: model.pendingDeepLink, initial: true) { _, link in
+            guard let link else { return }
+            model.pendingDeepLink = nil
+            route(link)
+        }
+    }
+
+    /// Routes a `cardsite://` link from a widget, the share extension or
+    /// Siri (held by `RootView` until this shell is up).
+    private func route(_ link: CardsiteDeepLink) {
+        router.isPalettePresented = false
+        switch link {
+        case .home:
+            router.open(.home)
+        case .qrCode:
+            router.open(.qrCodes)
+        case .createLink(let destination):
+            model.compose(.link, prefill: destination)
+        case .link(let id):
+            Task { [router, model] in
+                do {
+                    router.presentedLink = try await model.client.link(id: id)
+                } catch is CancellationError {
+                    // Cancelled: nothing to show.
+                } catch {
+                    // Deleted, or in another workspace: show the list.
+                    model.handle(error)
+                    router.open(.links)
+                }
+            }
+        }
     }
 
     /// The inbox's unread count on its sidebar item; zero hides the badge.

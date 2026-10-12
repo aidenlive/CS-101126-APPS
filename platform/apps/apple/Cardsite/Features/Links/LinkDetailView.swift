@@ -77,7 +77,7 @@ private struct LinkDetailForm: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("link.detail")
         .navigationTitle(Text(verbatim: "/" + model.slug))
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {

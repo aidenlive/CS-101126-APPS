@@ -35,11 +35,11 @@ struct ChangePasswordView: View {
                         SecureField("Current Password", text: $current)
                             .textContentType(.password)
                         SecureField("New Password", text: $new)
-                            #if os(iOS)
+                            #if os(iOS) || os(visionOS)
                             .textContentType(.newPassword)
                             #endif
                         SecureField("Confirm New Password", text: $confirm)
-                            #if os(iOS)
+                            #if os(iOS) || os(visionOS)
                             .textContentType(.newPassword)
                             #endif
                             .onSubmit { Task { await submit() } }
@@ -53,7 +53,7 @@ struct ChangePasswordView: View {
             }
             .studioForm()
             .navigationTitle("Change Password")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

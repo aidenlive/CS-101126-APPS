@@ -449,7 +449,7 @@ private struct WorkspaceNameSheet: View {
             }
             .studioForm()
             .navigationTitle(isCreate ? "Create Workspace" : "Rename Workspace")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
@@ -508,7 +508,7 @@ private struct InviteMemberSheet: View {
                     TextField("Email", text: $email, prompt: Text(verbatim: "teammate@example.com"))
                         .textContentType(.emailAddress)
                         .plainEntry()
-                        #if os(iOS)
+                        #if os(iOS) || os(visionOS)
                         .keyboardType(.emailAddress)
                         #endif
                 } footer: {
@@ -529,7 +529,7 @@ private struct InviteMemberSheet: View {
             }
             .studioForm()
             .navigationTitle("Add Member")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

@@ -1,5 +1,6 @@
 import SwiftUI
 import StudioKit
+import CardsiteKit
 
 @main
 struct CardsiteApp: App {
@@ -7,6 +8,10 @@ struct CardsiteApp: App {
 
     init() {
         StudioFonts.register()
+        #if os(iOS)
+        // The watch app gets the session from here (AppModel sends it).
+        WatchSessionRelay.shared.activate()
+        #endif
     }
 
     var body: some Scene {

@@ -114,11 +114,14 @@ struct PixelsForm: View {
     @Environment(PagesModel.self) private var pages
     let editor: PageEditorModel
 
-    @State private var pixels: Loadable<[BioPixel]> = .idle
-    @State private var types: [String: BioPixelType] = [:]
+    /// The list and the provider names, in a model so `.refreshable`'s
+    /// `@Sendable` closure captures it rather than the view.
+    @State private var catalog = PixelCatalog()
     @State private var savingID: BioPixel.ID? = nil
     @State private var saveError: String? = nil
 
+    private var pixels: Loadable<[BioPixel]> { catalog.pixels }
+    private var types: [String: BioPixelType] { catalog.types }
     private var attached: [Int] { editor.page?.pixelIDs ?? [] }
 
     var body: some View {
@@ -141,7 +144,7 @@ struct PixelsForm: View {
             case .failed(let error):
                 Section {
                     StudioBanner(lead: String(localized: "Pixels didn't load."), message: error.localizedDescription, tone: .warning)
-                    Button("Try Again") { Task { await load() } }
+                    Button("Try Again") { Task { await catalog.load(from: pages) } }
                 }
             case .loaded(let list) where list.isEmpty:
                 Section {
@@ -171,8 +174,8 @@ struct PixelsForm: View {
                 }
             }
         }
-        .task { if pixels.value == nil { await load() } }
-        .refreshable { await load() }
+        .task { [catalog, pages] in if catalog.pixels.value == nil { await catalog.load(from: pages) } }
+        .refreshable { [catalog, pages] in await catalog.load(from: pages) }
     }
 
     private func help(for pixel: BioPixel) -> String {
@@ -184,7 +187,28 @@ struct PixelsForm: View {
         return provider
     }
 
-    private func load() async {
+    private func setAttached(_ pixel: BioPixel, _ isOn: Bool) async {
+        var ids = attached.filter { $0 != pixel.id }
+        if isOn { ids.append(pixel.id) }
+        savingID = pixel.id
+        defer { savingID = nil }
+        do {
+            try await editor.savePage(BioPageChanges(pixelIDs: ids))
+            saveError = nil
+        } catch {
+            saveError = error.asAPIError.localizedDescription
+        }
+    }
+}
+
+/// The workspace's pixels and the providers' names, for `PixelsForm`.
+@MainActor
+@Observable
+final class PixelCatalog {
+    private(set) var pixels: Loadable<[BioPixel]> = .idle
+    private(set) var types: [String: BioPixelType] = [:]
+
+    func load(from pages: PagesModel) async {
         if pixels.value == nil { pixels = .loading }
         do {
             let client = pages.client
@@ -201,19 +225,6 @@ struct PixelsForm: View {
         } catch {
             pages.onError(error)
             if pixels.value == nil { pixels = .failed(error.asAPIError) }
-        }
-    }
-
-    private func setAttached(_ pixel: BioPixel, _ isOn: Bool) async {
-        var ids = attached.filter { $0 != pixel.id }
-        if isOn { ids.append(pixel.id) }
-        savingID = pixel.id
-        defer { savingID = nil }
-        do {
-            try await editor.savePage(BioPageChanges(pixelIDs: ids))
-            saveError = nil
-        } catch {
-            saveError = error.asAPIError.localizedDescription
         }
     }
 }

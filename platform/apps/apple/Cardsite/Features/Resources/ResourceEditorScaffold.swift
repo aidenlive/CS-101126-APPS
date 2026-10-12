@@ -83,7 +83,7 @@ struct ResourceEditorScaffold<Model: ResourceEditorState, Actions: View, Fields:
             }
         }
         .navigationTitle(isNew ? kind.createTitle : kind.editTitle)
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {

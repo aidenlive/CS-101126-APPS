@@ -12,7 +12,8 @@ import PackageDescription
  Deployment target is iOS 17 so the package is usable in existing apps.
  The Liquid Glass material is adopted through `if #available(iOS 26.0, *)`
  inside `StudioGlass.swift`; below that it falls back to an equivalent
- SwiftUI material. That is the only version-sensitive code in the package.
+ SwiftUI material; on visionOS it uses the platform glass. That is the only
+ version-sensitive code in the package.
 
  Colour, spacing, radius, motion and type tokens are GENERATED into
  Sources/StudioKit/Generated/StudioTokens.swift from tokens/studio.tokens.json.
@@ -24,6 +25,10 @@ let package = Package(
     platforms: [
         .iOS(.v17),
         .macOS(.v14),
+        // `.v1` because tools version 5.9 has no `.v2` (the Cardsite app
+        // sets its own visionOS 2 floor). StudioGlass uses the platform's
+        // glassBackgroundEffect there: visionOS has no Liquid Glass API.
+        .visionOS(.v1),
     ],
     products: [
         .library(name: "StudioKit", targets: ["StudioKit"]),

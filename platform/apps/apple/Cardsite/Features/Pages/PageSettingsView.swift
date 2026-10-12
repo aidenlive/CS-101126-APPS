@@ -89,7 +89,7 @@ struct PageSettingsView: View {
             }
             .background(Color.studioBg)
             .navigationTitle("Page Settings")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
@@ -158,7 +158,7 @@ struct PageSettingsSectionView: View {
         .scrollContentBackground(.hidden)
         .background(Color.studioBg)
         .navigationTitle(section.title)
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .onDisappear {
@@ -452,7 +452,7 @@ private struct BrandingSection: View {
                     EditorTextInput(label: String(localized: "Branding URL"), text: settings.text("branding_url"),
                                     prompt: "https://…")
                         .plainEntry()
-                        #if os(iOS)
+                        #if os(iOS) || os(visionOS)
                         .keyboardType(.URL)
                         #endif
                 }

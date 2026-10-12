@@ -75,6 +75,14 @@
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Cardsite saves QR code images you choose to keep to your photo library.</string>
 
+	<!-- A vCard's "Add to Contacts" opens the system's new-contact card
+	     (CNContactViewController). The app never reads the address book; the
+	     key is here in case the system asks for access when the card is saved.
+	     The event editor (EKEventEditViewController) runs out of process and
+	     needs no calendar key on iOS 17 and later, so none is declared. -->
+	<key>NSContactsUsageDescription</key>
+	<string>Cardsite adds the contact cards you choose to save to your contacts. It doesn't read your contacts.</string>
+
 	<!-- Required for apps built with the OS 27 SDK. -->
 	<key>UILaunchScreen</key>
 	<dict>

@@ -58,7 +58,7 @@ extension View {
     /// Form fields: no autocapitalisation or autocorrection for addresses,
     /// emails and URLs.
     func plainEntry() -> some View {
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         return self
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()

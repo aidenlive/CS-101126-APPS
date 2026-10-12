@@ -78,7 +78,7 @@ struct TimezonePickerView: View {
             }
             .searchable(text: $query, prompt: Text("Search timezones"))
             .navigationTitle("Timezone")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

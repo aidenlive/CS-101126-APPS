@@ -21,7 +21,6 @@ struct AccountScreen: View {
 struct AccountView: View {
     @Environment(AppModel.self) private var app
     @State private var settings: AccountSettingsModel
-    @State private var plan: Loadable<(AccountPlan, Plan?)> = .idle
     @State private var sheet: Sheet? = nil
     @State private var confirmSignOut = false
 
@@ -76,12 +75,19 @@ struct AccountView: View {
         }
         .studioForm()
         .navigationTitle("Account")
-        .task {
+        .task { [app, settings] in
             if app.needsProfile { await app.refreshUser() }
-            await loadPlan()
+            await settings.loadPlan()
         }
         .task { [settings] in await settings.loadTwoFactor() }
-        .refreshable { await refresh() }
+        // Captures the models, not the view: the closure is `@Sendable`.
+        // Not an unconditional `refreshUser()`: the server caches GET /user
+        // for ~10 min and would bring back a name the user just changed.
+        .refreshable { [app, settings] in
+            if app.needsProfile { await app.refreshUser() }
+            await settings.loadPlan(force: true)
+            await settings.loadTwoFactor(force: true)
+        }
         .sheet(item: $sheet) { sheet in
             switch sheet {
             case .editName: AccountNameEditor()
@@ -96,15 +102,6 @@ struct AccountView: View {
         .confirmationDialog("Sign out of Cardsite?", isPresented: $confirmSignOut, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) { Task { await app.signOut() } }
         }
-    }
-
-    /// Pull to refresh. Not an unconditional `refreshUser()`: the server
-    /// caches GET /user for ~10 min and would bring back a name the user
-    /// just changed.
-    private func refresh() async {
-        if app.needsProfile { await app.refreshUser() }
-        await loadPlan(force: true)
-        await settings.loadTwoFactor(force: true)
     }
 
     private var currentTimezone: String {
@@ -207,11 +204,11 @@ struct AccountView: View {
 
     @ViewBuilder
     private var planRow: some View {
-        switch plan {
+        switch settings.plan {
         case .idle, .loading:
             HStack { Text("Current plan"); Spacer(); ProgressView() }
         case .failed:
-            Button("Couldn't load your plan. Try again.") { Task { await loadPlan(force: true) } }
+            Button("Couldn't load your plan. Try again.") { Task { await settings.loadPlan(force: true) } }
         case .loaded(let (account, details)):
             LabeledContent("Current plan", value: details?.name ?? String(localized: "Unknown"))
             if let limit = details?.settings?.customSlugsLimit {
@@ -220,23 +217,6 @@ struct AccountView: View {
             if let expiry = account.planExpirationDate {
                 LabeledContent("Renews or ends", value: expiry.formatted(date: .abbreviated, time: .omitted))
             }
-        }
-    }
-
-    private func loadPlan(force: Bool = false) async {
-        if !force, plan.value != nil { return }
-        if plan.value == nil { plan = .loading }
-        let client = app.client
-        do {
-            async let account = client.accountPlan()
-            async let plans = client.plans()
-            let (a, all) = try await (account, plans)
-            plan = .loaded((a, all.first { $0.id == a.planID }))
-        } catch is CancellationError {
-            if case .loading = plan { plan = .idle }
-        } catch {
-            app.handle(error)
-            if plan.value == nil { plan = .failed(error.asAPIError) }
         }
     }
 }
@@ -252,7 +232,7 @@ struct AccountNameEditor: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: StudioSpace.s4) {
                 StudioTextField(String(localized: "Name"), text: $name, errorMessage: error)
-                    #if os(iOS)
+                    #if os(iOS) || os(visionOS)
                     .textContentType(.name)
                     #endif
                     .onSubmit { Task { await save() } }
@@ -261,7 +241,7 @@ struct AccountNameEditor: View {
             .padding(StudioSpace.s6)
             .background(Color.studioBg)
             .navigationTitle("Edit Name")
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {

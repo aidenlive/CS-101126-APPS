@@ -5,8 +5,9 @@ import PackageDescription
  CardsiteKit — the platform-neutral core of the Cardsite Apple app.
 
  Models, the API client, error mapping, address rules and the token store.
- No SwiftUI, so it builds and tests with `swift test` on macOS and (minus the
- Keychain store, which is guarded by `canImport(Security)`) on Linux.
+ No SwiftUI, UIKit or CoreImage, so the same sources build for iOS, macOS,
+ watchOS (the watch app) and visionOS, and test with `swift test` on macOS
+ and (minus the Keychain store, guarded by `canImport(Security)`) on Linux.
 
  The test fixtures are the bodies captured from a live API by
  ../../ContractTests/native-contract.sh. Refresh them with
@@ -17,6 +18,8 @@ let package = Package(
     platforms: [
         .iOS(.v18),
         .macOS(.v15),
+        .watchOS(.v11),
+        .visionOS(.v2),
     ],
     products: [
         .library(name: "CardsiteKit", targets: ["CardsiteKit"]),

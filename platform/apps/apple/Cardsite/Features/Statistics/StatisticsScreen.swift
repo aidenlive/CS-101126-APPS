@@ -56,7 +56,7 @@ struct StatisticsScreen: View {
         }
         .background(Color.studioBg)
         .navigationTitle(linkID == nil ? Text("Statistics") : Text("Link statistics"))
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .task {

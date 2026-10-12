@@ -189,16 +189,16 @@ struct VCardEditorView: View {
         Section {
             EditorTextField(String(localized: "First Name"), text: form.card.firstName, prompt: "Ada",
                             error: model.errors[.name])
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .textContentType(.givenName)
                 #endif
             EditorTextField(String(localized: "Last Name"), text: form.card.lastName, prompt: "Lovelace")
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .textContentType(.familyName)
                 #endif
             EditorTextField(String(localized: "Email"), text: form.card.email, prompt: "ada@example.com", kind: .plain,
                             error: model.errors[.email])
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .keyboardType(.emailAddress)
                 .textContentType(.emailAddress)
                 #endif
@@ -212,11 +212,11 @@ struct VCardEditorView: View {
     private func workSection(_ form: Binding<VCardForm>) -> some View {
         Section {
             EditorTextField(String(localized: "Company"), text: form.card.company, prompt: "Analytical Engines")
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .textContentType(.organizationName)
                 #endif
             EditorTextField(String(localized: "Job Title"), text: form.card.jobTitle, prompt: String(localized: "Analyst"))
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .textContentType(.jobTitle)
                 #endif
             EditorTextField(String(localized: "Website"), text: form.card.website, prompt: "https://example.com",
@@ -230,23 +230,23 @@ struct VCardEditorView: View {
     private func postalSection(_ form: Binding<VCardForm>) -> some View {
         Section {
             EditorTextField(String(localized: "Street"), text: form.card.street, prompt: String(localized: "12 St James’s Square"))
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .textContentType(.fullStreetAddress)
                 #endif
             EditorTextField(String(localized: "City"), text: form.card.city, prompt: String(localized: "London"))
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .textContentType(.addressCity)
                 #endif
             EditorTextField(String(localized: "Region"), text: form.card.region, prompt: String(localized: "Greater London"))
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .textContentType(.addressState)
                 #endif
             EditorTextField(String(localized: "Postcode"), text: form.card.zip, prompt: "SW1Y 4LE", kind: .plain)
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .textContentType(.postalCode)
                 #endif
             EditorTextField(String(localized: "Country"), text: form.card.country, prompt: String(localized: "United Kingdom"))
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .textContentType(.countryName)
                 #endif
         } header: {
@@ -386,14 +386,14 @@ struct VCardEntryRows: View {
         switch kind {
         case .phone:
             TextField(String(localized: "Phone"), text: entry.value, prompt: Text("+44 20 7946 0000"))
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .keyboardType(.phonePad)
                 .textContentType(.telephoneNumber)
                 #endif
         case .social:
             TextField(String(localized: "Address"), text: entry.value, prompt: Text("https://linkedin.com/in/ada"))
                 .plainEntry()
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .keyboardType(.URL)
                 #endif
         }
