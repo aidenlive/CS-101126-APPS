@@ -1,4 +1,5 @@
 name: apple
+# Public repo since 2026-10-12: standard runners, macOS included, are free.
 
 # platform/apps/apple (Cardsite for iPhone, iPad and Mac) and the StudioKit
 # package it depends on. macOS runners only, except the fixture check, the
