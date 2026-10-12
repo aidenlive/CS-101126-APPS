@@ -1,0 +1,13 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/user",
+    "status": 401
+  },
+  "response": {
+    "error": {
+      "title": "Invalid or expired token",
+      "code": 401
+    }
+  }
+}

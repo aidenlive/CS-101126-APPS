@@ -1,0 +1,5 @@
+// Copy to Local.xcconfig (git-ignored) to point Debug builds somewhere other
+// than localhost — e.g. a physical iPhone reaching the API on your Mac.
+// Your Mac's name: `scutil --get LocalHostName` (add .local), or its address:
+// `ipconfig getifaddr en0`. Then `xcodegen generate` and run again.
+CARDSITE_API_BASE_URL = http:/$()/Your-Mac-Name.local:8080

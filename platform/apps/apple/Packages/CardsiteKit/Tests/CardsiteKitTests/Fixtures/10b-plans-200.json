@@ -1,0 +1,138 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/plans",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "id": 1,
+        "name": "Free",
+        "description": "Free plan with basic features",
+        "monthly_price": 0,
+        "annual_price": 0,
+        "trial_days": 0,
+        "settings": {
+          "ai_tools": true,
+          "api_is_enabled": true,
+          "custom_pwa_is_enabled": true,
+          "custom_slugs_limit": 1,
+          "domains_limit": 0,
+          "password_protection": true,
+          "premium_blocks": true,
+          "storage_bytes_limit": 104857600,
+          "targeting_is_enabled": true,
+          "teams_limit": 0
+        },
+        "status": 1,
+        "order": 0,
+        "created_at": "2026-10-11T19:58:23.027417Z"
+      },
+      {
+        "id": 2,
+        "name": "Starter",
+        "description": "For one person with a few addresses of their own.",
+        "monthly_price": 5,
+        "trial_days": 0,
+        "settings": {
+          "ai_tools": true,
+          "api_is_enabled": true,
+          "custom_pwa_is_enabled": true,
+          "custom_slugs_limit": 3,
+          "domains_limit": 0,
+          "password_protection": true,
+          "premium_blocks": true,
+          "storage_bytes_limit": 1073741824,
+          "targeting_is_enabled": true,
+          "teams_limit": 1
+        },
+        "status": 1,
+        "order": 1,
+        "created_at": "2026-10-11T19:58:23.352939Z"
+      },
+      {
+        "id": 3,
+        "name": "Pro",
+        "description": "Your own domain, more addresses and more storage.",
+        "monthly_price": 25,
+        "trial_days": 0,
+        "settings": {
+          "ai_tools": true,
+          "api_is_enabled": true,
+          "custom_pwa_is_enabled": true,
+          "custom_slugs_limit": 5,
+          "domains_limit": 1,
+          "password_protection": true,
+          "premium_blocks": true,
+          "storage_bytes_limit": 10737418240,
+          "targeting_is_enabled": true,
+          "teams_limit": 4
+        },
+        "status": 1,
+        "order": 2,
+        "created_at": "2026-10-11T19:58:23.352939Z"
+      },
+      {
+        "id": 4,
+        "name": "Business",
+        "description": "For teams running several workspaces and domains.",
+        "monthly_price": 100,
+        "trial_days": 0,
+        "settings": {
+          "ai_tools": true,
+          "api_is_enabled": true,
+          "custom_pwa_is_enabled": true,
+          "custom_slugs_limit": 10,
+          "domains_limit": 3,
+          "password_protection": true,
+          "premium_blocks": true,
+          "storage_bytes_limit": 107374182400,
+          "targeting_is_enabled": true,
+          "teams_limit": 9
+        },
+        "status": 1,
+        "order": 3,
+        "created_at": "2026-10-11T19:58:23.352939Z"
+      },
+      {
+        "id": 5,
+        "name": "Business+",
+        "description": "Unlimited workspaces, 25 domains and a terabyte of storage.",
+        "monthly_price": 500,
+        "trial_days": 0,
+        "settings": {
+          "ai_tools": true,
+          "api_is_enabled": true,
+          "custom_pwa_is_enabled": true,
+          "custom_slugs_limit": 25,
+          "domains_limit": 25,
+          "password_protection": true,
+          "premium_blocks": true,
+          "storage_bytes_limit": 1099511627776,
+          "targeting_is_enabled": true
+        },
+        "status": 1,
+        "order": 4,
+        "created_at": "2026-10-11T19:58:23.352939Z"
+      },
+      {
+        "id": 6,
+        "name": "Enterprise",
+        "description": "Custom limits and pricing. Contact us.",
+        "trial_days": 0,
+        "settings": {
+          "ai_tools": true,
+          "api_is_enabled": true,
+          "custom_pwa_is_enabled": true,
+          "password_protection": true,
+          "premium_blocks": true,
+          "targeting_is_enabled": true
+        },
+        "status": 1,
+        "order": 5,
+        "created_at": "2026-10-11T19:58:23.352939Z"
+      }
+    ]
+  }
+}

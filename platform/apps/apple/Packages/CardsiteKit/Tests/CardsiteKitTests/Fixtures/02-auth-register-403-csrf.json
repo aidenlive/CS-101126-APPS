@@ -1,0 +1,13 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/auth/register",
+    "status": 403
+  },
+  "response": {
+    "error": {
+      "code": 403,
+      "title": "CSRF check failed"
+    }
+  }
+}

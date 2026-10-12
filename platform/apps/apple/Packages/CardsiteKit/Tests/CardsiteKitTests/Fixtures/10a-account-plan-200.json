@@ -1,0 +1,16 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/account/plan",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "payment_processor": "",
+      "payment_subscription_id": "",
+      "plan_expiration_date": null,
+      "plan_id": 1,
+      "plan_settings": null
+    }
+  }
+}

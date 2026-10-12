@@ -1,0 +1,17 @@
+// Shared build settings for the Cardsite Apple app.
+// `//` starts a comment in xcconfig, so URLs use the `$()` break: https:/$()/host
+
+MARKETING_VERSION = 1.0.0
+CURRENT_PROJECT_VERSION = 1
+
+// OWNER DECISION (docs/launch/native-apple.md, N1): the bundle ID is
+// permanent once the app is created in App Store Connect.
+CARDSITE_BUNDLE_ID = com.cardsite.app
+
+// Public address host (docs/brand/Cardsite-Overview.md → Domains).
+CARDSITE_PUBLIC_HOST = card.site
+
+// Web app and marketing site; legal pages and contact live here.
+CARDSITE_WEB_URL = https:/$()/cardsite.com
+
+#include? "Signing.xcconfig"

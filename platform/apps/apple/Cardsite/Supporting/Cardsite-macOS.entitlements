@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Mac App Store apps must be sandboxed. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Outgoing connections to the Cardsite API. -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- The session token uses the data-protection keychain, which on macOS
+	     needs an explicit access group. -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)$(CARDSITE_BUNDLE_ID)</string>
+	</array>
+	<!-- Saving a QR code image where the user chooses (share sheet → Save). -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+</dict>
+</plist>

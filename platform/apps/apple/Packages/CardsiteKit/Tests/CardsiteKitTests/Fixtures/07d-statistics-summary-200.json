@@ -1,0 +1,18 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/statistics",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "links": 1,
+      "biolinks": 0,
+      "qr_codes": 0,
+      "projects": 0,
+      "domains": 0,
+      "pixels": 0,
+      "total_clicks": 1
+    }
+  }
+}

@@ -1,0 +1,93 @@
+name: apple
+
+# platform/apps/apple (Cardsite for iPhone, iPad and Mac) and the StudioKit
+# package it depends on. macOS runners only: nothing here builds on Linux
+# except the fixture check.
+#
+# What a green run proves: CardsiteKit's unit tests pass against fixtures
+# captured from a live API, and the app compiles for the iOS Simulator and
+# for macOS with signing off. It does not prove the app runs correctly; see
+# docs/launch/native-apple.md → Verification for the device checks.
+
+on:
+  push:
+    branches: [main, "claude/**", "ws/**"]
+    paths:
+      - "platform/apps/apple/**"
+      - "platform/studio/packages/swift/**"
+      - ".github/workflows/apple.yml"
+  pull_request:
+    paths:
+      - "platform/apps/apple/**"
+      - "platform/studio/packages/swift/**"
+      - ".github/workflows/apple.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: apple-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: platform/apps/apple
+
+jobs:
+  fixtures:
+    name: contract fixtures in sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./scripts/sync-fixtures.sh --check
+
+  kit:
+    name: CardsiteKit + StudioKit (swift test)
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: xcodebuild -version && swift --version
+      - run: swift test --package-path Packages/CardsiteKit
+      - run: swift build --package-path ../../studio/packages/swift
+
+  app:
+    name: app builds (${{ matrix.destination.name }})
+    runs-on: macos-26
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        destination:
+          - { name: iOS Simulator, value: "generic/platform=iOS Simulator" }
+          - { name: macOS, value: "generic/platform=macOS" }
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - run: xcodegen generate
+      - name: xcodebuild
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Cardsite.xcodeproj \
+            -scheme Cardsite \
+            -configuration Debug \
+            -destination "${{ matrix.destination.value }}" \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee build.log
+          echo "warnings: $(grep -c ' warning: ' build.log || true)"
+
+  apple-summary:
+    needs: [fixtures, kit, app]
+    if: always()
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - run: |
+          echo "fixtures: ${{ needs.fixtures.result }}  kit: ${{ needs.kit.result }}  app: ${{ needs.app.result }}"
+          for r in "${{ needs.fixtures.result }}" "${{ needs.kit.result }}" "${{ needs.app.result }}"; do
+            [ "$r" = "success" ] || exit 1
+          done

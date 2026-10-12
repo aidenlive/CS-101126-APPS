@@ -1,0 +1,12 @@
+#include "Base.xcconfig"
+
+// OWNER DECISION (docs/launch/native-apple.md, N2): the production API host.
+// The contract (openapi.yaml `servers`) names https://prod.cardsite.io; the
+// Caddyfile also serves /api/* on cardsite.com, which is used here because
+// it is the host the web app itself calls. Confirm before archiving.
+CARDSITE_API_BASE_URL = https:/$()/cardsite.com
+
+SWIFT_COMPILATION_MODE = wholemodule
+SWIFT_OPTIMIZATION_LEVEL = -O
+VALIDATE_PRODUCT = YES
+DEBUG_INFORMATION_FORMAT = dwarf-with-dsym

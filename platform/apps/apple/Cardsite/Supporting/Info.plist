@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Cardsite</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.productivity</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>© 2026 Cardsite, Inc. Cardsite® is a registered trademark of Cardsite, Inc.</string>
+
+	<!-- Read by AppConfiguration (Cardsite/App/AppModel.swift). -->
+	<key>CSAPIBaseURL</key>
+	<string>$(CARDSITE_API_BASE_URL)</string>
+	<key>CSWebURL</key>
+	<string>$(CARDSITE_WEB_URL)</string>
+	<key>CSPublicHost</key>
+	<string>$(CARDSITE_PUBLIC_HOST)</string>
+
+	<!-- Only HTTPS/TLS from the OS is used: exempt from export documentation. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
+	<!-- HTTPS everywhere; plain HTTP only to the local development API. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+
+	<!-- iOS asks before an app reaches devices on the local network. Only
+	     Debug builds pointed at a Mac's API do; Release talks to the internet. -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Cardsite connects to a Cardsite server on your local network during development.</string>
+
+	<!-- The share sheet's "Save Image" for QR codes writes to Photos. -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Cardsite saves QR code images you choose to keep to your photo library.</string>
+
+	<!-- Required for apps built with the OS 27 SDK. -->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<true/>
+	</dict>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>LSMinimumSystemVersion</key>
+	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+</dict>
+</plist>

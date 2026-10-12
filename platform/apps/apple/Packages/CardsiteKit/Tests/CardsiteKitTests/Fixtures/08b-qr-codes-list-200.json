@@ -1,0 +1,46 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/qr-codes?page=1&results_per_page=25",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "id": 7,
+        "user_id": 7,
+        "workspace_id": 131,
+        "name": "Native contract QR",
+        "type": "url",
+        "qr_code": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAABmvDolAAAABlBMVEX///8AAABVwtN+AAABYElEQVR42uyYsZHFIAxE10NA6BIohdauNEqhBEICj/dGAs//vu9/BUhs4MDzIg3alYSlpaWl/0TVASCSDXtN48+PLeCUTziA2LGTrKnKn+wO2MgjHIFdiAYkKVVxC3RACtW8A6TWaa9GgdEXoY/GkDo8No51YPpk6LHHtrevRmodmNK+gABf0tE6II0zchOxyVcLVawB24mNB0KP7DMNKpCLN2B0hcQixniAVHPJ98bxAGhgXIXaWRPr3Sd9ABt56riIyLazJdZU8ptP2gCmO0gcqBHO9/CnL+wDYzzgMZekpj753hdugO28rUkjLbI7YDulToEyNw+r5Pt7MQJcUxC7vAiJAyQWuANeRxKpUtMt6cMnHQDXlqSFkm1RC/Xhk/aB19Yc2+UP+XmtNgD08SJ0PLjfBn0B8lNjUUbB5yuKbeC6kWosjrGYBe6A60jCOS/OGwmNAUtLSx71GwAA//8aI2n9uKrKdwAAAABJRU5ErkJggg==",
+        "settings": {
+          "_style": {
+            "background_color_transparency": 0,
+            "error_level": "",
+            "eyes_inner_color": "",
+            "eyes_outer_color": "",
+            "foreground_gradient_color": "",
+            "foreground_gradient_type": "",
+            "frame": "",
+            "frame_color": "",
+            "frame_text": "",
+            "frame_text_font": "",
+            "frame_text_size": 0,
+            "inner_eye_style": "",
+            "outer_eye_style": "",
+            "size": 0
+          },
+          "url": "https://example.com"
+        },
+        "embedded_data": "https://example.com",
+        "created_at": "2026-10-11T20:03:55.586225Z",
+        "updated_at": null
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "per_page": 25,
+      "total": 1
+    }
+  }
+}

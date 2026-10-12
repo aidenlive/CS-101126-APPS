@@ -1,0 +1,13 @@
+{
+  "_request": {
+    "method": "DELETE",
+    "path": "/api/v1/account",
+    "status": 401
+  },
+  "response": {
+    "error": {
+      "title": "Password is incorrect",
+      "code": 401
+    }
+  }
+}

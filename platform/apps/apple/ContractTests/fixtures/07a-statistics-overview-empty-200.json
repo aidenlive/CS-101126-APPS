@@ -1,0 +1,10 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/statistics/{id}?type=overview&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD",
+    "status": 200
+  },
+  "response": {
+    "data": null
+  }
+}

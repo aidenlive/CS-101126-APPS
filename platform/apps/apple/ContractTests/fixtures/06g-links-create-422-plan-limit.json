@@ -1,0 +1,16 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/links",
+    "status": 422
+  },
+  "response": {
+    "error": {
+      "code": 422,
+      "current": 1,
+      "limit": "custom_slugs_limit",
+      "max": 1,
+      "title": "plan_limit_exceeded"
+    }
+  }
+}

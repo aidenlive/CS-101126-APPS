@@ -1,0 +1,12 @@
+{
+  "_request": {
+    "method": "DELETE",
+    "path": "/api/v1/account",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "message": "Account deleted successfully"
+    }
+  }
+}

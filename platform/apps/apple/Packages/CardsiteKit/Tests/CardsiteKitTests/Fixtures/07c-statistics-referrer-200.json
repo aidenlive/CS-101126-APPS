@@ -1,0 +1,10 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/statistics/{id}?type=referrer&...",
+    "status": 200
+  },
+  "response": {
+    "data": null
+  }
+}

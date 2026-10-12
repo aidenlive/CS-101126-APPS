@@ -1,0 +1,81 @@
+# Cardsite for iPhone, iPad and Mac — one multiplatform SwiftUI target.
+#
+# Generate the Xcode project (not committed):
+#   brew install xcodegen          # 2.42 or later (multi-destination targets)
+#   cd platform/apps/apple && xcodegen generate && open Cardsite.xcodeproj
+#
+# Requires Xcode 26 or later (App Store Connect has required the OS 26 SDK
+# since 28 Apr 2026; Xcode 27 is current). Set DEVELOPMENT_TEAM in
+# Config/Signing.xcconfig before archiving.
+name: Cardsite
+
+options:
+  bundleIdPrefix: com.cardsite
+  deploymentTarget:
+    iOS: "18.0"
+    macOS: "15.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  generateEmptyDirectories: false
+
+configFiles:
+  Debug: Config/Debug.xcconfig
+  Release: Config/Release.xcconfig
+
+packages:
+  StudioKit:
+    path: ../../studio/packages/swift
+  CardsiteKit:
+    path: Packages/CardsiteKit
+
+targets:
+  Cardsite:
+    type: application
+    platform: auto
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: Cardsite
+        excludes:
+          - "**/.DS_Store"
+          - "Supporting/Info.plist"
+          - "Supporting/*.entitlements"
+    dependencies:
+      - package: StudioKit
+      - package: CardsiteKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(CARDSITE_BUNDLE_ID)
+        PRODUCT_NAME: Cardsite
+        INFOPLIST_FILE: Cardsite/Supporting/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        SWIFT_EMIT_LOC_STRINGS: YES
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+        ENABLE_HARDENED_RUNTIME[sdk=macosx*]: YES
+        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: Cardsite/Supporting/Cardsite-macOS.entitlements
+        CODE_SIGN_STYLE: Automatic
+        DEAD_CODE_STRIPPING: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+        GENERATE_INFOPLIST_FILE: NO
+    # No `info:` block on purpose: XcodeGen would regenerate Info.plist from
+    # defaults and drop the CS* keys, ATS, UILaunchScreen and the category.
+
+schemes:
+  Cardsite:
+    build:
+      targets:
+        Cardsite: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - package: CardsiteKit/CardsiteKitTests
+    archive:
+      config: Release

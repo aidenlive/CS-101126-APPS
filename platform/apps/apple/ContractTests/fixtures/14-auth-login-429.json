@@ -1,0 +1,13 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "status": 429
+  },
+  "response": {
+    "error": {
+      "title": "Too many attempts. Please try again later.",
+      "code": 429
+    }
+  }
+}

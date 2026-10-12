@@ -1,0 +1,34 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/links?page=1&results_per_page=25",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "id": 7,
+        "user_id": 7,
+        "workspace_id": 131,
+        "type": "link",
+        "url": "nc-179174903420425",
+        "location_url": "https://example.com",
+        "settings": null,
+        "clicks": 0,
+        "is_verified": false,
+        "is_enabled": true,
+        "directory_is_enabled": false,
+        "created_at": "2026-10-11T20:03:55.202094Z",
+        "updated_at": null,
+        "last_used_at": "2026-10-11T20:03:55.202094Z",
+        "lifecycle_state": "active",
+        "lifecycle_state_at": "2026-10-11T20:03:55.202094Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "per_page": 25,
+      "total": 1
+    }
+  }
+}

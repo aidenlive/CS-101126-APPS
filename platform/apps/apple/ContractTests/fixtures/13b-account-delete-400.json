@@ -1,0 +1,13 @@
+{
+  "_request": {
+    "method": "DELETE",
+    "path": "/api/v1/account",
+    "status": 400
+  },
+  "response": {
+    "error": {
+      "title": "Password is required to confirm account deletion",
+      "code": 400
+    }
+  }
+}

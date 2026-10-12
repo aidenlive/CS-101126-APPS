@@ -1,0 +1,13 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/links",
+    "status": 409
+  },
+  "response": {
+    "error": {
+      "title": "That address is already taken",
+      "code": 409
+    }
+  }
+}
