@@ -61,7 +61,9 @@ struct PagesScreen: View {
                 SplitPlaceholder(systemImage: "person.crop.square",
                                  title: String(localized: "Select a page"),
                                  message: String(localized: "Its blocks appear here, ready to edit."))
+                    #if os(macOS)
                     .navigationTitle("Pages")
+                    #endif
                     #if os(macOS)
                     .navigationSplitViewColumnWidth(min: 300, ideal: 360)
                     #endif
@@ -75,7 +77,9 @@ struct PagesScreen: View {
                 // reads calmer than two side by side.
                 Color.studioBg
                     .ignoresSafeArea()
+                    #if os(macOS)
                     .navigationTitle("Pages")
+                    #endif
             }
         }
         .task { [list = model.list] in await list.loadIfNeeded() }

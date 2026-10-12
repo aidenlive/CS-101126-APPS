@@ -78,7 +78,9 @@ struct LinksScreen: View {
                     SplitPlaceholder(systemImage: "link",
                                      title: String(localized: "Select a link"),
                                      message: String(localized: "Its address, destination, settings and traffic appear here."))
+                    #if os(macOS)
                     .navigationTitle("Links")
+                    #endif
                 }
             }
         }
