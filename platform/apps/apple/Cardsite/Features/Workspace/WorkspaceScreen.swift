@@ -64,8 +64,7 @@ struct WorkspaceView: View {
     var body: some View {
         content
             .background(Color.studioBg)
-            .navigationTitle(model.snapshot.map { title(for: $0.workspace) } ?? String(localized: "Workspace"))
-            .inlineNavigationTitle()
+            .pageHeadNavigationTitle(model.snapshot.map { title(for: $0.workspace) } ?? String(localized: "Workspace"))
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -143,13 +142,20 @@ struct WorkspaceView: View {
     private var content: some View {
         switch model.state {
         case .idle, .loading:
-            ListSkeletonView(style: .textRows)
+            ListSkeletonView(style: .textRows, head: Self.placeholderHead)
         case .failed(let error):
-            ErrorStateView(error: error) { [model] in await model.refresh() }
+            ErrorStateView(error: error, head: Self.placeholderHead) { [model] in await model.refresh() }
         case .loaded(let snapshot):
             form(snapshot)
         }
     }
+
+    /// The head before the workspace is known: the page keeps its anatomy
+    /// while it loads or when it can't load.
+    private static let placeholderHead = ListPageHeadContent(
+        kicker: String(localized: "Account · Collaboration"),
+        title: String(localized: "Workspace")
+    )
 
     // MARK: Content
 

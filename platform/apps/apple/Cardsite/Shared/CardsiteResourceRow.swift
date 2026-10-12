@@ -8,7 +8,15 @@ import StudioKit
 ///
 /// At accessibility text sizes the row stacks: the text gets the full
 /// width, addresses wrap instead of truncating to a few characters, and
-/// the accessory moves onto its own line under the text.
+/// the accessory moves onto its own leading-aligned line under the text.
+///
+/// In compact width (iPhone) a row that is a navigation link already has
+/// the system disclosure chevron, and a switch next to a chevron is not a
+/// pattern Apple's lists use, so the trailing accessory is left out there.
+/// The state stays visible as the Off / Lapsing pill, and Turn On / Turn
+/// Off stays one gesture away in the leading swipe and the context menu
+/// (``ResourceActionSet``). At accessibility sizes the switch keeps its
+/// own line, where it has the room.
 ///
 ///     CardsiteResourceRow(systemImage: "link", isLive: link.isEnabled,
 ///                         title: Text(verbatim: "card.site/spring-menu"),
@@ -28,8 +36,21 @@ struct CardsiteResourceRow<Trailing: View>: View {
     @ViewBuilder var trailing: () -> Trailing
 
     @Environment(\.dynamicTypeSize) private var typeSize
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
 
     private var isStacked: Bool { typeSize.isAccessibilitySize }
+
+    /// The accessory is shown in regular width and at accessibility sizes;
+    /// left out in a compact, single-line row (see the type's note).
+    private var showsTrailing: Bool {
+        #if os(iOS)
+        return isStacked || sizeClass != .compact
+        #else
+        return true
+        #endif
+    }
 
     var body: some View {
         let layout = isStacked
@@ -65,7 +86,15 @@ struct CardsiteResourceRow<Trailing: View>: View {
                     .fixedSize()
             }
 
-            trailing()
+            if showsTrailing {
+                if isStacked {
+                    // Its own line, leading, with the text above it.
+                    trailing()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    trailing()
+                }
+            }
         }
         .padding(.vertical, StudioSpace.s1)
     }

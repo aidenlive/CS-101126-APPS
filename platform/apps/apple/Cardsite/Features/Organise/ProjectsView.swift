@@ -74,6 +74,13 @@ struct ProjectsView: View {
         _model = State(initialValue: model)
     }
 
+    /// The page head, kept in every state of the list.
+    private static let pageHead = ListPageHeadContent(
+        kicker: String(localized: "Organize"),
+        title: String(localized: "Projects"),
+        description: String(localized: "Group resources into color-coded projects.")
+    )
+
     var body: some View {
         ListStateView(
             state: model.list.state,
@@ -84,12 +91,11 @@ struct ProjectsView: View {
                 actionTitle: String(localized: "Create Project"),
                 action: { editing = .new }
             ),
+            head: Self.pageHead,
             retry: { [list = model.list] in await list.refresh() }
         ) { projects in
             List {
-                ListPageHead(kicker: String(localized: "Organize"),
-                             title: String(localized: "Projects"),
-                             description: String(localized: "Group resources into color-coded projects."))
+                ListPageHead(Self.pageHead)
                 if let error = model.list.refreshError {
                     RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
                         .studioClearRow()
@@ -115,8 +121,7 @@ struct ProjectsView: View {
             .refreshable { [list = model.list] in await list.refresh() }
         }
         .background(Color.studioBg)
-        .navigationTitle("Projects")
-        .inlineNavigationTitle()
+        .pageHeadNavigationTitle(String(localized: "Projects"))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { editing = .new } label: {

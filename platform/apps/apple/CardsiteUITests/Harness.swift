@@ -199,10 +199,16 @@ struct Harness {
         if let range = identifier.range(of: ".row."),
            let index = Int(identifier[range.upperBound...]) {
             let prefix = String(identifier[..<range.upperBound])
-            let exact = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+            let exact = app.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier == %@ AND elementType != %@",
+                                      identifier, NSNumber(value: XCUIElement.ElementType.switch.rawValue)))
+                .firstMatch
             if exact.exists { return exact }
             return app.descendants(matching: .any)
-                .matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix))
+                // Not the row's switch, which inherits the row's identifier
+                // and isn't the thing to tap.
+                .matching(NSPredicate(format: "identifier BEGINSWITH %@ AND elementType != %@",
+                                      prefix, NSNumber(value: XCUIElement.ElementType.switch.rawValue)))
                 .element(boundBy: index)
         }
         return app.descendants(matching: .any).matching(identifier: identifier).firstMatch

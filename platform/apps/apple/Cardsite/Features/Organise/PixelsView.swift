@@ -99,6 +99,13 @@ struct PixelsView: View {
         _model = State(initialValue: model)
     }
 
+    /// The page head, kept in every state of the list.
+    private static let pageHead = ListPageHeadContent(
+        kicker: String(localized: "Track"),
+        title: String(localized: "Pixels"),
+        description: String(localized: "Retargeting pixels fired on every redirect.")
+    )
+
     var body: some View {
         ListStateView(
             state: model.list.state,
@@ -109,12 +116,11 @@ struct PixelsView: View {
                 actionTitle: String(localized: "Create Pixel"),
                 action: { editing = .new }
             ),
+            head: Self.pageHead,
             retry: { [list = model.list] in await list.refresh() }
         ) { pixels in
             List {
-                ListPageHead(kicker: String(localized: "Track"),
-                             title: String(localized: "Pixels"),
-                             description: String(localized: "Retargeting pixels fired on every redirect."))
+                ListPageHead(Self.pageHead)
                 if let error = model.list.refreshError {
                     RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
                         .studioClearRow()
@@ -155,8 +161,7 @@ struct PixelsView: View {
             .refreshable { [list = model.list] in await list.refresh() }
         }
         .background(Color.studioBg)
-        .navigationTitle("Pixels")
-        .inlineNavigationTitle()
+        .pageHeadNavigationTitle(String(localized: "Pixels"))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { editing = .new } label: {

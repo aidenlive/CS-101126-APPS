@@ -35,9 +35,8 @@ struct ResourceListScreen: View {
             if let model {
                 ResourceListView(model: model)
             } else {
-                ListSkeletonView()
-                    .navigationTitle(kind.pluralTitle)
-                    .inlineNavigationTitle()
+                ListSkeletonView(head: kind.pageHead)
+                    .pageHeadNavigationTitle(kind.pluralTitle)
             }
         }
         .task {
@@ -79,13 +78,13 @@ private struct ResourceListView: View {
                 actionTitle: kind.createTitle,
                 action: { isComposing = true }
             ),
+            head: kind.pageHead,
             retry: { [list = model.list] in await list.refresh() }
         ) { _ in
             rows
         }
         .background(Color.studioBg)
-        .navigationTitle(kind.pluralTitle)
-        .inlineNavigationTitle()
+        .pageHeadNavigationTitle(kind.pluralTitle)
         .searchable(text: $model.searchText, prompt: Text(kind.searchPrompt))
         .task(id: model.searchText) { [model] in
             // Debounced: the server is asked once typing pauses.
@@ -159,7 +158,7 @@ private struct ResourceListView: View {
 
     private var rows: some View {
         List {
-            ListPageHead(kicker: kind.kicker, title: kind.pluralTitle, description: kind.blurb)
+            ListPageHead(kind.pageHead)
             if let error = model.list.refreshError {
                 RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
                     .studioClearRow()
@@ -241,6 +240,13 @@ private struct ResourceListView: View {
                                       message: error.asAPIError.localizedDescription)
         }
         pendingDelete = nil
+    }
+}
+
+extension ResourceKind {
+    /// The list's page head, in every state of the list.
+    var pageHead: ListPageHeadContent {
+        ListPageHeadContent(kicker: kicker, title: pluralTitle, description: blurb)
     }
 }
 

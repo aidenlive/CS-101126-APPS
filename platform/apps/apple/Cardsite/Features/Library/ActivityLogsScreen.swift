@@ -101,6 +101,13 @@ struct ActivityLogsView: View {
         _model = State(initialValue: model)
     }
 
+    /// The page head, kept in every state of the list.
+    private static let pageHead = ListPageHeadContent(
+        kicker: String(localized: "Account"),
+        title: String(localized: "Activity Logs"),
+        description: String(localized: "Sign-ins and security changes on your account.")
+    )
+
     var body: some View {
         @Bindable var model = model
         ListStateView(
@@ -114,13 +121,12 @@ struct ActivityLogsView: View {
                     ? String(localized: "Try another search or device.")
                     : String(localized: "Sign-ins and account activity will appear here.")
             ),
+            head: Self.pageHead,
             skeleton: .textRows,
             retry: { [list = model.list] in await list.refresh() }
         ) { entries in
             List {
-                ListPageHead(kicker: String(localized: "Account"),
-                             title: String(localized: "Activity Logs"),
-                             description: String(localized: "Sign-ins and security changes on your account."))
+                ListPageHead(Self.pageHead)
                 if let error = model.list.refreshError {
                     RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
                         .studioClearRow()
@@ -152,8 +158,7 @@ struct ActivityLogsView: View {
             .refreshable { [list = model.list] in await list.refresh() }
         }
         .background(Color.studioBg)
-        .navigationTitle("Activity Logs")
-        .inlineNavigationTitle()
+        .pageHeadNavigationTitle(String(localized: "Activity Logs"))
         .searchable(text: $model.searchText, prompt: Text("Search by IP, city, browser…"))
         .onSubmit(of: .search) { Task { await model.applySearch() } }
         .onChange(of: model.searchText) { _, text in

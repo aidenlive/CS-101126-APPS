@@ -41,6 +41,13 @@ struct InboxView: View {
     let model: InboxModel
     @State private var actionError: String? = nil
 
+    /// The page head, kept in every state of the list.
+    private static let pageHead = ListPageHeadContent(
+        kicker: String(localized: "Account"),
+        title: String(localized: "Inbox"),
+        description: String(localized: "Announcements and updates about your account and workspaces.")
+    )
+
     var body: some View {
         @Bindable var model = model
         ListStateView(
@@ -50,14 +57,14 @@ struct InboxView: View {
                 title: String(localized: "No inbox notifications yet"),
                 message: String(localized: "Announcements and updates about your account and workspaces arrive here.")
             ),
+            head: Self.pageHead,
             skeleton: .textRows,
             retry: { [model] in await model.refresh() }
         ) { _ in
             list
         }
         .background(Color.studioBg)
-        .navigationTitle("Inbox")
-        .inlineNavigationTitle()
+        .pageHeadNavigationTitle(String(localized: "Inbox"))
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Picker("Show", selection: $model.filter) {
@@ -95,9 +102,7 @@ struct InboxView: View {
 
     private var list: some View {
         List {
-            ListPageHead(kicker: String(localized: "Account"),
-                         title: String(localized: "Inbox"),
-                         description: String(localized: "Announcements and updates about your account and workspaces."))
+            ListPageHead(Self.pageHead)
             if let error = model.list.refreshError {
                 RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
                     .studioClearRow()

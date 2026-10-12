@@ -56,13 +56,13 @@ struct UploadsView: View {
                 actionTitle: String(localized: "Upload"),
                 action: { isImportingFile = true }
             ),
+            head: pageHead,
             retry: { [model] in await model.refresh() }
         ) { _ in
             gallery
         }
         .background(Color.studioBg)
-        .navigationTitle("Uploads")
-        .inlineNavigationTitle()
+        .pageHeadNavigationTitle(String(localized: "Uploads"))
         .toolbar {
             ToolbarItem(placement: .principal) {
                 filterPicker
@@ -143,6 +143,13 @@ struct UploadsView: View {
         .fixedSize()
     }
 
+    /// The page head, kept in every state: the gallery draws it above the
+    /// grid, and the empty, loading and error states above themselves.
+    private var pageHead: ListPageHeadContent {
+        ListPageHeadContent(kicker: String(localized: "Tools"), title: String(localized: "Uploads"),
+                            description: headDescription)
+    }
+
     /// The web's page description, with the storage this workspace uses.
     private var headDescription: String {
         let lead = String(localized: "Images and files this workspace stores, to use anywhere an address is asked for.")
@@ -153,8 +160,8 @@ struct UploadsView: View {
     private var gallery: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: StudioSpace.s6) {
-                StudioPageHead(kicker: String(localized: "Tools"), title: String(localized: "Uploads"),
-                               description: headDescription)
+                StudioPageHead(kicker: pageHead.kicker, title: pageHead.title,
+                               description: pageHead.description)
                 if let error = model.list.refreshError {
                     RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
                 }

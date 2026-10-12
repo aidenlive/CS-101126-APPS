@@ -56,10 +56,9 @@ struct StatisticsScreen: View {
             }
         }
         .background(Color.studioBg)
-        .navigationTitle(linkID == nil ? Text("Statistics") : Text("Link Statistics"))
-        #if os(iOS) || os(visionOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
+        .pageHeadNavigationTitle(linkID == nil
+            ? String(localized: "Statistics")
+            : String(localized: "Link Statistics"))
         .task {
             if model == nil {
                 let model = StatisticsModel(client: app.client, target: StatisticsTarget(linkID: linkID))

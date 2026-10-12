@@ -15,9 +15,10 @@ import StudioKit
  are kept.
 
  Full-width list destinations (resource lists, Organize, Library, Inbox,
- Workspace) open with ``ListPageHead`` as their first section and an inline
- navigation title; split-view list columns and Forms keep the native large
- title (PARITY-PLAN §6).
+ Workspace) open with ``ListPageHead`` as their first section and use
+ ``pageHeadNavigationTitle(_:)``, which keeps the inline bar title empty
+ until the head scrolls away; split-view list columns and Forms keep the
+ native large title (PARITY-PLAN §6).
  */
 
 extension View {
@@ -97,7 +98,7 @@ private struct MeasuredScrollContent: ViewModifier {
 
 /// The page head of a full-width list destination, as its first section:
 /// kicker, display title and the web's one-line description, on the page
-/// background. Pair it with ``inlineNavigationTitle()`` so the title
+/// background. Pair it with ``pageHeadNavigationTitle(_:)`` so the title
 /// doesn't appear twice.
 ///
 ///     List {
@@ -129,6 +130,18 @@ extension ListPageHead where Actions == EmptyView {
     init(kicker: String, title: String, accent: String = "", description: String? = nil) {
         self.init(kicker: kicker, title: title, accent: accent, description: description) { EmptyView() }
     }
+
+    init(_ content: ListPageHeadContent) {
+        self.init(kicker: content.kicker, title: content.title, description: content.description)
+    }
+}
+
+/// A page head's words, for the states that draw it before the content
+/// exists (``ListStateView``'s skeleton, empty and error states).
+struct ListPageHeadContent {
+    let kicker: String
+    let title: String
+    var description: String? = nil
 }
 
 extension View {
@@ -139,6 +152,44 @@ extension View {
         return navigationBarTitleDisplayMode(.inline)
         #else
         return self
+        #endif
+    }
+
+    /// The title of a page that opens with its own head (``ListPageHead``
+    /// or `StudioPageHead`): on iOS the inline bar title stays empty while
+    /// the head is on screen, so the page doesn't say its name twice, and
+    /// fades in once the content scrolls under the bar, as Apple's own
+    /// header pages do. The Mac keeps it as the window title throughout.
+    ///
+    /// Apply it to the screen's root, outside any state switch: it watches
+    /// whichever scroll view the screen is showing.
+    func pageHeadNavigationTitle(_ title: String) -> some View {
+        modifier(PageHeadNavigationTitle(title: title))
+    }
+}
+
+private struct PageHeadNavigationTitle: ViewModifier {
+    let title: String
+    @State private var isScrolledPastHead = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        #if os(iOS) || os(visionOS)
+        content
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                // Once the kicker and the first line of the title have gone
+                // under the bar.
+                geometry.contentOffset.y + geometry.contentInsets.top > StudioSpace.s16
+            } action: { _, isPast in
+                withAnimation(reduceMotion ? nil : StudioAnimation.base) {
+                    isScrolledPastHead = isPast
+                }
+            }
+            .navigationTitle(isScrolledPastHead ? title : "")
+            .navigationBarTitleDisplayMode(.inline)
+        #else
+        content
+            .navigationTitle(title)
         #endif
     }
 }
@@ -157,6 +208,12 @@ extension View {
     /// Sizes a sheet's root view: `presentationSizing` on iPad (iOS 18),
     /// minimum and ideal frames on the Mac. Apply it to the sheet's
     /// outermost view (usually its `NavigationStack`).
+    ///
+    /// On iOS the sheet itself is painted `studioBg`, so the page colour
+    /// reaches the sheet's edges whatever its content measures (a short
+    /// `ScrollView`, the keyboard's safe area, a detent change) and the
+    /// whole sheet is one surface, as `studioForm()` and `studioList()`
+    /// paint a page.
     @ViewBuilder
     func cardsiteSheet(_ size: CardsiteSheetSize) -> some View {
         #if os(macOS)
@@ -167,10 +224,13 @@ extension View {
         )
         #else
         // Two branches: `.page` and `.form` are different sizing types.
-        switch size {
-        case .page: presentationSizing(.page)
-        case .form: presentationSizing(.form)
+        Group {
+            switch size {
+            case .page: self.presentationSizing(.page)
+            case .form: self.presentationSizing(.form)
+            }
         }
+        .presentationBackground(Color.studioBg)
         #endif
     }
 }
@@ -187,7 +247,6 @@ extension View {
             .studioRowBackground()
         }
         .studioList()
-        .navigationTitle("Projects")
-        .inlineNavigationTitle()
+        .pageHeadNavigationTitle("Projects")
     }
 }

@@ -187,8 +187,8 @@ struct ResourceMenuItems: View {
 }
 
 extension View {
-    /// The same actions as ``ResourceMenuItems``, as swipes: Copy Link and
-    /// Open in Browser leading; Delete, Duplicate and Statistics trailing.
+    /// The same actions as ``ResourceMenuItems``, as swipes: Turn On / Turn
+    /// Off (full swipe), Copy Link and Open in Browser leading; Delete, Duplicate and Statistics trailing.
     func resourceSwipeActions(_ actions: ResourceActionSet) -> some View {
         modifier(ResourceSwipeActions(actions: actions))
     }
@@ -218,6 +218,12 @@ private struct ResourceSwipeActions: ViewModifier {
                 }
             }
             .swipeActions(edge: .leading) {
+                // First, so a full swipe flips the state, as Mail's
+                // read/unread does. Rows hide their switch in compact width.
+                if let setEnabled = actions.setEnabled, let isEnabled = actions.isEnabled {
+                    Button { setEnabled(!isEnabled) } label: { ResourceVerb.toggle(isEnabled: isEnabled).label }
+                        .tint(isEnabled ? Color.studioText2 : Color.studioAccentLine)
+                }
                 if let url = actions.url {
                     Button { ResourceActionSet.copy(url, toasts: toasts) } label: { ResourceVerb.copyLink.label }
                         .tint(.studioInfo)

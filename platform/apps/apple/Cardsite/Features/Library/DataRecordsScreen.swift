@@ -105,6 +105,13 @@ struct DataRecordsView: View {
         _model = State(initialValue: model)
     }
 
+    /// The page head, kept in every state of the list.
+    private static let pageHead = ListPageHeadContent(
+        kicker: String(localized: "Content"),
+        title: String(localized: "Data Records"),
+        description: String(localized: "What visitors submit through the forms on your bio pages.")
+    )
+
     var body: some View {
         ListStateView(
             state: model.list.state,
@@ -113,13 +120,12 @@ struct DataRecordsView: View {
                 title: String(localized: "No data records yet"),
                 message: String(localized: "Records are created when visitors submit forms on your bio page blocks.")
             ),
+            head: Self.pageHead,
             skeleton: .textRows,
             retry: { [list = model.list] in await list.refresh() }
         ) { records in
             List {
-                ListPageHead(kicker: String(localized: "Content"),
-                             title: String(localized: "Data Records"),
-                             description: String(localized: "What visitors submit through the forms on your bio pages."))
+                ListPageHead(Self.pageHead)
                 if let error = model.list.refreshError {
                     RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
                         .studioClearRow()
@@ -148,8 +154,7 @@ struct DataRecordsView: View {
             .refreshable { [list = model.list] in await list.refresh() }
         }
         .background(Color.studioBg)
-        .navigationTitle("Data Records")
-        .inlineNavigationTitle()
+        .pageHeadNavigationTitle(String(localized: "Data Records"))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {

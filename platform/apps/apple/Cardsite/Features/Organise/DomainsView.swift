@@ -137,6 +137,13 @@ struct DomainsView: View {
         _model = State(initialValue: model)
     }
 
+    /// The page head, kept in every state of the list.
+    private static let pageHead = ListPageHeadContent(
+        kicker: String(localized: "Organize"),
+        title: String(localized: "Domains"),
+        description: String(localized: "Serve links from your own branded domains.")
+    )
+
     var body: some View {
         ListStateView(
             state: model.list.state,
@@ -147,12 +154,11 @@ struct DomainsView: View {
                 actionTitle: String(localized: "Add Domain"),
                 action: { isAdding = true }
             ),
+            head: Self.pageHead,
             retry: { [list = model.list] in await list.refresh() }
         ) { domains in
             List {
-                ListPageHead(kicker: String(localized: "Organize"),
-                             title: String(localized: "Domains"),
-                             description: String(localized: "Serve links from your own branded domains."))
+                ListPageHead(Self.pageHead)
                 if let error = model.list.refreshError {
                     RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
                         .studioClearRow()
@@ -201,8 +207,7 @@ struct DomainsView: View {
             .refreshable { [list = model.list] in await list.refresh() }
         }
         .background(Color.studioBg)
-        .navigationTitle("Domains")
-        .inlineNavigationTitle()
+        .pageHeadNavigationTitle(String(localized: "Domains"))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { isAdding = true } label: {

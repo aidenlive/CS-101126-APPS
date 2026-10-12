@@ -132,15 +132,17 @@ struct AccountView: View {
                 }
             }
             .accessibilityElement(children: .combine)
-            Button("Edit Name") { sheet = .editName }
-            Button {
+            // Row anatomy (one rule for the whole screen): an action is
+            // accent text, with an ellipsis when it asks for more input; a
+            // value the user chooses is a label, the value in secondary ink
+            // and a chevron; a read-only value has no chevron; a push is a
+            // navigation link with the system chevron.
+            Button("Edit Name…") { sheet = .editName }
+            EditorValueRow(label: String(localized: "Timezone"),
+                           value: currentTimezone.replacingOccurrences(of: "_", with: " "),
+                           isDisabled: app.needsProfile) {
                 sheet = .timezone
-            } label: {
-                LabeledContent("Timezone") {
-                    Text(verbatim: currentTimezone.replacingOccurrences(of: "_", with: " "))
-                }
             }
-            .disabled(app.needsProfile)
         }
         .studioRowBackground()
     }

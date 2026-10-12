@@ -5,9 +5,14 @@ import CardsiteKit
 /// Full-area states for a list that has nothing to show yet: a skeleton
 /// of the list while the first page loads, the empty state with its
 /// primary action, and the error with Try Again.
+///
+/// A full-width destination passes its `head`: the page head then stays
+/// in every state (PARITY-PLAN §6), with the skeleton, the empty state or
+/// the error below it, laid out exactly as the loaded list lays it out.
 struct ListStateView<Item, Content: View>: View {
     let state: Loadable<[Item]>
     let empty: EmptyContent
+    var head: ListPageHeadContent? = nil
     var skeleton: ListSkeleton = .resourceRows
     let retry: @MainActor @Sendable () async -> Void
     @ViewBuilder let content: ([Item]) -> Content
@@ -20,11 +25,13 @@ struct ListStateView<Item, Content: View>: View {
         var action: (() -> Void)?
     }
 
-    init(state: Loadable<[Item]>, empty: EmptyContent, skeleton: ListSkeleton = .resourceRows,
+    init(state: Loadable<[Item]>, empty: EmptyContent, head: ListPageHeadContent? = nil,
+         skeleton: ListSkeleton = .resourceRows,
          retry: @escaping @MainActor @Sendable () async -> Void,
          @ViewBuilder content: @escaping ([Item]) -> Content) {
         self.state = state
         self.empty = empty
+        self.head = head
         self.skeleton = skeleton
         self.retry = retry
         self.content = content
@@ -33,23 +40,42 @@ struct ListStateView<Item, Content: View>: View {
     var body: some View {
         switch state {
         case .idle, .loading:
-            ListSkeletonView(style: skeleton)
+            ListSkeletonView(style: skeleton, head: head)
         case .failed(let error):
-            ErrorStateView(error: error, retry: retry)
+            ErrorStateView(error: error, head: head, retry: retry)
         case .loaded(let items) where items.isEmpty:
-            ScrollView {
-                StudioEmptyState(systemImage: empty.systemImage, title: empty.title, message: empty.message) {
-                    if let actionTitle = empty.actionTitle, let action = empty.action {
-                        StudioButton(actionTitle, systemImage: "plus", variant: .primary, action: action)
+            if let head {
+                // The same List as the loaded state, so the head doesn't move
+                // when the first item arrives.
+                List {
+                    ListPageHead(head)
+                    Section {
+                        emptyState
+                            .listRowInsets(EdgeInsets())
+                            .studioClearRow()
                     }
                 }
-                .padding(StudioSpace.s6)
-                .readableWidth(.sheet)
+                .studioList()
+                .refreshable { [retry] in await retry() }
+            } else {
+                ScrollView {
+                    emptyState
+                        .padding(StudioSpace.s6)
+                        .readableWidth(.sheet)
+                }
+                .background(Color.studioBg)
+                .refreshable { [retry] in await retry() }
             }
-            .background(Color.studioBg)
-            .refreshable { [retry] in await retry() }
         case .loaded(let items):
             content(items)
+        }
+    }
+
+    private var emptyState: some View {
+        StudioEmptyState(systemImage: empty.systemImage, title: empty.title, message: empty.message) {
+            if let actionTitle = empty.actionTitle, let action = empty.action {
+                StudioButton(actionTitle, systemImage: "plus", variant: .primary, action: action)
+            }
         }
     }
 }
@@ -64,20 +90,41 @@ enum ListSkeleton {
 
 /// Six placeholder rows in the real row anatomy, redacted, so nothing
 /// jumps when the first page lands. VoiceOver hears one "Loading".
+///
+/// With a `head`, the page head is drawn for real above the placeholder
+/// rows; VoiceOver reads the head, then one "Loading".
 struct ListSkeletonView: View {
     var style: ListSkeleton = .resourceRows
+    var head: ListPageHeadContent? = nil
 
     var body: some View {
-        List {
-            ForEach(0..<6, id: \.self) { index in
-                row(index)
-                    .studioRowBackground()
+        if let head {
+            List {
+                ListPageHead(head)
+                Section {
+                    ForEach(0..<6, id: \.self) { index in
+                        row(index)
+                            .redacted(reason: .placeholder)
+                            .loadingAccessibility(true)
+                            .accessibilityHidden(index > 0)
+                    }
+                }
+                .studioRowBackground()
             }
+            .studioList()
+            .disabled(true)
+        } else {
+            List {
+                ForEach(0..<6, id: \.self) { index in
+                    row(index)
+                        .studioRowBackground()
+                }
+            }
+            .studioList()
+            .redacted(reason: .placeholder)
+            .disabled(true)
+            .loadingAccessibility(true)
         }
-        .studioList()
-        .redacted(reason: .placeholder)
-        .disabled(true)
-        .loadingAccessibility(true)
     }
 
     @ViewBuilder
@@ -117,33 +164,60 @@ extension View {
 }
 
 /// A full-area load failure, with Try Again when trying again can help.
+///
+/// With a `head` (a full-width destination), the page head stays above it.
 struct ErrorStateView: View {
     let error: APIError
+    var head: ListPageHeadContent? = nil
     let retry: @MainActor @Sendable () async -> Void
     @State private var isRetrying = false
 
+    init(error: APIError, head: ListPageHeadContent? = nil,
+         retry: @escaping @MainActor @Sendable () async -> Void) {
+        self.error = error
+        self.head = head
+        self.retry = retry
+    }
+
     var body: some View {
-        ScrollView {
-            StudioEmptyState(
-                systemImage: error == .offline ? "wifi.slash" : "exclamationmark.triangle",
-                title: error == .offline ? String(localized: "You’re offline") : String(localized: "Couldn’t load this"),
-                message: error.localizedDescription
-            ) {
-                if error.isRetryable || error == .offline {
-                    StudioButton(String(localized: "Try Again"), systemImage: "arrow.clockwise", variant: .outline, isLoading: isRetrying) {
-                        Task {
-                            isRetrying = true
-                            await retry()
-                            isRetrying = false
-                        }
+        if let head {
+            List {
+                ListPageHead(head)
+                Section {
+                    state
+                        .listRowInsets(EdgeInsets())
+                        .studioClearRow()
+                }
+            }
+            .studioList()
+            .refreshable { [retry] in await retry() }
+        } else {
+            ScrollView {
+                state
+                    .padding(StudioSpace.s6)
+                    .readableWidth(.sheet)
+            }
+            .background(Color.studioBg)
+            .refreshable { [retry] in await retry() }
+        }
+    }
+
+    private var state: some View {
+        StudioEmptyState(
+            systemImage: error == .offline ? "wifi.slash" : "exclamationmark.triangle",
+            title: error == .offline ? String(localized: "You’re offline") : String(localized: "Couldn’t load this"),
+            message: error.localizedDescription
+        ) {
+            if error.isRetryable || error == .offline {
+                StudioButton(String(localized: "Try Again"), systemImage: "arrow.clockwise", variant: .outline, isLoading: isRetrying) {
+                    Task {
+                        isRetrying = true
+                        await retry()
+                        isRetrying = false
                     }
                 }
             }
-            .padding(StudioSpace.s6)
-            .readableWidth(.sheet)
         }
-        .background(Color.studioBg)
-        .refreshable { [retry] in await retry() }
     }
 }
 
