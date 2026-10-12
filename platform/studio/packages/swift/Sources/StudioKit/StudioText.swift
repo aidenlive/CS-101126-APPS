@@ -75,7 +75,7 @@ private struct StudioTextModifier: ViewModifier {
         // built with `fixedSize:` because `Font.custom(_:size:)` would
         // scale relative to `.body` a second time (15pt body rendered at
         // ~145pt at AX5), and `scaled: false` would not be fixed at all.
-        let size = style.resolvedSize(for: viewport) * (scaled ? scale : 1)
+        let size = style.resolvedSize(for: viewport) * (scaled ? style.clampedScale(scale) : 1)
 
         return content
             .font(.custom(style.family, fixedSize: size))
@@ -99,6 +99,7 @@ public struct StudioTwoToneTitle: View {
     private let style: StudioTextStyle
 
     @Environment(\.studioViewport) private var viewport
+    @ScaledMetric private var scale: CGFloat = 1
 
     public init(_ lead: String, accent: String, style: StudioTextStyle = .display) {
         self.lead = lead
@@ -107,16 +108,18 @@ public struct StudioTwoToneTitle: View {
     }
 
     public var body: some View {
-        let size = style.resolvedSize(for: viewport)
+        // Scaled once, and capped like every display style (see
+        // `clampedScale`), so a headline never breaks inside a word.
+        let size = style.resolvedSize(for: viewport) * style.clampedScale(scale)
 
         // Concatenating Text keeps this a single laid-out paragraph, so the
         // two faces share a baseline and wrap together.
         return (
             Text(lead)
-                .font(.custom(style.family, size: size))
+                .font(.custom(style.family, fixedSize: size))
                 .fontWeight(style.weight)
             + Text(accent)
-                .font(.custom(StudioFontFamily.serif, size: size))
+                .font(.custom(StudioFontFamily.serif, fixedSize: size))
                 .italic()
                 .foregroundColor(.studioText3)
         )
@@ -127,6 +130,24 @@ public struct StudioTwoToneTitle: View {
 }
 
 public extension StudioTextStyle {
+
+    /// The most a style grows with Dynamic Type. Display sizes are already
+    /// large, and scaling them with body text breaks words mid-letter at
+    /// accessibility sizes ("Upload / s"); Apple caps large titles the same
+    /// way. Body, UI and label styles scale without limit.
+    var maxDynamicScale: CGFloat {
+        switch self {
+        case .displayXl, .display: return 1.15
+        case .title: return 1.3
+        case .titleSm, .serifAccent: return 1.6
+        default: return .greatestFiniteMagnitude
+        }
+    }
+
+    /// `scale` (from `@ScaledMetric`) capped at `maxDynamicScale`.
+    func clampedScale(_ scale: CGFloat) -> CGFloat {
+        Swift.min(scale, maxDynamicScale)
+    }
 
     /// The point size for a width band.
     ///

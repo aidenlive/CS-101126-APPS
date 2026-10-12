@@ -110,6 +110,8 @@ struct Harness {
     let app: XCUIApplication
     let test: XCTestCase
     let variant: Variant
+    /// The launch arguments without a starting destination, for relaunches.
+    private let baseArguments: [String]
 
     /// Identifiers looked up and not found, across the test run, so a run
     /// can report which ones the app still needs.
@@ -125,9 +127,22 @@ struct Harness {
         if empty { arguments.append("-CardsiteFixturesEmpty") }
         arguments += variant.launchArguments
         arguments += ["-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-ApplePersistenceIgnoreState", "YES"]
+        baseArguments = arguments
         app.launchArguments = arguments
         app.launch()
         waitForLaunch()
+    }
+
+    /// Relaunches straight onto `destination` (fixture mode's debug-only
+    /// `-CardsiteOpen`), for when the tab bar or sidebar can't be driven.
+    /// The screenshot is what matters; the navigation is covered by the
+    /// journeys.
+    private func relaunch(opening destination: Destination) -> Bool {
+        app.terminate()
+        app.launchArguments = baseArguments + ["-CardsiteOpen", destination.rawValue]
+        app.launch()
+        waitForLaunch()
+        return waitForScreen(destination)
     }
 
     /// Waits for the first real screen: the sign-in form or the signed-in
@@ -402,11 +417,11 @@ struct Harness {
     func open(_ destination: Destination) -> Bool {
         if isShowing(destination) { return true }
         #if os(macOS)
-        return openOnMac(destination)
+        if openOnMac(destination) { return true }
         #else
-        if Device.isPhone { return openOnPhone(destination) }
-        return openOnPad(destination)
+        if Device.isPhone ? openOnPhone(destination) : openOnPad(destination) { return true }
         #endif
+        return relaunch(opening: destination)
     }
 
     #if os(macOS)

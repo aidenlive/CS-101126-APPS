@@ -1,24 +1,24 @@
 # Native apps: Apple launch plan and status
 
-**Status:** `BUILT, NOT YET COMPILED` · **Updated:** 2026-10-12 · **Repo:** `aidenlive/CS-101126-APPS` · Plan: [`PARITY-PLAN.md`](PARITY-PLAN.md) · Code: [`platform/apps/apple/`](../../platform/apps/apple/README.md)
+**Status:** `COMPILES ON CI · UI TESTS IN PROGRESS` · **Updated:** 2026-10-12 · **Repo:** `aidenlive/CS-101126-APPS` · Plan: [`PARITY-PLAN.md`](PARITY-PLAN.md) · Code: [`platform/apps/apple/`](../../platform/apps/apple/README.md)
 
-The honest summary: Cardsite® for iPhone, iPad, Mac, Apple Vision Pro and
-Apple Watch is now written to web parity (PARITY-PLAN waves 0–3), with
-widgets, Siri and Shortcuts, and a share extension. **None of it has been
-compiled or run.** There is no Swift toolchain in this workspace, and GitHub
-Actions on `aidenlive/CS-101126-APPS` refuses to start any job ("recent
-account payments have failed or your spending limit needs to be
-increased"), so the macOS runners that are meant to be the compiler, the
-test runner and the camera have never run (A23).
+The summary: Cardsite® for iPhone, iPad, Mac, Apple Vision Pro and Apple
+Watch is written to web parity (PARITY-PLAN waves 0–3), with widgets, Siri
+and Shortcuts, and a share extension. Since 12 Oct, when the repo went public
+and GitHub Actions started running (A23), **every target compiles on CI**
+(iOS with widgets, share extension and watch app; macOS; visionOS; watchOS)
+and **every CardsiteKit and StudioKit test passes**.
 
-What *is* proven: every request the app makes, against a live API built from
-source (332/332 assertions); Swift syntax (tree-sitter); the Studio design
-lint; and that `project.yml` and the workflow parse. The design review read
-the source only; no screen has been rendered.
+What is proven: the builds and unit tests above; every request the app makes,
+against a live API built from source (332/332 assertions); the Studio design
+lint; and the first rendered screens (iPad sign-in, Mac Home and empty
+states), reviewed and fixed. Not yet proven: the UI test journeys and the
+full screenshot set (the harness is being fixed for each platform's
+navigation), a Release archive, signing, and anything on a real device.
 
-The apps **cannot ship on the main launch day** unless A23 is fixed (or a Mac
-is used), the compile errors are fixed, the device checklist passes, and App
-Review passes (Apple: 50% of submissions in under 24 h, 90% in under 48 h).
+The apps **cannot ship on the main launch day** unless the owner items (A1–A3,
+A7–A12, A25), the device checklist and App Review are done (Apple: 50% of
+submissions in under 24 h, 90% in under 48 h).
 
 ## 1. Assessment (what existed on 11 Oct 2026)
 
@@ -122,7 +122,7 @@ notes, privacy label, age rating and screenshot plan
 - `screens`: the UI tests on iPhone 17 Pro Max, iPad Pro 13" and Mac, which run the journeys and capture every screen in light, dark and AX XXXL;
 - `screens-publish`: commits the PNGs to the orphan `screens` branch under `runs/<sha>/`.
 
-Compiler errors become check-run annotations. **No job has ever run** (A23).
+Compiler errors become check-run annotations. Jobs run since 12 Oct.
 
 ### Supporting changes
 
@@ -144,17 +144,18 @@ Compiler errors become check-run annotations. **No job has ever run** (A23).
 | `project.yml` and `apple.yml` parse | **Verified** (re-run 12 Oct) | PyYAML. That XcodeGen accepts the spec is **not verified** |
 | Code review as a compiler would read it | **Done**, not proof: Swift 6 concurrency, availability and platform gates were checked by reading (commits `9efc62b`, `0dd5145`) | Source review only |
 | Design review | **Source-only**, 12 Oct: 5 P0, about 20 P1 and 18 P2 findings plus 9 systemic fixes ([`DESIGN-REVIEW.md`](DESIGN-REVIEW.md)). No screen was rendered. Fixes in progress | Read the SwiftUI source |
-| App compiles: iOS, macOS, visionOS, watchOS, widgets, share extension | **Not verified** | CI `app`, blocked by A23. Never compiled anywhere |
-| CardsiteKit tests (113) and StudioKit tests (16) | **Written, not run** | CI `kit`, blocked by A23 |
-| UI tests: 4 screenshot passes and 5 journeys on iPhone, iPad, Mac | **Written, not run** | CI `screens`, blocked by A23 |
-| Screenshots | **Not produced** | CI `screens` → `screens` branch |
+| App compiles: iOS (with widgets, share extension and embedded watch app), macOS, visionOS, watchOS | **Verified** 12 Oct on CI (Xcode 26, `macos-26`), Debug, signing off. First green at `d886216` after 4 fix rounds | CI `app` matrix. A Release archive is **not verified** |
+| CardsiteKit tests (113) and StudioKit tests (16) | **Verified**: all pass on CI, and CardsiteKit also builds for watchOS | CI `kit` |
+| UI tests: 4 screenshot passes and 5 journeys on iPhone, iPad, Mac | **Running, not yet green**: the app launches in fixture mode on the iPhone 17 Pro Max simulator, the iPad Pro 13" simulator and the Mac runner. The harness is being fixed for platform navigation | CI `screens` |
+| Screenshots | **Partly produced**: first iPad (sign-in/up) and Mac (empty states, Home) captures on the `screens` branch and reviewed. Fixes from them are in | CI `screens` → `screens` branch |
 | Widgets, share extension, intents, watch session relay | **Not verified**; they also need a signed build with A25 provisioned | Device only |
 | Critical journeys on a device | **Not verified** | [Device checklist](#device-checklist) |
 | API changes (ADR-0175, `Retry-After`) | **Verified** on 11 Oct | `go test ./...` with Postgres, in CS-CORE |
 
-Expect the first Xcode build to report many compile errors: about 37,500
-lines have never met a compiler. Budget a day for them, more for the
-extensions and the watch app.
+The first CI compile (12 Oct, after the repo went public) needed four small
+fixes: a duplicate memberwise initializer, a type-checker time-out and a
+nested `ForEach` crash in the tab builder, and an API that doesn't exist on
+visionOS. Every target has built since.
 
 ### Device checklist
 
@@ -217,12 +218,12 @@ take). "Built" means the code is written but not compiled.
 | A1 | Apple Developer Program membership for Cardsite, Inc. (organisation, D-U-N-S) | owner | Team ID known | **unknown** |
 | A2 | Decide bundle ID (N1) and production API host (N2); set `Config/*.xcconfig` | owner → apple | Values committed | open |
 | A3 | App Store Connect record (iOS, macOS and visionOS; universal purchase; the watch app inside the iOS app), agreements, tax, banking, DSA trader status | owner | Record exists | open |
-| A4 | First Xcode 27 build of every target (app on iOS, macOS and visionOS; widgets; share extension; watch app); fix compile errors; zero Swift 6 concurrency errors | apple | CI `app` green | open. **Blocked by A23**, or a Mac |
-| A5 | `swift test` green for CardsiteKit (113) and StudioKit (16) | apple | CI `kit` green | open. Written, not run; blocked by A23 |
+| A4 | First Xcode 27 build of every target (app on iOS, macOS and visionOS; widgets; share extension; watch app); fix compile errors; zero Swift 6 concurrency errors | apple | CI `app` green | **Done** 12 Oct: all four `app` jobs green |
+| A5 | `swift test` green for CardsiteKit (113) and StudioKit (16) | apple | CI `kit` green | **Done** 12 Oct: `kit` green |
 | A6 | Device checklist 1–23 passes on iPhone, iPad, Mac, Apple Watch and Vision Pro; UI tests green | apple, verify | CI `screens` green; screenshots on the `screens` branch | open |
 | A7 | Production API reachable over HTTPS with the deploy (G5: O1, O2) | infra, owner | `curl https://<host>/api/v1/plans` → 200 | **blocked on owner** (O1, O2) |
 | A8 | Legal texts approved (G7: O5); the Privacy Policy matches the privacy label | owner, content | Counsel sign-off; label confirmed | **blocked on owner** (O5) |
-| A9 | Font licences cover embedding Certia, Bounded and Editorial New **in an app binary**, including the extensions (O6, extended) | owner | Written confirmation | **blocked on owner** (O6) |
+| A9 | Font licences cover embedding Certia, Bounded and Editorial New **in an app binary**, including the extensions (O6, extended) | owner | Written confirmation | **blocked on owner** (O6). Since 12 Oct the repo is public, so the font files under `platform/studio/packages/swift/Sources/StudioKit/Resources/Fonts` are publicly downloadable; confirm the licences allow that, or move the repo back to private with Actions billing fixed |
 | A10 | App Review demo account on a paid plan, seeded; screenshots for every required size (see A24 for iPhone Duo) | apple, owner | Uploaded | open. The plan is in `AppStore/README.md`; CI captures iPhone, iPad and Mac once A23 is fixed |
 | A11 | Submit for review; respond to findings | apple | "Ready for Sale" | open |
 | A12 | CAPTCHA stays **off** for login and register while the app is live (a native client can't complete it) | owner | Admin setting confirmed off | open |
@@ -236,7 +237,7 @@ take). "Built" means the code is written but not compiled.
 | A20 | Widgets (Link Traffic, My QR Code), App Intents (Create Short Link, Show QR Code, Get Link Clicks), share extension | apple | Device checklist 16–18 | **Built, not compiled**. Now in 1.0 scope |
 | A21 | iPhone Duo layout and screenshots | apple | — | Moved to A24 |
 | A22 | Bio page editing (blocks and settings) and file editing in the app | apple | Device checklist 9, 11 | **Built, not compiled**. Also built: watchOS companion (N9) and the visionOS destination; device checklist 19–20 |
-| A23 | **Fix GitHub Actions billing** on `aidenlive/CS-101126-APPS`. Every job is refused: "recent account payments have failed or your spending limit needs to be increased". Until then nothing compiles, no test runs and no screenshot exists | **owner** | A workflow run starts; `apple` jobs report | **P0, open.** The single biggest blocker |
+| A23 | **Fix GitHub Actions billing** on `aidenlive/CS-101126-APPS`. Every job is refused: "recent account payments have failed or your spending limit needs to be increased". Until then nothing compiles, no test runs and no screenshot exists | **owner** | A workflow run starts; `apple` jobs report | **Done** 12 Oct: the repo was made public, which makes the standard runners free |
 | A24 | iPhone Duo (foldable, iOS 27.1, from 23 Oct 2026) layout: `ArrangementView`, hinge-aware `ReservedRegion`, both displays; screenshots (outer 1398 × 2034, inner 2007 × 2853) | apple | Duo screenshots uploaded | P1. Required from **April 2027** for builds made with the iOS 27.1 SDK or later. Not needed for a 1.0 built with the 27.0 SDK |
 | A25 | Provision the **App Group** `group.<bundle ID>` and the **keychain group** `<team>.<bundle ID>.shared` for the app, CardsiteWidgets (`.widgets`), CardsiteShare (`.share`) and CardsiteWatch (`.watchkitapp`); App IDs for all four bundles; the watch app ID set as a companion of the iOS app | owner → apple | A signed build shares the session: the widget and share extension see the signed-in user | open. Needs A1 and N1. Unsigned CI builds turn sharing off |
 | A26 | **Server issues found by the agents**, to fix in `apps/api`. The app works around each one where it can | api | Each fixed, with a contract assertion turned from `note` to pass | open; see the list below |

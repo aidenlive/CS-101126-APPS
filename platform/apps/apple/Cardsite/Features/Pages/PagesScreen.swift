@@ -62,15 +62,19 @@ struct PagesScreen: View {
                                  title: String(localized: "Select a page"),
                                  message: String(localized: "Its blocks appear here, ready to edit."))
                     .navigationTitle("Pages")
+                    #if os(macOS)
+                    .navigationSplitViewColumnWidth(min: 300, ideal: 360)
+                    #endif
             }
         } detail: {
             if let editor {
                 EditorDetailColumn(editor: editor, isCompact: isCompact)
                     .id(editor.pageID)
             } else {
-                SplitPlaceholder(systemImage: "rectangle.and.pencil.and.ellipsis",
-                                 title: String(localized: "No page open"),
-                                 message: String(localized: "Choose a page, then a block, to edit it here."))
+                // The middle column already says what to do; one prompt
+                // reads calmer than two side by side.
+                Color.studioBg
+                    .ignoresSafeArea()
                     .navigationTitle("Pages")
             }
         }

@@ -56,7 +56,7 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
                             .transition(.opacity)
                     }
                 }
-                Text(verbatim: title)
+                Text(verbatim: Self.breakable(title))
                     .studioText(.title)
                     .foregroundStyle(Color.studioText)
                     .textSelection(.enabled)
@@ -75,8 +75,11 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
                         .lineLimit(2)
                         .truncationMode(.middle)
                 }
+                // Full row; else Copy Link plus icon buttons on one line (an
+                // iPhone width); else stacked (accessibility sizes).
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: StudioSpace.s2) { buttons }
+                    HStack(spacing: StudioSpace.s2) { compactButtons }
                     VStack(alignment: .leading, spacing: StudioSpace.s2) { buttons }
                 }
                 .padding(.top, StudioSpace.s1)
@@ -149,6 +152,37 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
             .accessibilityHint(cardHint.map { Text($0) } ?? Text(""))
         }
         actions()
+    }
+
+    @ViewBuilder
+    private var compactButtons: some View {
+        if let url {
+            StudioButton(copied ? String(localized: "Copied") : ResourceVerb.copyLink.title,
+                         systemImage: copied ? "checkmark" : ResourceVerb.copyLink.systemImage,
+                         variant: .primary) {
+                copy(url)
+            }
+            StudioIconButton(systemImage: ResourceVerb.openInBrowser.systemImage,
+                             label: ResourceVerb.openInBrowser.title) {
+                openURL(url)
+            }
+        }
+        if let cardURL {
+            StudioIconButton(systemImage: ResourceVerb.showCard.systemImage,
+                             label: ResourceVerb.showCard.title) {
+                openURL(cardURL)
+            }
+            .accessibilityHint(cardHint.map { Text($0) } ?? Text(""))
+        }
+        actions()
+    }
+
+    /// Lets an address wrap after a dot or slash ("links.example.com/
+    /// launch") instead of inside a word.
+    static func breakable(_ address: String) -> String {
+        address
+            .replacingOccurrences(of: ".", with: ".\u{200B}")
+            .replacingOccurrences(of: "/", with: "/\u{200B}")
     }
 
     @ViewBuilder

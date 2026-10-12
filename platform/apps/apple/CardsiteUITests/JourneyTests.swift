@@ -46,7 +46,18 @@ final class JourneyTests: XCTestCase {
         try openNewestLink(ui)
         let edited = "https://example.com/edited-by-journey"
 
-        if let field = ui.textField("link.detail.destination", timeout: 5),
+        // The editor is a lazy Form: below the fold on iPhone the field
+        // doesn't exist until it's scrolled to.
+        var destinationField = ui.textField("link.detail.destination", timeout: 3)
+        #if os(iOS)
+        var swipes = 0
+        while destinationField == nil && swipes < 4 {
+            ui.app.swipeUp()
+            swipes += 1
+            destinationField = ui.textField("link.detail.destination", timeout: 1)
+        }
+        #endif
+        if let field = destinationField,
            [.textField, .textView].contains(field.elementType) {
             ui.replaceText(in: field, with: edited)
             ui.tap("link.detail.save", labels: ["Save", "Done"], timeout: 3)

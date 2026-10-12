@@ -47,6 +47,13 @@ enum FixtureMode {
 
     /// From `-AppleInterfaceStyle Dark` or `Light` (the argument domain of
     /// `UserDefaults`). Nil follows the system.
+    /// `-CardsiteOpen <destination raw value>`: the screen the signed-in
+    /// shell opens on, so UI tests can capture any screen directly.
+    static var initialDestination: String? {
+        guard isEnabled else { return nil }
+        return UserDefaults.standard.string(forKey: "CardsiteOpen")
+    }
+
     static var colorScheme: ColorScheme? {
         guard isEnabled else { return nil }
         switch UserDefaults.standard.string(forKey: "AppleInterfaceStyle")?.lowercased() {

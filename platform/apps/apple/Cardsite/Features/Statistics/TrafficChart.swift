@@ -68,6 +68,8 @@ struct TrafficChart: View {
             }
         }
         .chartYScale(domain: 0...max(1, maxValue))
+        // Room at the trailing edge so the last date label isn't clipped ("O…").
+        .chartXScale(range: .plotDimension(endPadding: StudioSpace.s6))
         .frame(minHeight: height)
         .animation(reduceMotion ? nil : StudioAnimation.out, value: days)
         .accessibilityLabel(Text("Traffic over time"))

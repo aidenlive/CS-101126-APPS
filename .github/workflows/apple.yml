@@ -231,6 +231,37 @@ jobs:
         if: always()
         run: python3 CardsiteUITests/ci/export-screens.py screens.xcresult "screens/${{ matrix.device.slug }}"
 
+      # The session can read the screens branch but not job logs, so the
+      # test log tail and (on the Mac) a launch diagnosis go there too.
+      - name: logs to the screens branch
+        if: always()
+        run: |
+          mkdir -p "screens/${{ matrix.device.slug }}/failures"
+          if [ -f test.log ]; then
+            grep -E "error|failed|Test Case|Assertion|crash|Fatal|fixture|Cardsite\[" test.log | tail -n 400 \
+              > "screens/${{ matrix.device.slug }}/failures/test-log-tail.txt" || true
+          fi
+
+      - name: Mac launch diagnosis
+        if: always() && matrix.device.slug == 'mac'
+        run: |
+          D="screens/mac/failures"; mkdir -p "$D"
+          APP=$(find DerivedData/Build/Products -maxdepth 2 -name "Cardsite.app" -type d | head -n 1)
+          echo "app: $APP" > "$D/launch-diagnosis.txt"
+          if [ -n "$APP" ]; then
+            "$APP/Contents/MacOS/Cardsite" -CardsiteFixtures -ApplePersistenceIgnoreState YES > "$D/launch-stdout.txt" 2>&1 &
+            PID=$!
+            sleep 20
+            echo "alive: $(kill -0 $PID 2>/dev/null && echo yes || echo no)" >> "$D/launch-diagnosis.txt"
+            screencapture -x "$D/launch-screen.png" || true
+            sample $PID 3 -file "$D/launch-sample.txt" >/dev/null 2>&1 || true
+            osascript -e 'tell application "System Events" to get name of every window of (every process whose unix id is '"$PID"')' >> "$D/launch-diagnosis.txt" 2>&1 || true
+            kill $PID 2>/dev/null || true
+          fi
+          ls -t ~/Library/Logs/DiagnosticReports 2>/dev/null | grep -i cardsite | head -n 3 | while read f; do
+            cp "$HOME/Library/Logs/DiagnosticReports/$f" "$D/crash-$f.txt"; done
+          log show --last 3m --style compact --predicate 'process == "Cardsite"' 2>/dev/null | tail -n 300 > "$D/launch-log.txt" || true
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:

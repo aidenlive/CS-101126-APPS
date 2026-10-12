@@ -98,6 +98,11 @@ struct MainView: View {
                 inbox.onError = model.handle
                 router.tab = MainTab(storageKey: storedTab)
                 router.adapt(isCompact: isCompact)
+                #if DEBUG
+                if let raw = FixtureMode.initialDestination, let destination = AppDestination(rawValue: raw) {
+                    router.open(destination)
+                }
+                #endif
             }
             .onChange(of: isCompact) { _, compact in
                 router.adapt(isCompact: compact)
