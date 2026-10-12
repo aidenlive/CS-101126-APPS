@@ -110,10 +110,15 @@ struct CardsiteResourceRow<Trailing: View>: View {
             if let pill { pill }
         } else {
             HStack(spacing: StudioSpace.s2) {
+                // One line, truncated in the middle: an address keeps its
+                // host and its slug end ("card.site/su…sale") instead of
+                // breaking inside a word in a narrow column.
                 title
                     .studioText(.ui)
                     .foregroundStyle(Color.studioText)
-                    .lineLimit(2)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .layoutPriority(1)
                 if let pill { pill.fixedSize() }
             }
         }

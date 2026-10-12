@@ -151,7 +151,7 @@ struct WorkspaceMenuItems: View {
 
     /// "PERSONAL" or "SHARED · ADMIN" (rendered in the uppercase meta style).
     static func describe(_ workspace: Workspace) -> String {
-        if workspace.isPersonal { return String(localized: "Personal") }
+        if workspace.isPersonal { return String(localized: "Just you") }
         let role: String
         switch workspace.workspaceRole {
         case .owner: role = String(localized: "Owner")

@@ -132,9 +132,11 @@ struct MainView: View {
             WorkspaceSwitcher()
                 .padding(.bottom, StudioSpace.s2)
                 #if os(macOS)
-                // Widens the Mac sidebar to Studio's full width so titles
-                // such as "Payment Links" aren't truncated.
-                .frame(minWidth: StudioLayout.sidebarFull - StudioSpace.s8)
+                // Widens the Mac sidebar toward Studio's full width so titles
+                // such as "Payment Links" aren't truncated (a frame on the
+                // header alone didn't widen the column).
+                .navigationSplitViewColumnWidth(min: StudioLayout.sidebarFull - StudioSpace.s12,
+                                                ideal: StudioLayout.sidebarFull - StudioSpace.s6)
                 #endif
         }
     }
