@@ -273,7 +273,7 @@ struct CreateAPITokenView: View {
                 FormErrorText(message: error)
             }
         }
-        .formStyle(.grouped)
+        .studioForm()
     }
 
     private func binding(for resource: ScopeResource) -> Binding<ScopeAccess> {

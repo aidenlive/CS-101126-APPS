@@ -976,6 +976,61 @@ expect "$J_ERR" 'a workspace you are not in → error envelope'
 save GET '/api/v1/links (X-Workspace-ID: foreign)' 26z11-links-list-foreign-workspace
 req DELETE "/api/v1/workspaces/$WS_ID"
 expect_status 200 204
+# ── 21 (cont). Organise CRUD: edit, verify, delete ──────────────────────────
+# After the links section, which attaches this project, domain and pixel to a
+# link; deleting them here also proves a delete with attachments succeeds.
+
+step "P21l. PUT /api/v1/domains/{id} (only the changed fields)"
+req PUT "/api/v1/domains/$DOMAIN_ID" '{"scheme":"https","redirect_type":"frame","custom_not_found_url":"https://example.com/404","ssl_is_enabled":true,"force_ssl":true}'
+expect_status 200
+expect ".data|$OWNED and (.id==$DOMAIN_ID) and (.scheme==\"https\") and (.redirect_type==\"frame\") and (.custom_not_found_url==\"https://example.com/404\") and (.ssl_is_enabled==true) and (.force_ssl==true) and (.forward_parameters==false) and (.is_verified==false)" 'changed fields applied, the rest kept'
+expect '.data|has("custom_index_url")|not' 'an unset custom_index_url is left out (omitempty)'
+save PUT "/api/v1/domains/{id}" 21l-domains-update-200
+
+step "P21m. POST /api/v1/domains/{id}/verify (no body)"
+req POST "/api/v1/domains/$DOMAIN_ID/verify"
+expect_status 422 503
+if [[ "$STATUS" == 422 ]]; then
+  expect ".data.id==$DOMAIN_ID and .data.is_verified==false" '422 carries the domain, recorded as unverified'
+  expect '(.error.title|type=="string") and (.error.message|type=="string") and .error.code==422' '422 carries {title,message}: the host and what to point it at'
+  save POST "/api/v1/domains/{id}/verify" 21m-domains-verify-422
+else
+  expect "$J_ERR" '503 (no DOMAIN_VERIFICATION_TARGET): error envelope, not maintenance'
+  note "verify answered 503: start the API with DOMAIN_VERIFICATION_TARGET set to capture the 422"
+  save POST "/api/v1/domains/{id}/verify" 21m-domains-verify-503
+fi
+
+step "P21n. PUT /api/v1/pixels/{id} {name,type,pixel}"
+req PUT "/api/v1/pixels/$PIXEL_ID" '{"name":"Ads","type":"linkedin","pixel":"0987654321"}'
+expect_status 200
+expect ".data|$OWNED and (.id==$PIXEL_ID) and (.type==\"linkedin\") and (.pixel==\"0987654321\")" 'provider and id changed in place'
+save PUT "/api/v1/pixels/{id}" 21n-pixels-update-200
+
+step "P21o. PUT /api/v1/projects/{id} {name,color}"
+req PUT "/api/v1/projects/$PROJECT_ID" '{"name":"Launch week","color":"#22aa66"}'
+expect_status 200
+expect '.data.color=="#22aa66"' 'recoloured'
+save PUT "/api/v1/projects/{id} {name,color}" 21o-projects-recolour-200
+
+step "P21p. DELETE /api/v1/pixels/{id}, /domains/{id}, /projects/{id}"
+req DELETE "/api/v1/pixels/$PIXEL_ID"
+expect_status 200
+expect '.data.message=="Pixel deleted"' '{message}'
+save DELETE "/api/v1/pixels/{id}" 21p-pixels-delete-200
+req DELETE "/api/v1/domains/$DOMAIN_ID"
+expect_status 200
+expect '.data.message=="Domain deleted"' '{message}'
+save DELETE "/api/v1/domains/{id}" 21q-domains-delete-200
+req DELETE "/api/v1/projects/$PROJECT_ID"
+expect_status 200
+expect '.data.message=="Project deleted"' '{message}'
+save DELETE "/api/v1/projects/{id}" 21r-projects-delete-200
+req GET "/api/v1/links/$FULL_ID"
+expect_status 200
+expect '.data.project_id==null' 'a deleted project leaves its links, unfiled (ON DELETE SET NULL)'
+req DELETE "/api/v1/projects/$PROJECT_ID"
+expect_status 404
+expect "$J_ERR" 'deleting it again → 404 envelope'
 else
   PARITY_RAN=0
   step "PARITY skipped"

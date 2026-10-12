@@ -6,8 +6,7 @@ import Foundation
 //
 // Uploads, the targeting vocabulary and plan capabilities come from the
 // shared models (`UploadItem`, `TargetingOptions`, `PlanCapabilities`).
-// Pixels carry a `Bio` prefix so this file can land beside a fuller
-// Organise model without a clash.
+// `BioPixel` and `BioPixelType` are aliases of the Organise models.
 
 // MARK: - Bio page
 
@@ -382,13 +381,16 @@ public struct BlockConflictError: Error, Sendable, Equatable {
         self.lastEditorName = lastEditorName
     }
 
-    /// Reads the name out of the 409 title, which is
-    /// `"<name> changed this block — reload it and reapply your change"`, or
-    /// `"Block was modified elsewhere — …"` when nobody can be named.
-    ///
-    /// The name also travels as `error.last_editor.name`; the shared error
-    /// envelope does not decode that yet, so the title is the source here.
-    init(serverTitle: String) {
+    /// The editor's name from the 409: `error.last_editor.name` when the
+    /// server sent one (``APIError/lastEditorName``), else read out of the
+    /// title, which is `"<name> changed this block — reload it and reapply
+    /// your change"`, or `"Block was modified elsewhere — …"` when nobody
+    /// can be named.
+    init(serverTitle: String, lastEditor: String? = nil) {
+        if let lastEditor = lastEditor?.trimmingCharacters(in: .whitespacesAndNewlines), !lastEditor.isEmpty {
+            lastEditorName = lastEditor
+            return
+        }
         let marker = " changed this block"
         if let range = serverTitle.range(of: marker) {
             let name = serverTitle[..<range.lowerBound].trimmingCharacters(in: .whitespaces)
@@ -396,6 +398,12 @@ public struct BlockConflictError: Error, Sendable, Equatable {
         } else {
             lastEditorName = nil
         }
+    }
+
+    /// The conflict an ``APIError`` describes, or nil for any other error.
+    public init?(_ error: APIError) {
+        guard case .conflict(let title, _, let lastEditor) = error else { return nil }
+        self.init(serverTitle: title, lastEditor: lastEditor)
     }
 }
 
@@ -410,50 +418,13 @@ extension BlockConflictError: LocalizedError {
 
 // MARK: - Pixels
 
-/// `GET /pixels` row.
-public struct BioPixel: Decodable, Sendable, Hashable, Identifiable {
-    public let id: Int
-    /// The provider key, matching ``BioPixelType/key``.
-    public let type: String
-    public let name: String
+/// A `GET /pixels` row. The same record the Organise screens edit
+/// (Models+Organise.swift); the name is kept for the bio page editor.
+public typealias BioPixel = TrackingPixel
 
-    enum CodingKeys: String, CodingKey { case id, type, name }
-
-    public init(id: Int, type: String, name: String) {
-        self.id = id
-        self.type = type
-        self.name = name
-    }
-}
-
-/// `GET /pixels/types` row.
-public struct BioPixelType: Decodable, Sendable, Hashable, Identifiable {
-    public let key: String
-    public let name: String
-    /// Whether a bio page can emit this provider at all: only providers with
-    /// a no-script beacon can (ADR-0096).
-    public let emitsBeacon: Bool
-
-    public var id: String { key }
-
-    enum CodingKeys: String, CodingKey {
-        case key, name
-        case emitsBeacon = "emits_beacon"
-    }
-
-    public init(key: String, name: String, emitsBeacon: Bool) {
-        self.key = key
-        self.name = name
-        self.emitsBeacon = emitsBeacon
-    }
-
-    public init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        key = try c.decode(String.self, forKey: .key)
-        name = try c.decodeIfPresent(String.self, forKey: .name) ?? key
-        emitsBeacon = try c.decodeIfPresent(Bool.self, forKey: .emitsBeacon) ?? false
-    }
-}
+/// A `GET /pixels/types` row, with whether a bio page can emit it at all
+/// (``PixelType/emitsBeacon``).
+public typealias BioPixelType = PixelType
 
 // MARK: - JSONValue display
 

@@ -47,7 +47,7 @@ struct ChangePasswordView: View {
                     }
                 }
             }
-            .formStyle(.grouped)
+            .studioForm()
             .navigationTitle("Change Password")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

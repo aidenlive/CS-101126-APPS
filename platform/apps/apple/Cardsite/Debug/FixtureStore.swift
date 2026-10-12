@@ -163,6 +163,18 @@ actor FixtureStore {
         }
         if match("GET", "spotlight") != nil { return spotlight(request.query["q"] ?? "") }
 
+        // Feature flags: none are switched on for the fixture account.
+        if match("GET", "feature-flags/evaluate") != nil { return .ok(.array([])) }
+
+        // Organise: projects, domains and pixels, validated as the handlers do.
+        if match("POST", "projects") != nil { return createProject(body) }
+        if let id = match("PUT", "projects/{}") { return updateProject(id[0], body) }
+        if match("POST", "domains") != nil { return createDomain(body) }
+        if let id = match("PUT", "domains/{}") { return updateDomain(id[0], body) }
+        if let id = match("POST", "domains/{}/verify") { return verifyDomain(id[0]) }
+        if match("POST", "pixels") != nil { return createPixel(body) }
+        if let id = match("PUT", "pixels/{}") { return updatePixel(id[0], body) }
+
         // Reference lists.
         if match("GET", "qr-codes/types") != nil { return passthrough("23a-qr-codes-types-200") }
         if match("GET", "pixels/types") != nil { return passthrough("21f-pixels-types-200") }
@@ -177,12 +189,15 @@ actor FixtureStore {
                 .sorted { ($0["order"]?.intValue ?? 0) < ($1["order"]?.intValue ?? 0) }
             return .ok(["biolink": .object(page), "blocks": .array(blocks.map(JSONValue.object))])
         }
-        if let id = match("POST", "links/{}/duplicate") { return duplicateLink(id[0]) }
-        if let id = match("POST", "domains/{}/verify") {
-            return update(in: "domains", id: id[0], with: ["is_verified": true], missing: "Domain not found")
-        }
+        if let id = match("POST", "links/{}/duplicate") { return duplicateResource(id[0]) }
+        if match("POST", "biolinks") != nil { return createBioPage(body) }
+        if let id = match("PUT", "biolinks/{}") { return updateBioPage(id[0], body) }
+        if let id = match("DELETE", "biolinks/{}") { return deleteBioPage(id[0]) }
         if match("POST", "biolink-blocks/order") != nil { return reorderBlocks(body) }
         if let id = match("PUT", "biolink-blocks/{}") { return updateBlock(id[0], body) }
+        if let id = match("DELETE", "biolink-blocks/{}") {
+            return remove(from: "biolink-blocks", id: id[0], idKey: "id", message: "Block deleted", missing: "Block not found")
+        }
 
         // Inbox.
         if match("GET", "internal-notifications/unread") != nil {
@@ -240,7 +255,7 @@ actor FixtureStore {
             if match("POST", segment) != nil, Self.creatable.contains(segment) { return create(in: segment, body) }
             if let id = match("PUT", segment + "/{}") { return update(in: segment, id: id[0], with: body, missing: missing) }
             if let id = match("DELETE", segment + "/{}") {
-                let message = segment == "uploads" ? "Upload deleted" : segment == "data" ? "Data deleted" : "Deleted"
+                let message = Self.deletedMessages[segment] ?? "Deleted"
                 return remove(from: segment, id: id[0], idKey: idKey, message: message, missing: missing)
             }
         }
@@ -258,6 +273,12 @@ actor FixtureStore {
     ]
     private static let creatable: Set<String> = [
         "qr-codes", "projects", "domains", "pixels", "splash-pages", "uploads", "biolink-blocks",
+    ]
+    /// `{message}` of each handler's DELETE.
+    private static let deletedMessages: [String: String] = [
+        "uploads": "Upload deleted", "data": "Data deleted", "projects": "Project deleted",
+        "domains": "Domain deleted", "pixels": "Pixel deleted", "biolink-blocks": "Block deleted",
+        "qr-codes": "QR code deleted",
     ]
     private static let missingTitles: [String: String] = [
         "links": "Link not found", "biolinks": "Biolink not found", "events": "Event not found",
@@ -661,23 +682,213 @@ actor FixtureStore {
         return .ok(.object(resources[index]))
     }
 
-    private func duplicateLink(_ id: String) -> FixtureReply {
-        guard var copy = resource(id, kind: "link") else { return .error(404, "Link not found") }
+    /// `POST /links/{id}/duplicate` (link_duplicate.go): any resource but a
+    /// file or static site, at `<slug>-copy` (then `-copy-2`, …), switched
+    /// off, with no clicks; a bio page also gets a copy of every block and
+    /// leaves the directory.
+    private func duplicateResource(_ id: String) -> FixtureReply {
+        guard var copy = resources.first(where: { "\($0["id"]?.intValue ?? -1)" == id }) else {
+            return .error(404, "Resource not found")
+        }
+        let kind = copy["type"]?.stringValue ?? "link"
+        guard kind != "file", kind != "static" else {
+            return .error(422, "A resource that stores a file cannot be duplicated yet")
+        }
+        let sourceID = copy["id"]?.intValue
         let base = (copy["url"]?.stringValue ?? "link") + "-copy"
         var slug = base
         var counter = 2
         while resources.contains(where: { $0["url"]?.stringValue == slug }) {
+            guard counter <= 20 else {
+                return .error(409, "No free address for the copy; rename the original or a previous copy")
+            }
             slug = "\(base)-\(counter)"
             counter += 1
         }
-        copy["id"] = .int(makeID())
+        let newID = makeID()
+        copy["id"] = .int(newID)
         copy["url"] = .string(slug)
         copy["is_enabled"] = false
         copy["clicks"] = 0
         copy["created_at"] = timestamp(0)
         copy["updated_at"] = .null
+        copy["last_used_at"] = timestamp(0)
+        copy["lifecycle_state"] = "active"
+        copy["lifecycle_state_at"] = timestamp(0)
+        if kind == "biolink" {
+            copy["directory_is_enabled"] = false
+            let blocks = rows("biolink-blocks").filter { $0["link_id"]?.intValue == sourceID }
+            for block in blocks {
+                var clone = block
+                clone["id"] = .int(makeID())
+                clone["link_id"] = .int(newID)
+                clone["clicks"] = 0
+                clone["version"] = 1
+                clone["created_at"] = timestamp(0)
+                clone["updated_at"] = .null
+                tables["biolink-blocks", default: []].append(clone)
+            }
+        }
         resources.append(copy)
         return .ok(.object(copy), status: 201)
+    }
+
+    // MARK: Bio pages
+
+    /// `POST /biolinks {url, settings, project_id?, domain_id?}`: enabled
+    /// and listed in the directory, with no blocks.
+    private func createBioPage(_ body: FixtureObject) -> FixtureReply {
+        let allowed: Set<String> = ["url", "settings", "project_id", "domain_id"]
+        let reply = createResource(kind: "biolink", body.filter { allowed.contains($0.key) })
+        guard reply.status == 201, let id = reply.body["data"]?["id"]?.intValue,
+              let index = resources.firstIndex(where: { $0["id"]?.intValue == id }) else { return reply }
+        resources[index]["directory_is_enabled"] = true
+        if body["settings"]?.objectValue == nil { resources[index]["settings"] = .object([:]) }
+        return .ok(.object(resources[index]), status: 201)
+    }
+
+    /// `PUT /biolinks/{id}`: only the fields the handler reads.
+    private func updateBioPage(_ id: String, _ body: FixtureObject) -> FixtureReply {
+        let allowed: Set<String> = [
+            "url", "settings", "display_rules", "timezone", "scheduled_at", "scheduled_end", "project_id",
+            "domain_id", "splash_page_id", "pixels_ids", "is_enabled", "directory_is_enabled",
+        ]
+        return updateResource(id, kind: "biolink", body.filter { allowed.contains($0.key) }, missing: "Biolink not found")
+    }
+
+    /// `DELETE /biolinks/{id}`: the blocks go with the page.
+    private func deleteBioPage(_ id: String) -> FixtureReply {
+        guard let index = resources.firstIndex(where: { "\($0["id"]?.intValue ?? -1)" == id && $0["type"]?.stringValue == "biolink" }) else {
+            return .error(404, "Biolink not found")
+        }
+        let pageID = resources[index]["id"]?.intValue
+        resources.remove(at: index)
+        tables["biolink-blocks"] = rows("biolink-blocks").filter { $0["link_id"]?.intValue != pageID }
+        return .message("Biolink deleted")
+    }
+
+    // MARK: Organise
+
+    private func createProject(_ body: FixtureObject) -> FixtureReply {
+        let name = body["name"]?.stringValue ?? ""
+        guard !name.isEmpty else { return .error(400, "Name is required") }
+        var row = Self.row(data("21c-projects-list-200"))
+        row["id"] = .int(makeID())
+        row["user_id"] = .int(userID)
+        row["workspace_id"] = workspaces.first?["workspace_id"] ?? row["workspace_id"]
+        row["name"] = .string(name)
+        row["color"] = .string(body["color"]?.stringValue ?? "")
+        row["created_at"] = timestamp(0)
+        row["updated_at"] = .null
+        tables["projects", default: []].append(row)
+        return .ok(.object(row), status: 201)
+    }
+
+    private func updateProject(_ id: String, _ body: FixtureObject) -> FixtureReply {
+        update(in: "projects", id: id, with: body.filter { ["name", "color"].contains($0.key) }, missing: "Project not found")
+    }
+
+    /// `POST /domains`: `host` is required; the scheme defaults to `https`
+    /// and the redirect to `301`. The domain starts enabled and unverified.
+    private func createDomain(_ body: FixtureObject) -> FixtureReply {
+        let host = body["host"]?.stringValue ?? ""
+        guard !host.isEmpty else { return .error(400, "Host is required") }
+        var row = Self.row(data("21e-domains-list-200"))
+        row["id"] = .int(makeID())
+        row["user_id"] = .int(userID)
+        row["workspace_id"] = workspaces.first?["workspace_id"] ?? row["workspace_id"]
+        row["host"] = .string(host)
+        row["scheme"] = .string(body["scheme"]?.stringValue.flatMap { $0.isEmpty ? nil : $0 } ?? "https")
+        row["redirect_type"] = .string(body["redirect_type"]?.stringValue.flatMap { $0.isEmpty ? nil : $0 } ?? "301")
+        row["type"] = .int(body["type"]?.intValue ?? 0)
+        for key in ["ssl_is_enabled", "force_ssl", "forward_parameters"] {
+            row[key] = .bool(body[key]?.boolValue ?? false)
+        }
+        for key in ["custom_index_url", "custom_not_found_url"] {
+            // `omitempty` on the server: an empty URL is left out.
+            let value = body[key]?.stringValue ?? ""
+            row[key] = value.isEmpty ? nil : .string(value)
+        }
+        if let link = body["link_id"]?.intValue { row["link_id"] = .int(link) }
+        row["is_enabled"] = true
+        row["is_verified"] = false
+        row["last_verified_at"] = nil
+        row["created_at"] = timestamp(0)
+        row["updated_at"] = .null
+        tables["domains", default: []].append(row)
+        return .ok(.object(row), status: 201)
+    }
+
+    private func updateDomain(_ id: String, _ body: FixtureObject) -> FixtureReply {
+        let allowed: Set<String> = [
+            "host", "scheme", "custom_index_url", "custom_not_found_url", "link_id", "type", "is_enabled",
+            "ssl_is_enabled", "force_ssl", "redirect_type", "forward_parameters",
+        ]
+        var changes = body.filter { allowed.contains($0.key) }
+        for key in ["custom_index_url", "custom_not_found_url"] where changes[key]?.stringValue == "" {
+            changes[key] = .null
+        }
+        let reply = update(in: "domains", id: id, with: changes, missing: "Domain not found")
+        guard reply.status == 200, let type = body["type"], type.intValue != nil else { return reply }
+        return setType(in: "domains", id: id, to: type)
+    }
+
+    /// `POST /domains/{id}/verify`. The fixture deployment is `card.site`,
+    /// and a host "points at it" when it starts with `links.` (as the seeded
+    /// verified domain does). Every other host gets the server's 422 with its
+    /// advice, and the outcome is recorded either way.
+    private func verifyDomain(_ id: String) -> FixtureReply {
+        guard let index = rows("domains").firstIndex(where: { "\($0["id"]?.intValue ?? -1)" == id }) else {
+            return .error(404, "Domain not found")
+        }
+        let host = rows("domains")[index]["host"]?.stringValue ?? ""
+        let verified = host.lowercased().hasPrefix("links.")
+        tables["domains"]?[index]["is_verified"] = .bool(verified)
+        tables["domains"]?[index]["last_verified_at"] = timestamp(0)
+        let row = JSONValue.object(rows("domains")[index])
+        guard verified else {
+            return FixtureReply(status: 422, body: [
+                "data": row,
+                "error": [
+                    "title": .string("\(host) does not point at this deployment yet"),
+                    "message": .string("Point \(host) at card.site, then verify again. DNS changes can take a while to propagate."),
+                    "code": 422,
+                ],
+            ])
+        }
+        return .ok(row)
+    }
+
+    private func createPixel(_ body: FixtureObject) -> FixtureReply {
+        let name = body["name"]?.stringValue ?? ""
+        let type = body["type"]?.stringValue ?? ""
+        guard !name.isEmpty else { return .error(400, "Name is required") }
+        guard !type.isEmpty else { return .error(400, "Type is required") }
+        var row = Self.row(data("21h-pixels-list-200"))
+        row["id"] = .int(makeID())
+        row["user_id"] = .int(userID)
+        row["workspace_id"] = workspaces.first?["workspace_id"] ?? row["workspace_id"]
+        row["name"] = .string(name)
+        row["type"] = .string(type)
+        row["pixel"] = .string(body["pixel"]?.stringValue ?? "")
+        row["created_at"] = timestamp(0)
+        row["updated_at"] = .null
+        tables["pixels", default: []].append(row)
+        return .ok(.object(row), status: 201)
+    }
+
+    private func updatePixel(_ id: String, _ body: FixtureObject) -> FixtureReply {
+        let reply = update(in: "pixels", id: id, with: body.filter { ["name", "pixel"].contains($0.key) }, missing: "Pixel not found")
+        guard reply.status == 200, let type = body["type"], type.stringValue != nil else { return reply }
+        return setType(in: "pixels", id: id, to: type)
+    }
+
+    /// ``apply(_:to:)`` never writes `type`, because a resource's kind is
+    /// fixed. A domain's and a pixel's `type` is an editable field, set here.
+    private func setType(in table: String, id: String, to value: JSONValue) -> FixtureReply {
+        guard let index = rows(table).firstIndex(where: { "\($0["id"]?.intValue ?? -1)" == id }) else { return .notFound }
+        tables[table]?[index]["type"] = value
+        return .ok(.object(rows(table)[index]))
     }
 
     /// Merges a request body into a row the way the handlers do: `settings`

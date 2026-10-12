@@ -58,6 +58,23 @@ struct ErrorEnvelope: Decodable {
         // plan_capability_required
         let capability: String?
         let label: String?
+        // 409 from a stale block PUT: who saved last.
+        let lastEditor: LastEditor?
+
+        struct LastEditor: Decodable {
+            let name: String?
+            let userID: Int?
+
+            enum CodingKeys: String, CodingKey {
+                case name
+                case userID = "user_id"
+            }
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case title, code, message, limit, current, max, capability, label
+            case lastEditor = "last_editor"
+        }
     }
 
     let error: Body

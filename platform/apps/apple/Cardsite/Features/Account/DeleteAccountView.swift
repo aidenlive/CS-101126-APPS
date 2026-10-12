@@ -13,7 +13,7 @@ struct DeleteAccountView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var password = ""
-    @State private var acknowledged = false
+    @State private var isConfirming = false
     @State private var error: String?
     @State private var isDeleting = false
     @State private var resetState: ResetState = .idle
@@ -35,18 +35,18 @@ struct DeleteAccountView: View {
                         SecureField("Your Cardsite password", text: $password)
                             .textContentType(.password)
                             .textFieldStyle(.roundedBorder)
-                            .onSubmit { Task { await delete() } }
+                            .accessibilityIdentifier("account.delete.password")
+                            .onSubmit { if !password.isEmpty { isConfirming = true } }
                         FormErrorText(message: error)
+                            .accessibilityIdentifier("account.delete.error")
                     }
-
-                    Toggle("I understand this can't be undone", isOn: $acknowledged)
-                        .toggleStyle(.switch)
 
                     StudioButton(String(localized: "Delete My Account"), systemImage: "trash",
                                  variant: .destructive, isLoading: isDeleting) {
-                        Task { await delete() }
+                        isConfirming = true
                     }
-                    .disabled(!acknowledged || password.isEmpty)
+                    .disabled(password.isEmpty)
+                    .accessibilityIdentifier("account.delete.confirm")
 
                     Divider()
 
@@ -69,6 +69,12 @@ struct DeleteAccountView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
             .interactiveDismissDisabled(isDeleting)
+            .alert("Delete your account?", isPresented: $isConfirming) {
+                Button("Delete", role: .destructive) { Task { await delete() } }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Everything in it is deleted and can't be recovered.")
+            }
         }
         #if os(macOS)
         .frame(minWidth: 480, minHeight: 520)
@@ -95,7 +101,7 @@ struct DeleteAccountView: View {
     }
 
     private func delete() async {
-        guard acknowledged, !password.isEmpty, !isDeleting else { return }
+        guard !password.isEmpty, !isDeleting else { return }
         isDeleting = true
         error = nil
         defer { isDeleting = false }

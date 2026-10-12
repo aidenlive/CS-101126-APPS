@@ -14,6 +14,9 @@ struct CardsiteApp: App {
             RootView()
                 .environment(model)
                 .studioViewport()
+                #if DEBUG
+                .fixtureOverrides()
+                #endif
                 .tint(.studioAccentLine)
                 .task { await model.restore() }
         }
@@ -24,6 +27,20 @@ struct CardsiteApp: App {
         .commands {
             CardsiteCommands(model: model)
         }
+
+        #if os(macOS)
+        // ⌘, : General, Security and Preferences. Its own scene, so it gets
+        // the session model, the Studio viewport and the tint here too.
+        Settings {
+            CardsiteSettingsView()
+                .environment(model)
+                .studioViewport()
+                #if DEBUG
+                .fixtureOverrides()
+                #endif
+                .tint(.studioAccentLine)
+        }
+        #endif
     }
 }
 

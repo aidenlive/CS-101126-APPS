@@ -62,6 +62,7 @@ struct LinksScreen: View {
                     } label: {
                         Label("New Short Link", systemImage: "plus")
                     }
+                    .accessibilityIdentifier("links.create")
                 }
             }
             #if os(macOS)
@@ -139,6 +140,7 @@ struct LinksScreen: View {
                         setEnabled: { isEnabled in Task { await setEnabled(link, isEnabled) } }
                     )
                 }
+                .accessibilityIdentifier("links.row.\(link.id)")
                 .contextMenu { menu(for: link) }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button(role: .destructive) { pendingDelete = link } label: {
@@ -274,12 +276,7 @@ struct LinkRow: View {
 
     var body: some View {
         HStack(spacing: StudioSpace.s3) {
-            Image(systemName: "link")
-                .imageScale(.medium)
-                .foregroundStyle(link.isEnabled ? Color.studioAccentLine : Color.studioText3)
-                .frame(width: StudioSpace.s8, height: StudioSpace.s8)
-                .background(Color.studioSurface2, in: RoundedRectangle(cornerRadius: StudioRadius.sm, style: .continuous))
-                .accessibilityHidden(true)
+            RowGlyphTile(systemImage: "link", isActive: link.isEnabled)
 
             VStack(alignment: .leading, spacing: StudioSpace.s1) {
                 HStack(spacing: StudioSpace.s2) {

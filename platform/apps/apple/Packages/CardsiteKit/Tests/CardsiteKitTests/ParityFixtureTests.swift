@@ -36,7 +36,10 @@ final class FixtureInvariantTests: XCTestCase {
                     XCTAssertEqual(Set(meta.keys), ["page", "per_page", "total"], name)
                 }
             } else {
-                XCTAssertEqual(Set(object.keys), ["error"], name)
+                // One error also carries data: the verify 422 sends the
+                // domain as the failed DNS check recorded it.
+                let keys: Set<String> = name == "21m-domains-verify-422" ? ["data", "error"] : ["error"]
+                XCTAssertEqual(Set(object.keys), keys, name)
                 let error = try XCTUnwrap(object["error"] as? [String: Any], name)
                 XCTAssertTrue(error["title"] is String, name)
                 XCTAssertEqual(error["code"] as? Int, f.status, name)
@@ -176,7 +179,7 @@ final class ResourceFixtureTests: XCTestCase {
             try await client.sendIgnoringBody(.put, "api/v1/biolink-blocks/1", body: ["version": 1])
             XCTFail("expected throw")
         } catch let error as APIError {
-            guard case .conflict(let title, _) = error else { return XCTFail("\(error)") }
+            guard case .conflict(let title, _, _) = error else { return XCTFail("\(error)") }
             XCTAssertTrue(title.contains("reload it"), title)
         }
     }

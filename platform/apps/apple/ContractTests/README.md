@@ -59,6 +59,15 @@ budget.
 The PARITY section adds no counted auth calls unless `TWOFA_LOGIN=1`, so
 a run with `PSQL_URL` still fits the default budget (verified, run B below).
 
+### Organise CRUD (2026-10-12, run D)
+
+Steps P21l–P21r (domain edit and verify, pixel edit, project recolour, the
+three deletes) were added and run against the same build on `:58081`, with
+`DOMAIN_VERIFICATION_TARGET=localhost` so verify answers the 422 rather than
+the 503 an unconfigured deployment gives, `AUTH_RATE_LIMIT_ATTEMPTS=200` and
+`PSQL_URL` set: **332 passed, 0 failed**. Only fixtures 21l–21r were copied
+from that run; the rest are from run A.
+
 ### How it was proven (2026-10-12, parity extension)
 
 Built from a scratch copy of `/home/claude/src/cardsite-platform_0.0.0/apps/api`
@@ -158,6 +167,11 @@ timestamps are real values from the run.
 | 21f / 21g / 21h pixels | GET /pixels/types, POST, GET /api/v1/pixels |
 | 21i / 21j splash pages | POST, GET /api/v1/splash-pages |
 | 21k-reference-targeting-200 | GET /api/v1/reference/targeting (public) |
+| 21l-domains-update-200 | PUT /api/v1/domains/{id} with only the changed fields |
+| 21m-domains-verify-422 | POST /api/v1/domains/{id}/verify, host not pointed here (`data` **and** `error`) |
+| 21n-pixels-update-200 | PUT /api/v1/pixels/{id} `{name,type,pixel}` |
+| 21o-projects-recolour-200 | PUT /api/v1/projects/{id} `{name,color}` |
+| 21p / 21q / 21r deletes | DELETE /api/v1/pixels/{id}, /domains/{id}, /projects/{id} → `{message}` |
 | 22a-links-create-full-201 | POST /api/v1/links with project, domain, splash page, pixel, timezone, schedule, display_rules, password, UTM, clicks limit, cloaking, status code |
 | 22b-links-get-full-200 | GET /api/v1/links/{id} (full object) |
 | 22c-links-update-full-200 | PUT /api/v1/links/{id} new settings + targeting, `project_id:null` |
@@ -335,6 +349,9 @@ the user-facing lists takes `search` or sort parameters, except `/logs`
 | GET /spotlight?q= | 200 | `[{type, id, label, url}]`, `type` one of `link`, `biolink`, `user`; `[]` when `q` is under 2 chars |
 | POST /projects `{name,color}` · PUT /projects/{id} (partial) | 201 · 200 | `{id,user_id,workspace_id,name,color,created_at,updated_at}` |
 | POST /domains `{host,scheme,…}` | 201 | `{id,user_id,workspace_id,scheme,host,type:Int,is_enabled,ssl_is_enabled,force_ssl,redirect_type:String("301"),forward_parameters,is_verified,created_at,updated_at}` |
+| PUT /domains/{id} (partial; every field optional) | 200 | the domain; `custom_index_url` / `custom_not_found_url` left out when empty (omitempty); the scheme is stored as sent (`https` from the web, `https://` from older clients) |
+| POST /domains/{id}/verify (no body) | 200 · **422** · 503 | 200: the domain, verified. 422: `{data: domain (is_verified:false), error:{title:"<host> does not point at this deployment yet", message:"Point <host> at <target>, then verify again. …"}}`. 503 (no `DOMAIN_VERIFICATION_TARGET`): error only. The outcome is recorded either way |
+| DELETE /projects/{id} · /domains/{id} · /pixels/{id} | 200 | `{message}` ("Project deleted", …); 404 envelope when gone. Links in a deleted project stay, with `project_id` null (ON DELETE SET NULL) |
 | GET /pixels/types | 200 | `[{key,name,description,field_label,emits_beacon}]` |
 | POST /pixels `{name,type,pixel}` | 201 | `{id,user_id,workspace_id,type,name,pixel,created_at,updated_at}` |
 | POST /splash-pages `{name,title,description,link_unlock_seconds,auto_redirect,settings}` | 201 | `{id,user_id,workspace_id,name,title,description,link_unlock_seconds,auto_redirect,created_at}` (`settings` omitted when empty) |

@@ -73,6 +73,7 @@ private struct StatisticsContent: View {
     @Bindable var model: StatisticsModel
     let subtitle: String?
 
+    @Environment(\.studioViewport) private var viewport
     @ScaledMetric(relativeTo: .body) private var tileMinWidth: CGFloat = 150
 
     var body: some View {
@@ -81,7 +82,9 @@ private struct StatisticsContent: View {
                 ErrorStateView(error: error) { [model] in await model.reload() }
             } else {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: StudioSpace.s6) {
+                    // The dashboard page anatomy Home uses: viewport
+                    // padding, the page head, sections a section gap apart.
+                    VStack(alignment: .leading, spacing: viewport.sectionGap) {
                         header
                         if let error = model.refreshError {
                             RefreshErrorBanner(error: error) { model.dismissRefreshError() }
@@ -90,7 +93,9 @@ private struct StatisticsContent: View {
                         trafficCard
                         breakdownCard
                     }
-                    .padding(StudioSpace.s6)
+                    .padding(.horizontal, viewport.contentPadding)
+                    .padding(.top, StudioSpace.s6)
+                    .padding(.bottom, StudioSpace.s12)
                     .readableWidth(960)
                 }
                 .refreshable { [model] in await model.reload() }
@@ -256,17 +261,7 @@ private struct StatisticsContent: View {
                     .redacted(reason: .placeholder)
                     .loadingAccessibility(true)
                 case .failed(let error):
-                    VStack(spacing: StudioSpace.s3) {
-                        Text(error.localizedDescription)
-                            .studioText(.uiSm)
-                            .foregroundStyle(Color.studioText3)
-                            .multilineTextAlignment(.center)
-                        StudioButton(String(localized: "Try Again"), systemImage: "arrow.clockwise", variant: .outline) {
-                            Task { await model.loadBreakdown() }
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, StudioSpace.s6)
+                    InlineErrorState(error: error) { [model] in await model.loadBreakdown() }
                 case .loaded(let rows) where rows.isEmpty:
                     Text("No data for the selected period.")
                         .studioText(.uiSm)
@@ -395,7 +390,7 @@ private struct BreakdownBar: View {
         .background(alignment: .leading) {
             GeometryReader { proxy in
                 RoundedRectangle(cornerRadius: StudioRadius.xs, style: .continuous)
-                    .fill(isLeading ? StatisticsPalette.highlight : StatisticsPalette.bar)
+                    .fill(isLeading ? Color.studioVizHighlight : Color.studioVizOther)
                     .frame(width: max(StudioSpace.s1, proxy.size.width * fraction))
             }
         }

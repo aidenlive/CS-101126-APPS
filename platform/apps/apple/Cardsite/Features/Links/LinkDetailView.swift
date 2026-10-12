@@ -74,6 +74,8 @@ private struct LinkDetailForm: View {
                 form
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("link.detail")
         .navigationTitle(Text(verbatim: "/" + model.slug))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -91,7 +93,8 @@ private struct LinkDetailForm: View {
             isDirty: model.isDirty,
             isSaving: model.isSaving,
             save: { [model] in await model.save() },
-            discard: { [model] in model.discard() }
+            discard: { [model] in model.discard() },
+            saveIdentifier: "link.detail.save"
         )
         .navigationDestination(for: StatisticsRoute.self) { route in
             StatisticsScreen(route: route)
@@ -217,6 +220,7 @@ private struct LinkDetailForm: View {
                 }
             }
             .toggleStyle(.switch)
+            .accessibilityIdentifier("link.detail.enabled")
             .disabled(model.isTogglingEnabled || model.detail == nil)
             if let error = model.toggleError {
                 FormErrorText(message: error)
@@ -233,6 +237,7 @@ private struct LinkDetailForm: View {
                 } label: {
                     Label("Create QR code", systemImage: "qrcode")
                 }
+                .accessibilityIdentifier("link.detail.qr")
             }
 
             if model.isLapsing {
@@ -328,6 +333,7 @@ private struct LinkDetailForm: View {
                 help: String(localized: "The address and any printed QR codes keep working and send people here instead."),
                 error: model.errors[.destination]
             )
+            .accessibilityIdentifier("link.detail.destination")
             if let archive = model.detail?.archiveURL {
                 VStack(alignment: .leading, spacing: StudioSpace.s1) {
                     Text("Archive address")

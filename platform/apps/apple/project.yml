@@ -63,6 +63,8 @@ targets:
         DEAD_CODE_STRIPPING: YES
         ENABLE_USER_SCRIPT_SANDBOXING: YES
         GENERATE_INFOPLIST_FILE: NO
+        # The fixture server's JSON (Cardsite/Debug) ships in Debug only.
+        EXCLUDED_SOURCE_FILE_NAMES[config=Release]: "*.fixture.json"
     # No `info:` block on purpose: XcodeGen would regenerate Info.plist from
     # defaults and drop the CS* keys, ATS, UILaunchScreen and the category.
 

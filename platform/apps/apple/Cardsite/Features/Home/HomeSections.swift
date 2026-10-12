@@ -564,7 +564,7 @@ struct HomeRecentRow: View {
                         .studioText(.meta)
                         .foregroundStyle(Color.studioText3)
                 }
-                Image(systemName: resource.type == LinkKind.shortLink ? "chevron.right" : "arrow.up.forward")
+                Image(systemName: resource.type == LinkKind.shortLink || resource.type == LinkKind.bioPage ? "chevron.right" : "arrow.up.forward")
                     .imageScale(.small)
                     .foregroundStyle(Color.studioText4)
                     .accessibilityHidden(true)
@@ -581,9 +581,13 @@ struct HomeRecentRow: View {
 // MARK: - Opening a resource
 
 /// Opens a resource the way the app can today: a short link pushes its
-/// detail; any other type opens its public page in the browser.
+/// detail, a bio page opens in the Pages editor, and any other type opens
+/// its public page in the browser.
 struct ResourceOpenLink<Label: View>: View {
     @Environment(AppModel.self) private var app
+    // Optional so a preview without the shell still renders.
+    @Environment(PagesModel.self) private var pages: PagesModel?
+    @Environment(ShellRouter.self) private var router: ShellRouter?
     let resource: Resource
     @ViewBuilder var label: () -> Label
 
@@ -593,6 +597,15 @@ struct ResourceOpenLink<Label: View>: View {
                 label()
             }
             .buttonStyle(StudioPressStyle(scale: 0.99))
+        } else if resource.type == LinkKind.bioPage, let pages, let router {
+            Button {
+                pages.openRequest = resource.id
+                router.open(.pages)
+            } label: {
+                label()
+            }
+            .buttonStyle(StudioPressStyle(scale: 0.99))
+            .accessibilityHint("Opens the page editor")
         } else if let url = app.addresses.url(for: resource.slug) {
             Link(destination: url) {
                 label()

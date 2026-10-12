@@ -4,30 +4,26 @@ import CardsiteKit
 
 // MARK: - Display rules
 
-/// Audience targeting for the page: six dimensions from the server's own
-/// vocabulary (`GET /reference/targeting`), written to `display_rules`.
+/// Audience targeting for the page: the shared `DisplayRulesSection` over
+/// the server's own vocabulary (`GET /reference/targeting`), written to
+/// `display_rules`.
 ///
-/// A local, simple version of the web's DisplayRulesEditor. The web also
-/// shows a scheduling toggle that writes `display_rules.scheduled_*`, which
-/// no server code reads for bio pages, so it is left out here.
-/// Replace this with the shared `Features/ResourceEditor/DisplayRulesSection`
-/// once that lands.
+/// Page settings save as you go, so a change is sent once the picking
+/// pauses, and again on leaving if it hasn't gone yet. The web also shows
+/// a scheduling toggle that writes `display_rules.scheduled_*`, which no
+/// server code reads for bio pages, so it is left out here.
 struct DisplayRulesForm: View {
     @Environment(PagesModel.self) private var pages
     let editor: PageEditorModel
 
     @State private var options: Loadable<TargetingOptions> = .idle
-    @State private var editing: DisplayRules.Dimension?
+    /// Rules picked but not saved yet; nil once the server has them.
+    @State private var draft: DisplayRules?
     @State private var isSaving = false
     @State private var saveError: String?
 
-    private var rules: DisplayRules { DisplayRules(json: editor.page?.displayRules ?? [:]) }
-
-    /// Without the capability, rules can be cleared but not added (the
-    /// server's rule: setting targeting takes the gate, clearing never does).
-    private var isLocked: Bool {
-        !pages.allows(PagesModel.Capability.targeting) && !rules.narrowsAudience
-    }
+    private var saved: DisplayRules { DisplayRules(json: editor.page?.displayRules ?? [:]) }
+    private var rules: DisplayRules { draft ?? saved }
 
     var body: some View {
         Form {
@@ -45,89 +41,35 @@ struct DisplayRulesForm: View {
                     .studioText(.uiSm)
                     .foregroundStyle(Color.studioText3)
                     .fixedSize(horizontal: false, vertical: true)
-                if isLocked {
-                    Text("Audience targeting isn't included in your plan, so these rules can't be set.")
-                        .studioText(.uiSm)
-                        .foregroundStyle(Color.studioText2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            if case .failed = options {
-                Section {
-                    StudioBanner(
-                        lead: String(localized: "Targeting options didn't load."),
-                        message: String(localized: "The pickers are unavailable. Any rules already set are kept and saved unchanged."),
-                        tone: .warning
-                    )
-                    Button("Try Again") { Task { await load() } }
-                }
-            }
-            Section {
-                ForEach(DisplayRules.Dimension.allCases) { dimension in
-                    EditorValueRow(
-                        label: Self.title(dimension),
-                        value: summary(for: dimension),
-                        isDisabled: isLocked || options.value == nil || isSaving
-                    ) {
-                        editing = dimension
-                    }
-                }
             } footer: {
-                if let saveError {
-                    Label(saveError, systemImage: "exclamationmark.circle.fill")
-                        .studioText(.uiSm)
-                        .foregroundStyle(Color.studioError)
-                } else if isSaving {
+                if isSaving {
                     Text("Saving…")
                         .studioText(.uiSm)
                         .foregroundStyle(Color.studioText3)
                 }
             }
+            .editorRowBackground()
+
+            if case .failed = options {
+                Section {
+                    Button("Try Again") { Task { await load() } }
+                }
+                .editorRowBackground()
+            }
+
+            DisplayRulesSection(
+                rules: Binding(get: { rules }, set: { draft = $0 }),
+                options: options.value,
+                loadFailed: options.error != nil,
+                isLocked: !pages.allows(PagesModel.Capability.targeting),
+                error: saveError
+            )
         }
         .task { if options.value == nil { await load() } }
-        .sheet(item: $editing) { dimension in
-            OptionPickerSheet(
-                title: Self.title(dimension),
-                options: (options.value?.options(for: dimension) ?? []).map { PickerOption(value: $0.value, label: $0.label) },
-                selected: rules[dimension],
-                allowsMultiple: true
-            ) { chosen in
-                Task { await save(dimension, chosen) }
-            }
+        .task(id: draft) { await saveDraft(after: .milliseconds(600)) }
+        .onDisappear {
+            Task { await saveDraft(after: .zero) }
         }
-    }
-
-    static func title(_ dimension: DisplayRules.Dimension) -> String {
-        switch dimension {
-        case .countries: return String(localized: "Countries")
-        case .continents: return String(localized: "Continents")
-        case .browsers: return String(localized: "Browsers")
-        case .operatingSystems: return String(localized: "Operating systems")
-        case .deviceTypes: return String(localized: "Devices")
-        case .languages: return String(localized: "Languages")
-        }
-    }
-
-    static func everyone(_ dimension: DisplayRules.Dimension) -> String {
-        switch dimension {
-        case .countries: return String(localized: "All countries")
-        case .continents: return String(localized: "All continents")
-        case .browsers: return String(localized: "All browsers")
-        case .operatingSystems: return String(localized: "All operating systems")
-        case .deviceTypes: return String(localized: "All devices")
-        case .languages: return String(localized: "All languages")
-        }
-    }
-
-    private func summary(for dimension: DisplayRules.Dimension) -> String {
-        let values = rules[dimension]
-        guard !values.isEmpty else { return Self.everyone(dimension) }
-        // A stored value with no label (vocabulary not loaded, or retired)
-        // shows as stored rather than disappearing.
-        let vocabulary = options.value?.options(for: dimension) ?? []
-        let labels = values.map { value in vocabulary.first { $0.value == value }?.label ?? value }
-        if labels.count <= 2 { return labels.joined(separator: ", ") }
-        return String(localized: "\(labels[0]), \(labels[1]) and \(labels.count - 2) more")
     }
 
     private func load() async {
@@ -141,16 +83,23 @@ struct DisplayRulesForm: View {
         }
     }
 
-    private func save(_ dimension: DisplayRules.Dimension, _ chosen: [String]) async {
-        var updated = rules
-        updated[dimension] = chosen
+    /// Sends the draft once it has been still for `delay`. The whole object
+    /// goes back: other keys (`cities`, conditions) ride along in
+    /// `DisplayRules.other`.
+    private func saveDraft(after delay: Duration) async {
+        guard let pending = draft, pending != saved else { return }
+        if delay > .zero {
+            try? await Task.sleep(for: delay)
+            guard !Task.isCancelled else { return }
+        }
         isSaving = true
         defer { isSaving = false }
         do {
-            // The whole object goes back: other keys (`cities`, conditions)
-            // ride along in `DisplayRules.other`.
-            try await editor.savePage(BioPageChanges(displayRules: updated.json))
+            try await editor.savePage(BioPageChanges(displayRules: pending.json))
             saveError = nil
+            if draft == pending { draft = nil }
+        } catch is CancellationError {
+            // A newer pick replaced this one; it saves instead.
         } catch {
             saveError = error.asAPIError.localizedDescription
         }

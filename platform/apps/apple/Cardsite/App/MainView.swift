@@ -41,6 +41,8 @@ struct MainView: View {
     @State private var pages: PagesModel
     @State private var home: HomeModel
     @State private var search: QuickSearchModel
+    /// One for the session, so the badge and the Inbox list agree.
+    @State private var inbox: InboxModel
 
     init(client: APIClient) {
         _links = State(initialValue: LinksModel(client: client))
@@ -48,6 +50,7 @@ struct MainView: View {
         _pages = State(initialValue: PagesModel(client: client))
         _home = State(initialValue: HomeModel(client: client))
         _search = State(initialValue: QuickSearchModel(client: client))
+        _inbox = State(initialValue: InboxModel(client: client))
     }
 
     /// iPhones always get the tab bar, even in landscape on the largest
@@ -77,12 +80,16 @@ struct MainView: View {
                     value: MainTab.destination(destination)) {
                     DestinationRoot(destination: destination)
                 }
+                .badge(badgeCount(for: destination))
+                .accessibilityIdentifier(destination.navIdentifier)
                 .hidden(isCompact && destination.iPhoneTab == .more)
             }
 
             Tab(String(localized: "More"), systemImage: "ellipsis.circle", value: MainTab.more) {
                 MoreScreen()
             }
+            .badge(isCompact ? inbox.unreadCount : 0)
+            .accessibilityIdentifier("nav.more")
             .hidden(!isCompact)
 
             ForEach(sectionGroups) { group in
@@ -93,6 +100,8 @@ struct MainView: View {
                             value: MainTab.destination(destination)) {
                             DestinationRoot(destination: destination)
                         }
+                        .badge(badgeCount(for: destination))
+                        .accessibilityIdentifier(destination.navIdentifier)
                     }
                 }
                 .hidden(isCompact)
@@ -113,17 +122,24 @@ struct MainView: View {
             }
         }
         .animation(reduceMotion ? StudioAnimation.base : StudioAnimation.spring, value: router.isPalettePresented)
-        .sheet(item: $app.composer) { composer in
+        // A view presents one sheet at a time: while a link from the
+        // palette is up, its own sheet presents the composer instead (its
+        // "Create QR code"), so this one stands down.
+        .sheet(item: Binding(get: { router.presentedLink == nil ? app.composer : nil },
+                             set: { app.composer = $0 })) { composer in
             composerSheet(composer)
         }
         .sheet(item: $nav.presentedLink) { link in
             NavigationStack {
-                LinkDetailView(link: link)
+                LinkDetailView(link: link, onDeleted: { router.presentedLink = nil })
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Done") { router.presentedLink = nil }
                         }
                     }
+            }
+            .sheet(item: $app.composer) { composer in
+                composerSheet(composer)
             }
             .environment(links)
             #if os(macOS)
@@ -136,8 +152,12 @@ struct MainView: View {
         .environment(pages)
         .environment(home)
         .environment(search)
+        .environment(inbox)
+        // The Workspace screen calls this after creating, leaving or
+        // deleting a workspace; the reload drops a workspace that is gone.
         .environment(\.switchWorkspace, SwitchWorkspaceAction { [model] id in
             await model.selectWorkspace(id)
+            await model.loadWorkspaces()
         })
         .focusedSceneValue(\.shellRouter, router)
         .task { [model] in
@@ -145,12 +165,14 @@ struct MainView: View {
             if model.needsProfile { await model.refreshUser() }
             await model.loadWorkspaces()
         }
+        .task { [inbox] in await inbox.pollUnreadCount() }
         .onAppear {
             links.onError = model.handle
             qrCodes.onError = model.handle
             pages.onError = model.handle
             home.onError = model.handle
             search.onError = model.handle
+            inbox.onError = model.handle
             router.tab = MainTab(storageKey: storedTab)
             router.adapt(isCompact: isCompact)
         }
@@ -162,23 +184,35 @@ struct MainView: View {
         }
     }
 
-    /// The create sheets. Home's paste box arrives as `.link(destination:)`;
-    /// the link editor reads `app.composer?.destination` to prefill.
+    /// The inbox's unread count on its sidebar item; zero hides the badge.
+    private func badgeCount(for destination: AppDestination) -> Int {
+        destination == .inbox ? inbox.unreadCount : 0
+    }
+
+    /// The create sheets. `composer.prefill` is Home's pasted URL for a
+    /// short link, or a link's address for a QR code.
     @ViewBuilder
     private func composerSheet(_ composer: AppModel.Composer) -> some View {
         switch composer.kind {
         case .link:
-            LinkEditorView { _ in
+            LinkEditorView(prefill: composer.prefill) { _ in
                 router.open(.links)
                 Task { [home] in await home.refresh() }
             }
             .environment(links)
         case .qrCode:
-            QRCodeEditorView { _ in
+            QRCodeEditorView(prefillURL: composer.prefill) { _ in
                 router.open(.qrCodes)
                 Task { [home] in await home.refresh() }
             }
             .environment(qrCodes)
+        case .bioPage:
+            CreatePageSheet { page in
+                pages.openRequest = page.id
+                router.open(.pages)
+                Task { [home] in await home.refresh() }
+            }
+            .environment(pages)
         }
     }
 }
@@ -187,6 +221,7 @@ struct MainView: View {
 /// as in the sidebar, under the workspace switcher.
 struct MoreScreen: View {
     @Environment(ShellRouter.self) private var router
+    @Environment(InboxModel.self) private var inbox
 
     private var groups: [AppDestination.Group] {
         AppDestination.Group.allCases.filter { group in
@@ -213,6 +248,8 @@ struct MoreScreen: View {
                                 Label(destination.title, systemImage: destination.systemImage)
                                     .studioText(.ui)
                             }
+                            .badge(destination == .inbox ? inbox.unreadCount : 0)
+                            .accessibilityIdentifier(destination.navIdentifier)
                         }
                     }
                 }
@@ -247,5 +284,6 @@ private struct MainPreview: View {
     return MoreScreen()
         .environment(app)
         .environment(router)
+        .environment(InboxModel(client: app.client))
 }
 #endif

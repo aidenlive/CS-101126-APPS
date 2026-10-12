@@ -20,7 +20,7 @@ extension APIClient {
         try await send(.get, "api/v1/biolinks/\(id)")
     }
 
-    /// `POST /biolinks`. A taken address is a 409 (``APIError/conflict(title:message:)``),
+    /// `POST /biolinks`. A taken address is a 409 (``APIError/conflict(title:message:lastEditor:)``),
     /// a full plan a 422 (``APIError/planLimit(limit:current:max:)``).
     public func createBioPage(slug: String, title: String? = nil) async throws -> BioPage {
         var settings: [String: JSONValue] = [:]
@@ -80,8 +80,8 @@ extension APIClient {
         if let isEnabled { body["is_enabled"] = .bool(isEnabled) }
         do {
             return try await send(.put, "api/v1/biolink-blocks/\(id)", body: body)
-        } catch APIError.conflict(let title, _) {
-            throw BlockConflictError(serverTitle: title)
+        } catch APIError.conflict(let title, _, let lastEditor) {
+            throw BlockConflictError(serverTitle: title, lastEditor: lastEditor)
         }
     }
 

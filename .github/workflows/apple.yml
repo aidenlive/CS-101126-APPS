@@ -80,10 +80,10 @@ jobs:
           set -o pipefail
           swift test --package-path Packages/CardsiteKit 2>&1 | tee kit.log \
             || { python3 "$ANNOTATE" kit.log; exit 1; }
-      - name: swift build (StudioKit)
+      - name: swift test (StudioKit)
         run: |
           set -o pipefail
-          swift build --package-path ../../studio/packages/swift 2>&1 | tee studio.log \
+          swift test --package-path ../../studio/packages/swift 2>&1 | tee studio.log \
             || { python3 "$ANNOTATE" studio.log; exit 1; }
 
   app:

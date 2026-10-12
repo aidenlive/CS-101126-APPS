@@ -69,11 +69,12 @@ struct AccountView: View {
             Section {
                 Button("Sign Out") { confirmSignOut = true }
                 Button("Delete Account…", role: .destructive) { sheet = .deleteAccount }
+                    .accessibilityIdentifier("account.delete")
             } footer: {
                 Text("Deleting your account removes your links, QR codes, pages and files, and frees their addresses. It can't be undone.")
             }
         }
-        .formStyle(.grouped)
+        .studioForm()
         .navigationTitle("Account")
         .task {
             if app.needsProfile { await app.refreshUser() }

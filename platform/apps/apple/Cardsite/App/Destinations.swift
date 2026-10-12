@@ -30,19 +30,28 @@ import CardsiteKit
  the inner one.
 
  Planned, once their screens exist (one case each):
-   overview  · statistics (StatisticsScreen(linkID: nil), ⌘5)
-   content   · vCards, events, paymentLinks, files, staticPages, splashPages,
-               uploads, data
+   content   · vCards, events, paymentLinks, files, staticPages, splashPages
    organise  · projects, domains, pixels
-   account   · workspace (WorkspaceView, ⌘7), inbox (⌘6, with a badge),
-               activity, settings / preferences (PreferencesView)
+
+ IDENTIFIERS. Each sidebar item, tab and More row carries `nav.<rawValue>`
+ and each destination's root `screen.<rawValue>`, which CardsiteUITests
+ finds them by (CardsiteUITests/Harness.swift). Keep raw values stable.
  */
 enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
     case home
     case links
     case pages
     case qrCodes
+    case statistics
+    case uploads
+    case data
+    case workspace
+    case inbox
+    case activity
     case account
+    /// Raw value "settings": the UI tests' name for it, and the web's
+    /// Settings / Preferences pair is one screen here.
+    case preferences = "settings"
 
     var id: String { rawValue }
 
@@ -83,8 +92,9 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
 
     var group: Group {
         switch self {
-        case .home, .links, .pages, .qrCodes: return .overview
-        case .account: return .account
+        case .home, .links, .pages, .qrCodes, .statistics: return .overview
+        case .uploads, .data: return .content
+        case .workspace, .inbox, .activity, .account, .preferences: return .account
         }
     }
 
@@ -95,7 +105,14 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .links: return String(localized: "Links")
         case .pages: return String(localized: "Pages")
         case .qrCodes: return String(localized: "QR Codes")
+        case .statistics: return String(localized: "Statistics")
+        case .uploads: return String(localized: "Uploads")
+        case .data: return String(localized: "Data Records")
+        case .workspace: return String(localized: "Workspace")
+        case .inbox: return String(localized: "Inbox")
+        case .activity: return String(localized: "Activity Logs")
         case .account: return String(localized: "Account")
+        case .preferences: return String(localized: "Preferences")
         }
     }
 
@@ -113,14 +130,21 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .links: return "link"
         case .pages: return "person.crop.square"
         case .qrCodes: return "qrcode"
+        case .statistics: return "chart.bar.xaxis"
+        case .uploads: return "square.and.arrow.up.on.square"
+        case .data: return "tablecells"
+        case .workspace: return "person.2"
+        case .inbox: return "tray"
+        case .activity: return "list.bullet.rectangle"
         case .account: return "person.crop.circle"
+        case .preferences: return "slider.horizontal.3"
         }
     }
 
     var iPhoneTab: IPhonePlacement {
         switch self {
         case .home, .links, .pages, .qrCodes: return .tab
-        case .account: return .more
+        case .statistics, .uploads, .data, .workspace, .inbox, .activity, .account, .preferences: return .more
         }
     }
 
@@ -132,7 +156,10 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .links: return "2"
         case .pages: return "3"
         case .qrCodes: return "4"
-        case .account: return nil
+        case .statistics: return "5"
+        case .inbox: return "6"
+        case .workspace: return "7"
+        case .uploads, .data, .activity, .account, .preferences: return nil
         }
     }
 
@@ -143,14 +170,28 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .links: return [String(localized: "short links"), String(localized: "addresses")]
         case .pages: return [String(localized: "bio pages"), String(localized: "link in bio")]
         case .qrCodes: return [String(localized: "codes"), String(localized: "scan")]
-        case .account: return [String(localized: "profile"), String(localized: "settings"),
+        case .statistics: return [String(localized: "analytics"), String(localized: "traffic"),
+                                  String(localized: "clicks")]
+        case .uploads: return [String(localized: "files"), String(localized: "images"), String(localized: "media")]
+        case .data: return [String(localized: "form submissions"), String(localized: "records")]
+        case .workspace: return [String(localized: "team"), String(localized: "members"), String(localized: "invite")]
+        case .inbox: return [String(localized: "notifications"), String(localized: "announcements")]
+        case .activity: return [String(localized: "logs"), String(localized: "sign-ins"), String(localized: "security")]
+        case .account: return [String(localized: "profile"), String(localized: "security"),
                                String(localized: "password"), String(localized: "sign out")]
+        case .preferences: return [String(localized: "settings"), String(localized: "defaults"),
+                                   String(localized: "options")]
         }
     }
 
     /// The tab bar's own roots own their navigation; everything else is
     /// stack-free content the shell wraps or pushes (see the root contract).
     var ownsNavigation: Bool { iPhoneTab == .tab }
+
+    /// `nav.<rawValue>`: the sidebar item, tab or More row.
+    var navIdentifier: String { "nav.\(rawValue)" }
+    /// `screen.<rawValue>`: the destination's root view.
+    var screenIdentifier: String { "screen.\(rawValue)" }
 
     func matches(_ query: String) -> Bool {
         guard !query.isEmpty else { return true }
@@ -162,16 +203,35 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
 /// contract describes.
 struct DestinationView: View {
     @Environment(AppModel.self) private var app
+    @Environment(InboxModel.self) private var inbox
     let destination: AppDestination
 
     var body: some View {
+        root
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier(destination.screenIdentifier)
+    }
+
+    @ViewBuilder
+    private var root: some View {
         switch destination {
         case .home: HomeScreen()
         case .links: LinksScreen()
         case .pages: PagesScreen()
         case .qrCodes: QRCodesScreen()
-        case .account: AccountView(client: app.client, onError: { [app] in app.handle($0) })
+        case .statistics: StatisticsScreen(linkID: nil)
+        case .uploads: UploadsView(client: app.client, onError: onError)
+        case .data: DataRecordsView(client: app.client, onError: onError)
+        case .workspace: WorkspaceView(client: app.client, onError: onError)
+        case .inbox: InboxView(model: inbox)
+        case .activity: ActivityLogsView(client: app.client, onError: onError)
+        case .account: AccountView(client: app.client, onError: onError)
+        case .preferences: PreferencesView(client: app.client, onError: onError)
         }
+    }
+
+    private var onError: @MainActor (any Error) -> Void {
+        { [app] error in app.handle(error) }
     }
 }
 
@@ -199,6 +259,7 @@ struct DestinationRoot: View {
 enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
     case shortLink
     case qrCode
+    case bioPage
 
     var id: String { rawValue }
 
@@ -207,6 +268,7 @@ enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
         switch self {
         case .shortLink: return String(localized: "New Short Link")
         case .qrCode: return String(localized: "New QR Code")
+        case .bioPage: return String(localized: "New Bio Page")
         }
     }
 
@@ -215,6 +277,7 @@ enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
         switch self {
         case .shortLink: return String(localized: "Short link")
         case .qrCode: return String(localized: "QR code")
+        case .bioPage: return String(localized: "Bio page")
         }
     }
 
@@ -223,6 +286,7 @@ enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
         switch self {
         case .shortLink: return String(localized: "Paste a long URL, get a short one")
         case .qrCode: return String(localized: "Scannable, fully styled")
+        case .bioPage: return String(localized: "A page in minutes")
         }
     }
 
@@ -230,6 +294,7 @@ enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
         switch self {
         case .shortLink: return "link.badge.plus"
         case .qrCode: return "qrcode"
+        case .bioPage: return "person.crop.square"
         }
     }
 
@@ -237,6 +302,7 @@ enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
         switch self {
         case .shortLink: return .link
         case .qrCode: return .qrCode
+        case .bioPage: return .bioPage
         }
     }
 
@@ -244,6 +310,7 @@ enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
         switch self {
         case .shortLink: return KeyboardShortcut("n", modifiers: .command)
         case .qrCode: return KeyboardShortcut("n", modifiers: [.command, .shift])
+        case .bioPage: return KeyboardShortcut("n", modifiers: [.command, .option])
         }
     }
 
@@ -252,6 +319,7 @@ enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
         switch self {
         case .shortLink: return "⌘N"
         case .qrCode: return "⇧⌘N"
+        case .bioPage: return "⌥⌘N"
         }
     }
 
@@ -297,6 +365,7 @@ final class ShellRouter {
     /// Goes to a destination the way the current layout shows it.
     func open(_ destination: AppDestination) {
         isPalettePresented = false
+        presentedLink = nil
         if isCompact && destination.iPhoneTab == .more {
             morePath = [destination]
             tab = .more

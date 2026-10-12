@@ -8,6 +8,7 @@ struct TimezonePickerView: View {
     let model: AccountSettingsModel
     let current: String
 
+    @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
     @State private var saving: String?
@@ -100,7 +101,9 @@ struct TimezonePickerView: View {
         saving = zone.id
         defer { saving = nil }
         do {
-            try await model.saveTimezone(zone.id)
+            let user = try await model.saveTimezone(zone.id)
+            // Only a complete profile replaces the signed-in one.
+            if user.id != 0, !user.email.isEmpty { app.replaceUser(user) }
             Haptics.success()
             dismiss()
         } catch {

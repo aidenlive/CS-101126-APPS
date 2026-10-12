@@ -25,6 +25,7 @@ struct QRCodesScreen: View {
                         Button { isComposing = true } label: {
                             Label("New QR Code", systemImage: "plus")
                         }
+                        .accessibilityIdentifier("qr.create")
                     }
                 }
                 .navigationDestination(for: QRCode.ID.self) { id in
@@ -148,6 +149,7 @@ struct QRCodesScreen: View {
             QRCodeCard(code: code, typeLabel: model.typeLabel(for: code.type))
         }
         .buttonStyle(StudioPressStyle(scale: 0.98))
+        .accessibilityIdentifier("qr.row.\(code.id)")
         .overlay(alignment: .topTrailing) {
             Menu {
                 menuItems(for: code)

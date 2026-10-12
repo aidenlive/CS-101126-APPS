@@ -123,15 +123,23 @@ struct LockedFeatureNote: View {
 }
 
 extension View {
-    /// The Studio look for a native grouped form: opaque Studio background
-    /// and row surfaces, Studio body type.
-    func resourceEditorForm() -> some View {
+    /// The Studio look for a native grouped form: opaque Studio background,
+    /// Studio body type and tint. Every in-app form uses it (editors,
+    /// Account, Preferences, Workspace), so they all sit on the same page
+    /// colour as the dashboards. The Mac Settings window keeps the system look.
+    func studioForm() -> some View {
         self
             .formStyle(.grouped)
             .scrollContentBackground(.hidden)
             .background(Color.studioBg)
             .studioText(.ui)
             .tint(Color.studioAccentLine)
+    }
+
+    /// A resource editor's form: ``studioForm()``; give each section
+    /// ``editorRowBackground()`` for Studio row surfaces.
+    func resourceEditorForm() -> some View {
+        studioForm()
     }
 
     /// Row surface for a section inside ``resourceEditorForm()``.

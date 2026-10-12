@@ -171,39 +171,6 @@ struct QRCodeDraft: Equatable {
     }
 }
 
-// MARK: - Colour
-
-/// `#rrggbb` ⇄ `Color`, for the colour wells. These colours are the user's
-/// data, not design tokens.
-enum QRHexColor {
-    static func color(_ hex: String) -> Color? {
-        var digits = hex.trimmingCharacters(in: .whitespaces)
-        if digits.hasPrefix("#") { digits.removeFirst() }
-        if digits.count == 3 { digits = digits.map { "\($0)\($0)" }.joined() }
-        guard digits.count == 6, let value = UInt32(digits, radix: 16) else { return nil }
-        let resolved = Color.Resolved(
-            red: Float((value >> 16) & 255) / 255,
-            green: Float((value >> 8) & 255) / 255,
-            blue: Float(value & 255) / 255
-        )
-        return Color(resolved)
-    }
-
-    static func hex(_ color: Color) -> String {
-        let resolved = color.resolve(in: EnvironmentValues())
-        func byte(_ component: Float) -> Int { Int((min(max(component, 0), 1) * 255).rounded()) }
-        return String(format: "#%02x%02x%02x", byte(resolved.red), byte(resolved.green), byte(resolved.blue))
-    }
-
-    /// A binding to a hex string as a `Color`.
-    static func binding(_ hex: Binding<String>, fallback: Color) -> Binding<Color> {
-        Binding(
-            get: { color(hex.wrappedValue) ?? fallback },
-            set: { hex.wrappedValue = Self.hex($0) }
-        )
-    }
-}
-
 // MARK: - Floating local time
 
 /// The event fields hold the author's wall-clock time, `YYYY-MM-DDTHH:mm`

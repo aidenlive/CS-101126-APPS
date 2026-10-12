@@ -14,8 +14,10 @@ public enum APIError: Error, Sendable, Equatable {
     case planLimit(limit: String, current: Int, max: Int)
     /// The plan lacks a capability (`label` is its display name when sent).
     case planCapability(label: String?)
-    /// 409: address taken, active subscription, and similar.
-    case conflict(title: String, message: String?)
+    /// 409: address taken, active subscription, a stale block edit, and
+    /// similar. `lastEditor` is `error.last_editor.name`, which the server
+    /// sends with a stale block `PUT` (see ``lastEditorName``).
+    case conflict(title: String, message: String?, lastEditor: String? = nil)
     /// 400 / 404 / 422 with a readable reason.
     case invalid(String)
     case rateLimited(retryAfter: TimeInterval?)
@@ -48,7 +50,7 @@ extension APIError: LocalizedError {
                 return String(localized: "\(label) is not included in your plan.")
             }
             return String(localized: "This feature is not included in your plan.")
-        case .conflict(let title, let message):
+        case .conflict(let title, let message, _):
             if title == "active_subscription" {
                 return message ?? String(localized: "Cancel your subscription before deleting your account.")
             }
@@ -72,6 +74,12 @@ extension APIError: LocalizedError {
         case .decoding:
             return String(localized: "Cardsite sent something this version of the app can't read. Update the app, or try again.")
         }
+    }
+
+    /// Who saved last, for a 409 that names them (a stale block `PUT`).
+    public var lastEditorName: String? {
+        guard case .conflict(_, _, let lastEditor) = self else { return nil }
+        return lastEditor
     }
 
     /// Worth an inline "Try again" button.
@@ -101,7 +109,9 @@ extension APIError {
             }
             return .sessionExpired
         case 409:
-            return .conflict(title: title ?? "conflict", message: error?.message)
+            let editor = error?.lastEditor?.name?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return .conflict(title: title ?? "conflict", message: error?.message,
+                             lastEditor: (editor?.isEmpty ?? true) ? nil : editor)
         case 422 where title == "plan_limit_exceeded":
             return .planLimit(limit: error?.limit ?? "", current: error?.current ?? 0, max: error?.max ?? 0)
         case 422 where title == "plan_capability_required":

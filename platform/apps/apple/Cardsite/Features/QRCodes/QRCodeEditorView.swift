@@ -74,6 +74,8 @@ private struct QRCodeBuilderView: View {
         NavigationStack {
             content
                 .background(Color.studioBg)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("qr.editor")
                 .navigationTitle(builder.isEditing ? Text("Edit QR Code") : Text("New QR Code"))
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
@@ -184,6 +186,7 @@ private struct QRCodeBuilderView: View {
                     builder.isEditing ? Text("Save") : Text("Create")
                 }
                 .keyboardShortcut("s", modifiers: .command)
+                .accessibilityIdentifier("qr.editor.save")
                 .disabled(builder.phase != .ready)
             }
         }
@@ -206,6 +209,7 @@ private struct QRCodeBuilderView: View {
                           help: String(localized: "Only you see this."),
                           text: $builder.draft.name,
                           error: builder.nameError)
+                    .accessibilityIdentifier("qr.editor.name")
             }
             .listRowBackground(Color.studioSurface)
 
@@ -300,6 +304,7 @@ private struct QRCodeBuilderView: View {
                 Section {
                     ForEach(group.fields) { field in
                         QRFieldRow(field: field, draft: $builder.draft)
+                            .accessibilityIdentifier("qr.editor.\(field.key)")
                     }
                 } header: {
                     Text(group.title ?? detailsTitle)
@@ -397,7 +402,7 @@ private struct QRCodeBuilderView: View {
     }
 
     private func colorRow(_ title: String, hex: Binding<String>, fallback: Color) -> some View {
-        ColorPicker(selection: QRHexColor.binding(hex, fallback: fallback), supportsOpacity: false) {
+        ColorPicker(selection: HexColor.binding(hex, fallback: fallback), supportsOpacity: false) {
             HStack(spacing: StudioSpace.s2) {
                 Text(title)
                 Spacer(minLength: StudioSpace.s2)

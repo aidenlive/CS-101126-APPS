@@ -223,7 +223,7 @@ struct TwoFactorPasswordView: View {
                             .disabled(password.isEmpty || isWorking)
                         }
                     }
-                    .formStyle(.grouped)
+                    .studioForm()
                 }
             }
             .navigationTitle(purpose == .disable ? "Disable 2FA" : "Recovery Codes")

@@ -24,28 +24,33 @@ final class AppModel {
 
     /// A create sheet, optionally prefilled.
     ///
-    /// `.link` and `.qrCode` open an empty editor. Home's paste box opens
-    /// `.link(destination:)`, and the link editor reads
-    /// `app.composer?.destination` when it appears to prefill its
-    /// destination field.
+    /// `.link`, `.qrCode` and `.bioPage` open an empty editor. Home's paste
+    /// box opens `.link(destination:)`, and a link's page opens
+    /// `composeQRCode(for:)`; `MainView.composerSheet` hands `prefill` to
+    /// `LinkEditorView(prefill:)` and `QRCodeEditorView(prefillURL:)`.
     struct Composer: Identifiable, Hashable {
-        enum Kind: String, Hashable {
-            case link, qrCode
+        enum Kind: String, Hashable, Sendable {
+            case link, qrCode, bioPage
         }
 
         let kind: Kind
-        /// What the user pasted, as typed. The editor validates it.
-        var destination: String?
+        /// The URL the editor starts with: a short link's destination, or
+        /// the address a QR code encodes.
+        var prefill: URL?
 
         var id: String { kind.rawValue }
 
         static let link = Composer(kind: .link)
         static let qrCode = Composer(kind: .qrCode)
+        static let bioPage = Composer(kind: .bioPage)
 
-        /// A new short link to `destination`.
+        /// A new short link to what the user pasted. Text that isn't a web
+        /// address yet ("example.com/menu") is normalised the way the
+        /// editor will; text that can't be one opens the editor empty.
         static func link(destination: String) -> Composer {
             let trimmed = destination.trimmingCharacters(in: .whitespacesAndNewlines)
-            return Composer(kind: .link, destination: trimmed.isEmpty ? nil : trimmed)
+            guard !trimmed.isEmpty else { return .link }
+            return Composer(kind: .link, prefill: Destination.normalized(trimmed) ?? URL(string: trimmed))
         }
     }
 
@@ -70,13 +75,27 @@ final class AppModel {
 
     init(configuration: AppConfiguration = .current, tokens: TokenStore? = nil, defaults: UserDefaults = .standard) {
         self.configuration = configuration
+        self.addresses = AddressBook(publicHost: configuration.publicHost)
+        #if DEBUG
+        // UI tests and screenshots: the in-app fixture server, a token held
+        // in memory and a throwaway defaults domain (Cardsite/Debug).
+        if FixtureMode.isEnabled {
+            let suite = "cardsite.fixtures"
+            let fixtureDefaults = UserDefaults(suiteName: suite) ?? defaults
+            fixtureDefaults.removePersistentDomain(forName: suite)
+            self.defaults = fixtureDefaults
+            self.tokens = FixtureMode.tokenStore()
+            self.client = APIClient(baseURL: configuration.apiBaseURL, transport: FixtureTransport(),
+                                    userAgent: configuration.userAgent)
+            return
+        }
+        #endif
         #if canImport(Security)
         self.tokens = tokens ?? KeychainTokenStore()
         #else
         self.tokens = tokens ?? MemoryTokenStore()
         #endif
         self.defaults = defaults
-        self.addresses = AddressBook(publicHost: configuration.publicHost)
         self.client = APIClient(baseURL: configuration.apiBaseURL, userAgent: configuration.userAgent)
     }
 
@@ -173,6 +192,26 @@ final class AppModel {
     func updateName(_ name: String) async throws {
         let updated = try await client.updateName(name.trimmingCharacters(in: .whitespacesAndNewlines))
         phase = .signedIn(updated)
+    }
+
+    /// A newer copy of the signed-in user, such as the one `PUT /account`
+    /// returns after a timezone change. `GET /user` stays cached on the
+    /// server for about 10 minutes, so this is how the app keeps up.
+    func replaceUser(_ user: User) {
+        guard self.user != nil else { return }
+        phase = .signedIn(user)
+    }
+
+    // MARK: Composer
+
+    /// Opens a create sheet, optionally prefilled with a URL.
+    func compose(_ kind: Composer.Kind, prefill: URL? = nil) {
+        composer = Composer(kind: kind, prefill: prefill)
+    }
+
+    /// A new QR code that encodes `url`, such as a short link's address.
+    func composeQRCode(for url: URL) {
+        compose(.qrCode, prefill: url)
     }
 
     private func endSession(notice: String?) async {

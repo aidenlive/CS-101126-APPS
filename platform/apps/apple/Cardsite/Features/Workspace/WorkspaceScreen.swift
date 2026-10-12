@@ -201,7 +201,7 @@ struct WorkspaceView: View {
                 }
             }
         }
-        .formStyle(.grouped)
+        .studioForm()
         .refreshable { await model.refresh() }
     }
 
@@ -447,7 +447,7 @@ private struct WorkspaceNameSheet: View {
                     }
                 }
             }
-            .formStyle(.grouped)
+            .studioForm()
             .navigationTitle(isCreate ? "Create Workspace" : "Rename Workspace")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -527,7 +527,7 @@ private struct InviteMemberSheet: View {
                     FormErrorText(message: error)
                 }
             }
-            .formStyle(.grouped)
+            .studioForm()
             .navigationTitle("Add Member")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

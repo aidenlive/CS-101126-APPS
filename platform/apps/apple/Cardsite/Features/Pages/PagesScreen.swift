@@ -45,6 +45,8 @@ struct PagesScreen: View {
         } content: {
             if let editor {
                 BlockListColumn(editor: editor, isCompact: isCompact)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("page.editor")
                     .id(editor.pageID)
                     #if os(macOS)
                     .navigationSplitViewColumnWidth(min: 300, ideal: 360)
@@ -216,6 +218,7 @@ private struct PagesListColumn: View {
                 } label: {
                     Label("New Bio Page", systemImage: "plus")
                 }
+                .accessibilityIdentifier("pages.create")
             }
         }
     }
@@ -234,6 +237,7 @@ private struct PagesListColumn: View {
                 NavigationLink(value: page.id) {
                     BioPageRow(page: page)
                 }
+                .accessibilityIdentifier("pages.row.\(page.id)")
                 .contextMenu { menu(for: page) }
                 .swipeActions(edge: .trailing) {
                     Button(role: .destructive) { pendingDelete = page } label: {
@@ -313,23 +317,14 @@ private struct PagesListColumn: View {
 struct BioPageRow: View {
     @Environment(AppModel.self) private var app
     let page: BioPage
-    @ScaledMetric(relativeTo: .body) private var glyphSide: CGFloat = 36
 
     var body: some View {
         HStack(spacing: StudioSpace.s3) {
-            RoundedRectangle(cornerRadius: StudioRadius.sm, style: .continuous)
-                .fill(Color.studioSurface3)
-                .frame(width: glyphSide, height: glyphSide)
-                .overlay(
-                    Image(systemName: "person.crop.square")
-                        .foregroundStyle(Color.studioText2)
-                )
-                .accessibilityHidden(true)
+            RowGlyphTile(systemImage: "person.crop.square", isActive: page.isEnabled)
             VStack(alignment: .leading, spacing: StudioSpace.s1) {
                 HStack(spacing: StudioSpace.s2) {
-                    Text(page.title ?? app.addresses.display(for: page.slug))
+                    Text(verbatim: page.title ?? app.addresses.display(for: page.slug))
                         .studioText(.ui)
-                        .fontWeight(.semibold)
                         .foregroundStyle(Color.studioText)
                         .lineLimit(2)
                     if !page.isEnabled {

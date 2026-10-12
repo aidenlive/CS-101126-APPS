@@ -159,7 +159,13 @@ struct PreferencesView: View {
         case .failed(let error):
             ErrorStateView(error: error) { [model] in await model.refresh() }
         case .loaded:
-            form
+            // The Mac Settings window keeps the system look; in the app the
+            // form sits on the Studio page like every other.
+            if inlineSave {
+                form.formStyle(.grouped)
+            } else {
+                form.studioForm()
+            }
         }
     }
 
@@ -233,7 +239,6 @@ struct PreferencesView: View {
                 }
             }
         }
-        .formStyle(.grouped)
         .refreshable { await model.refresh() }
     }
 

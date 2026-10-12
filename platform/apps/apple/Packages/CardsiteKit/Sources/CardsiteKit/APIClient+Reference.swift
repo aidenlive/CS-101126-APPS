@@ -26,19 +26,18 @@ extension APIClient {
         return page.items
     }
 
-    /// What the plan includes.
-    ///
-    /// `GET /account/plan` carries `plan_settings` only for accounts with
-    /// resolved overrides; it is `null` for a Free user (fixture 10a). Then
-    /// the plan's own `settings` from `GET /plans` apply.
+    /// What the plan includes, resolved the way the server resolves it
+    /// (`UserRepository.GetEffectivePlanSettings`): the plan's own
+    /// `settings` (the matching plan from `GET /plans`, else the default
+    /// plan), with the account's `plan_settings` override laid over them key
+    /// by key. `plan_settings` is `null` for most accounts (fixture 10a).
     public func planCapabilities() async throws -> PlanCapabilities {
         let account: JSONValue = try await send(.get, "api/v1/account/plan")
-        if let settings = account["plan_settings"]?.objectValue {
-            return PlanCapabilities(settings: settings)
-        }
-        let planID = account["plan_id"]?.intValue
         let plans: [JSONValue]? = try await sendOptional(.get, "api/v1/plans")
-        let plan = (plans ?? []).first { $0["id"]?.intValue == planID }
-        return PlanCapabilities(settings: plan?["settings"]?.objectValue ?? [:])
+        return PlanCapabilities.effective(
+            plans: plans ?? [],
+            planID: account["plan_id"]?.intValue,
+            override: account["plan_settings"]?.objectValue ?? [:]
+        )
     }
 }

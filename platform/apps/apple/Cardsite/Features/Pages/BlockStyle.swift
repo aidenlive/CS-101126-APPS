@@ -1,11 +1,6 @@
 import SwiftUI
 import StudioKit
 import CardsiteKit
-#if canImport(UIKit)
-import UIKit
-#elseif canImport(AppKit)
-import AppKit
-#endif
 
 // How blocks look in the editor: glyph, tint, one-line summary, library
 // grouping, and the hex ↔ Color bridge the colour fields need.
@@ -121,7 +116,7 @@ struct BlockGlyphTile: View {
             .fill(Color.studioSurface3)
             .overlay(
                 RoundedRectangle(cornerRadius: StudioRadius.sm, style: .continuous)
-                    .fill((color.flatMap(BlockHexColor.color(from:)) ?? Color.studioAccent).opacity(0.22))
+                    .fill((color.flatMap(HexColor.color(from:)) ?? Color.studioAccent).opacity(0.22))
             )
             .frame(width: side, height: side)
             .overlay(
@@ -230,49 +225,5 @@ enum BlockFieldInference {
 
     static func humanized(_ key: String) -> String {
         key.replacingOccurrences(of: "_", with: " ").capitalized
-    }
-}
-
-// MARK: - Hex colour
-
-/// `#rrggbb` ↔ `Color`, for the colour fields the server stores as hex.
-enum BlockHexColor {
-    /// Accepts `#rgb`, `#rrggbb` and `#rrggbbaa`, with or without `#`.
-    static func color(from raw: String) -> Color? {
-        var digits = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if digits.hasPrefix("#") { digits.removeFirst() }
-        if digits.count == 3 {
-            digits = digits.map { "\($0)\($0)" }.joined()
-        }
-        guard digits.count == 6 || digits.count == 8, let value = UInt64(digits, radix: 16) else { return nil }
-        let hasAlpha = digits.count == 8
-        let red = Double((value >> (hasAlpha ? 24 : 16)) & 0xFF) / 255
-        let green = Double((value >> (hasAlpha ? 16 : 8)) & 0xFF) / 255
-        let blue = Double((value >> (hasAlpha ? 8 : 0)) & 0xFF) / 255
-        let alpha = hasAlpha ? Double(value & 0xFF) / 255 : 1
-        return Color(.sRGB, red: red, green: green, blue: blue, opacity: alpha)
-    }
-
-    /// `#rrggbb` in sRGB, lowercase, alpha dropped (the renderer ignores it).
-    static func hex(from color: Color) -> String? {
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        #if canImport(UIKit)
-        var alpha: CGFloat = 0
-        guard UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return nil }
-        #elseif canImport(AppKit)
-        guard let srgb = NSColor(color).usingColorSpace(.sRGB) else { return nil }
-        red = srgb.redComponent
-        green = srgb.greenComponent
-        blue = srgb.blueComponent
-        #endif
-        func byte(_ component: CGFloat) -> Int {
-            Int((min(max(component, 0), 1) * 255).rounded())
-        }
-        return "#" + [red, green, blue].map { component in
-            let digits = String(byte(component), radix: 16)
-            return digits.count == 1 ? "0" + digits : digits
-        }.joined()
     }
 }

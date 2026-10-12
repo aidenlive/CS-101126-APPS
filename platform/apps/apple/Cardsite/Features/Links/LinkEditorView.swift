@@ -48,6 +48,7 @@ struct LinkEditorView: View {
                         help: String(localized: "Where the short address sends people."),
                         errorMessage: destinationError
                     )
+                    .accessibilityIdentifier("link.editor.destination")
                     .focused($focus, equals: .destination)
                     .plainEntry()
                     #if os(iOS)
@@ -65,6 +66,7 @@ struct LinkEditorView: View {
                             help: String(localized: "Letters, numbers, hyphens and underscores."),
                             errorMessage: slugError
                         )
+                        .accessibilityIdentifier("link.editor.slug")
                         .focused($focus, equals: .slug)
                         .plainEntry()
                         .submitLabel(.done)
@@ -94,6 +96,8 @@ struct LinkEditorView: View {
                 .readableWidth(560)
             }
             .background(Color.studioBg)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("link.editor")
             .navigationTitle("New Short Link")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -107,6 +111,7 @@ struct LinkEditorView: View {
                         ProgressView()
                     } else {
                         Button("Create") { Task { await save() } }
+                            .accessibilityIdentifier("link.editor.save")
                             .disabled(destination.trimmingCharacters(in: .whitespaces).isEmpty || slug.isEmpty)
                     }
                 }

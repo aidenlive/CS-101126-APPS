@@ -33,6 +33,8 @@ struct UnsavedChangesModifier: ViewModifier {
     let isSaving: Bool
     let save: @MainActor () async -> Bool
     let discard: @MainActor () -> Void
+    /// The Save button's accessibility identifier, for UI tests.
+    var saveIdentifier = "editor.save"
 
     @Environment(\.dismiss) private var dismiss
     @Environment(UnsavedChangesTracker.self) private var tracker: UnsavedChangesTracker?
@@ -55,6 +57,7 @@ struct UnsavedChangesModifier: ViewModifier {
                             .accessibilityLabel(Text("Saving"))
                     } else {
                         Button("Save") { Task { _ = await save() } }
+                            .accessibilityIdentifier(saveIdentifier)
                             .disabled(!isDirty)
                             .keyboardShortcut("s", modifiers: .command)
                     }
@@ -84,8 +87,10 @@ struct UnsavedChangesModifier: ViewModifier {
 extension View {
     func unsavedChanges(isDirty: Bool, isSaving: Bool,
                         save: @escaping @MainActor () async -> Bool,
-                        discard: @escaping @MainActor () -> Void) -> some View {
-        modifier(UnsavedChangesModifier(isDirty: isDirty, isSaving: isSaving, save: save, discard: discard))
+                        discard: @escaping @MainActor () -> Void,
+                        saveIdentifier: String = "editor.save") -> some View {
+        modifier(UnsavedChangesModifier(isDirty: isDirty, isSaving: isSaving, save: save, discard: discard,
+                                        saveIdentifier: saveIdentifier))
     }
 
     /// Asks before a guarded selection change throws away an editor's changes.

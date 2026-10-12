@@ -277,7 +277,7 @@ struct DataRecordDetailView: View {
                 Button("Delete Record…", role: .destructive, action: requestDelete)
             }
         }
-        .formStyle(.grouped)
+        .studioForm()
         .navigationTitle(record.kindTitle)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)

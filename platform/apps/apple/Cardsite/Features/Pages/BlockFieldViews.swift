@@ -216,9 +216,10 @@ struct ColorFieldRow: View {
 
     private var color: Binding<Color> {
         Binding(
-            get: { hex.flatMap(BlockHexColor.color(from:)) ?? Color.studioSurface3 },
+            get: { hex.flatMap(HexColor.color(from:)) ?? Color.studioSurface3 },
             set: { newColor in
-                if let value = BlockHexColor.hex(from: newColor), value != hex { hex = value }
+                let value = HexColor.hex(from: newColor)
+                if value != hex { hex = value }
             }
         )
     }

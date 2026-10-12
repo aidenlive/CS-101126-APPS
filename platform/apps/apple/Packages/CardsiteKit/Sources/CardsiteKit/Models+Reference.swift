@@ -186,6 +186,17 @@ public struct PlanCapabilities: Sendable, Hashable {
         "custom_pwa_is_enabled": true,
     ])
 
+    /// The server's merge: `plans` is `GET /plans` as JSON. The plan whose
+    /// `id` is `planID` supplies the defaults, or, when none matches, a plan
+    /// flagged `is_default`; `override` (`plan_settings`) then wins key by
+    /// key, as PostgreSQL's `jsonb || jsonb` does.
+    public static func effective(plans: [JSONValue], planID: Int?, override: [String: JSONValue]) -> PlanCapabilities {
+        let plan = plans.first { planID != nil && $0["id"]?.intValue == planID }
+            ?? plans.first { $0["is_default"]?.boolValue == true }
+        let defaults = plan?["settings"]?.objectValue ?? [:]
+        return PlanCapabilities(settings: defaults.merging(override) { _, overriding in overriding })
+    }
+
     public func includes(_ key: String) -> Bool {
         settings[key]?.boolValue ?? false
     }

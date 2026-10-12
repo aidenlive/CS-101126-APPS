@@ -82,12 +82,14 @@ private struct SignInForm: View {
                 Task { await submit() }
             }
             .disabled(email.isEmpty || password.isEmpty)
+            .accessibilityIdentifier("auth.signIn")
             .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack {
                 Button("Forgot password?") { mode = .forgotPassword }
                 Spacer()
                 Button("Create an account") { mode = .register }
+                    .accessibilityIdentifier("auth.toSignUp")
             }
             .buttonStyle(.borderless)
             .studioText(.uiSm)
@@ -217,6 +219,7 @@ private struct RegisterForm: View {
                 Task { await submit() }
             }
             .disabled(name.isEmpty || email.isEmpty || password.isEmpty || passwordProblem != nil)
+            .accessibilityIdentifier("auth.signUp")
 
             Text(consent)
                 .studioText(.uiSm)
@@ -320,7 +323,7 @@ struct PasswordField: View {
     @State private var isRevealed = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: StudioSpace.s2) {
             Text(title).studioText(.uiSm)
             HStack(spacing: StudioSpace.s2) {
                 Group {

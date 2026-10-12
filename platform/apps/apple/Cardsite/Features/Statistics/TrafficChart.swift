@@ -4,26 +4,6 @@ import Accessibility
 import StudioKit
 import CardsiteKit
 
-/// The Studio data-visualisation scale, as the web defines it
-/// (`--viz-1` … `--viz-grid` in studio-design-system core).
-///
-/// StudioKit's Swift package has no `viz` tokens yet, so the scale is built
-/// here from the palette primitives the web's variables point at, which is
-/// what `Color.StudioPalette` is for. Swap these for `Color.studioViz*` once
-/// StudioKit ships them.
-enum StatisticsPalette {
-    /// `--viz-1: var(--blue-500)`: pageviews.
-    static let primary = Color.StudioPalette.blue500
-    /// `--viz-2: var(--violet-400)`: visitors.
-    static let secondary = Color.StudioPalette.violet400
-    /// `--viz-grid: var(--border)`.
-    static let grid = Color.studioBorder
-    /// `--viz-highlight: var(--accent)`: the leading bar.
-    static let highlight = Color.studioAccentSoft
-    /// Bars after the first.
-    static let bar = Color.studioSurface3
-}
-
 /// Pageviews (filled line) against visitors (dashed line), one point per day.
 ///
 /// VoiceOver reads each day as one element ("12 Oct: 41 pageviews,
@@ -45,7 +25,7 @@ struct TrafficChart: View {
                 .interpolationMethod(.monotone)
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [StatisticsPalette.primary.opacity(0.22), StatisticsPalette.primary.opacity(0)],
+                        colors: [Color.studioViz1.opacity(0.22), Color.studioViz1.opacity(0)],
                         startPoint: .top, endPoint: .bottom
                     )
                 )
@@ -57,7 +37,7 @@ struct TrafficChart: View {
                     series: .value("Series", "Visitors")
                 )
                 .interpolationMethod(.monotone)
-                .foregroundStyle(StatisticsPalette.secondary)
+                .foregroundStyle(Color.studioViz2)
                 .lineStyle(StrokeStyle(lineWidth: 1.5, lineCap: .round, dash: [3, 4]))
                 .accessibilityHidden(true)
 
@@ -67,7 +47,7 @@ struct TrafficChart: View {
                     series: .value("Series", "Pageviews")
                 )
                 .interpolationMethod(.monotone)
-                .foregroundStyle(StatisticsPalette.primary)
+                .foregroundStyle(Color.studioViz1)
                 .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                 .accessibilityLabel(Text(point.date, format: .dateTime.day().month(.abbreviated)))
                 .accessibilityValue(Text("\(point.pageviews) pageviews, \(point.visitors) visitors"))
@@ -75,14 +55,14 @@ struct TrafficChart: View {
         }
         .chartXAxis {
             AxisMarks(values: .automatic(desiredCount: 4)) { _ in
-                AxisGridLine().foregroundStyle(StatisticsPalette.grid)
+                AxisGridLine().foregroundStyle(Color.studioVizGrid)
                 AxisValueLabel(format: .dateTime.day().month(.abbreviated))
                     .foregroundStyle(Color.studioText3)
             }
         }
         .chartYAxis {
             AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { _ in
-                AxisGridLine().foregroundStyle(StatisticsPalette.grid)
+                AxisGridLine().foregroundStyle(Color.studioVizGrid)
                 AxisValueLabel()
                     .foregroundStyle(Color.studioText3)
             }
@@ -117,8 +97,8 @@ struct TrafficChart: View {
 struct TrafficChartLegend: View {
     var body: some View {
         HStack(spacing: StudioSpace.s4) {
-            item(String(localized: "Pageviews"), color: StatisticsPalette.primary, dashed: false)
-            item(String(localized: "Visitors"), color: StatisticsPalette.secondary, dashed: true)
+            item(String(localized: "Pageviews"), color: Color.studioViz1, dashed: false)
+            item(String(localized: "Visitors"), color: Color.studioViz2, dashed: true)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Solid line: pageviews. Dashed line: visitors."))

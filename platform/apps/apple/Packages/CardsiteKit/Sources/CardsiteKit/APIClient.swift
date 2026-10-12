@@ -253,6 +253,15 @@ public actor APIClient {
     /// Sends a built request and returns the body of a 2xx response.
     /// Anything else becomes an ``APIError``.
     func execute(_ request: URLRequest, credentialCheck: Bool = false) async throws -> Data {
+        try await exchange(request, credentialCheck: credentialCheck).data
+    }
+
+    /// Like ``execute(_:credentialCheck:)``, but a status in `accepting`
+    /// comes back with its body instead of being thrown, for endpoints whose
+    /// non-2xx answers carry data (`POST /domains/{id}/verify` answers 422
+    /// with the domain and the DNS advice).
+    func exchange(_ request: URLRequest, credentialCheck: Bool = false,
+                  accepting: Set<Int> = []) async throws -> (status: Int, data: Data) {
         let data: Data
         let response: HTTPURLResponse
         do {
@@ -264,10 +273,10 @@ public actor APIClient {
         } catch {
             throw APIError.from(transportError: error)
         }
-        guard (200..<300).contains(response.statusCode) else {
+        guard (200..<300).contains(response.statusCode) || accepting.contains(response.statusCode) else {
             throw APIError.from(status: response.statusCode, body: data, headers: response.allHeaderFields, credentialCheck: credentialCheck)
         }
-        return data
+        return (response.statusCode, data)
     }
 
     /// Encodes `body` as JSON, sends the request and returns the raw body.

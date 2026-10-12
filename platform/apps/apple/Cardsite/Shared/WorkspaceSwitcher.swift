@@ -197,6 +197,7 @@ struct WorkspacePickerRow: View {
     }
 }
 
+#if DEBUG
 #Preview("Sidebar switcher") {
     WorkspaceSwitcher()
         .padding(StudioSpace.s4)
@@ -211,3 +212,4 @@ struct WorkspacePickerRow: View {
     }
     .environment(AppModel.preview())
 }
+#endif

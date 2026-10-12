@@ -1,0 +1,12 @@
+{
+  "_request": {
+    "method": "DELETE",
+    "path": "/api/v1/pixels/{id}",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "message": "Pixel deleted"
+    }
+  }
+}

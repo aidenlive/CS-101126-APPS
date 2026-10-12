@@ -1,0 +1,12 @@
+{
+  "_request": {
+    "method": "DELETE",
+    "path": "/api/v1/domains/{id}",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "message": "Domain deleted"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/domains/{id}/verify",
+    "status": 422
+  },
+  "response": {
+    "data": {
+      "id": 5,
+      "user_id": 7,
+      "workspace_id": 484,
+      "scheme": "https",
+      "host": "nc-179177469018122.example.test",
+      "custom_not_found_url": "https://example.com/404",
+      "type": 0,
+      "is_enabled": true,
+      "ssl_is_enabled": true,
+      "force_ssl": true,
+      "redirect_type": "frame",
+      "forward_parameters": false,
+      "is_verified": false,
+      "created_at": "2026-10-12T03:11:32.538388Z",
+      "updated_at": "2026-10-12T03:11:37.218677Z"
+    },
+    "error": {
+      "title": "nc-179177469018122.example.test does not point at this deployment yet",
+      "message": "Point nc-179177469018122.example.test at localhost, then verify again. DNS changes can take a while to propagate.",
+      "code": 422
+    }
+  }
+}

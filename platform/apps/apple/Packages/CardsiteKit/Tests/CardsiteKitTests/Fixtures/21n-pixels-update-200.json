@@ -1,0 +1,19 @@
+{
+  "_request": {
+    "method": "PUT",
+    "path": "/api/v1/pixels/{id}",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "id": 5,
+      "user_id": 7,
+      "workspace_id": 484,
+      "type": "linkedin",
+      "name": "Ads",
+      "pixel": "0987654321",
+      "created_at": "2026-10-12T03:11:32.657327Z",
+      "updated_at": null
+    }
+  }
+}

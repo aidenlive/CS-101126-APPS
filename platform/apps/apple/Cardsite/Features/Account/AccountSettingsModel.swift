@@ -28,10 +28,14 @@ final class AccountSettingsModel {
 
     // MARK: Profile
 
-    func saveTimezone(_ identifier: String) async throws {
+    /// Saves the timezone and returns the updated user, which the caller
+    /// hands to `AppModel.replaceUser(_:)`.
+    @discardableResult
+    func saveTimezone(_ identifier: String) async throws -> User {
         do {
             let user = try await client.updateTimezone(identifier)
             savedTimezone = user.timezone ?? identifier
+            return user
         } catch {
             onError(error)
             throw error
