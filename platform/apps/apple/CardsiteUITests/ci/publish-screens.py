@@ -103,7 +103,7 @@ def main() -> int:
     token = os.environ["GITHUB_TOKEN"]
     repo = os.environ["GITHUB_REPOSITORY"]
     sha = os.environ["GITHUB_SHA"]
-    keep = int(os.environ.get("KEEP_RUNS", "10"))
+    keep = int(os.environ.get("KEEP_RUNS", "2"))
     meta = {
         "repo": repo,
         "server": os.environ.get("GITHUB_SERVER_URL", "https://github.com"),
@@ -140,7 +140,10 @@ def main() -> int:
     run_dir = os.path.join(runs_root, sha)
     shutil.rmtree(run_dir, ignore_errors=True)
     for device in devices:
-        shutil.copytree(os.path.join(source, device), os.path.join(run_dir, device))
+        shutil.copytree(os.path.join(source, device), os.path.join(run_dir, device),
+                        # Screen recordings and UI snapshots run to tens of MB
+                        # each and pushed the branch past GitHub's limits.
+                        ignore=shutil.ignore_patterns("*.mp4", "*.mov", "*.bin", "*Synthesized-Event*", "*UI-Snapshot*"))
     with open(os.path.join(run_dir, "index.md"), "w", encoding="utf-8") as handle:
         handle.write(run_index(sha, run_dir, meta))
 
