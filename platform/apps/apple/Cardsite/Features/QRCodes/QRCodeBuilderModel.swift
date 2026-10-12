@@ -250,7 +250,7 @@ final class QRCodeBuilderModel {
             draft.setString(String(format: "%.6f", coordinate.longitude), for: "longitude")
         } catch is CancellationError {
         } catch {
-            geocodeError = String(localized: "Couldn't look up that address. Check your connection and try again.")
+            geocodeError = String(localized: "Couldn’t look up that address. Check your connection and try again.")
         }
     }
 

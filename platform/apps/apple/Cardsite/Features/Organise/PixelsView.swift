@@ -112,9 +112,12 @@ struct PixelsView: View {
             retry: { [list = model.list] in await list.refresh() }
         ) { pixels in
             List {
+                ListPageHead(kicker: String(localized: "Track"),
+                             title: String(localized: "Pixels"),
+                             description: String(localized: "Retargeting pixels fired on every redirect."))
                 if let error = model.list.refreshError {
                     RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
-                        .listRowSeparator(.hidden)
+                        .studioClearRow()
                 }
                 Section {
                     ForEach(Array(pixels.enumerated()), id: \.element.id) { index, pixel in
@@ -127,35 +130,33 @@ struct PixelsView: View {
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("org.pixels.row.\(index)")
                         .accessibilityHint(Text("Edits the pixel"))
-                        .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) { pendingDelete = pixel } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                            Button { editing = .existing(pixel) } label: {
-                                Label("Edit", systemImage: "pencil")
-                            }
-                        }
+                        .resourceSwipeActions(ResourceActionSet(edit: { editing = .existing(pixel) },
+                                                                delete: { pendingDelete = pixel }))
                         .contextMenu {
                             Button { editing = .existing(pixel) } label: {
-                                Label("Edit…", systemImage: "pencil")
+                                ResourceVerb.edit.label
                             }
                             Button { Pasteboard.copy(pixel.pixel) } label: {
                                 Label("Copy ID", systemImage: "doc.on.doc")
                             }
                             Divider()
                             Button(role: .destructive) { pendingDelete = pixel } label: {
-                                Label("Delete…", systemImage: "trash")
+                                ResourceVerb.delete.label
                             }
                         }
                     }
+                    .studioRowBackground()
                     OrganiseLoadMoreRow(list: model.list)
                 } footer: {
-                    Text("Pixels emit on your public pages as the provider's own no-script beacon. Providers marked “Can't emit yet” have none, so they count nothing for now.")
+                    Text("Pixels emit on your public pages as the provider’s own no-script beacon. Providers marked “Can’t emit yet” have none, so they count nothing for now.")
                 }
             }
+            .studioList()
             .refreshable { [list = model.list] in await list.refresh() }
         }
+        .background(Color.studioBg)
         .navigationTitle("Pixels")
+        .inlineNavigationTitle()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { editing = .new } label: {
@@ -174,8 +175,8 @@ struct PixelsView: View {
         .organiseDeleteFlow(
             $pendingDelete,
             title: String(localized: "Delete this pixel?"),
-            confirmTitle: { String(localized: "Delete \($0.name)") },
-            message: String(localized: "Are you sure you want to delete this pixel? This can't be undone."),
+            confirmTitle: { _ in String(localized: "Delete") },
+            message: String(localized: "Links that use it stop firing it. This can’t be undone."),
             delete: { [model] pixel in try await model.delete(pixel) }
         )
     }
@@ -225,7 +226,7 @@ struct PixelRow: View {
                 pills {
                     StudioStatusPill(typeName, tone: .accent)
                     if canEmit == false {
-                        StudioStatusPill(String(localized: "Can't emit yet"), tone: .warning)
+                        StudioStatusPill(String(localized: "Can’t emit yet"), tone: .warning)
                     }
                 }
                 Text(verbatim: pixel.pixel)
@@ -295,7 +296,7 @@ struct PixelEditorSheet: View {
                 } footer: {
                     Text("A tracking pixel you can attach to any link.")
                 }
-                .editorRowBackground()
+                .studioRowBackground()
 
                 Section {
                     typePicker
@@ -304,7 +305,7 @@ struct PixelEditorSheet: View {
                 } footer: {
                     typeFooter
                 }
-                .editorRowBackground()
+                .studioRowBackground()
 
                 Section {
                     EditorTextField(
@@ -319,10 +320,10 @@ struct PixelEditorSheet: View {
                     .accessibilityIdentifier("org.pixels.editor.code")
                     .onSubmit { Task { await save() } }
                 }
-                .editorRowBackground()
+                .studioRowBackground()
             }
             .resourceEditorForm()
-            .navigationTitle(pixel == nil ? String(localized: "Create pixel") : String(localized: "Edit pixel"))
+            .navigationTitle(pixel == nil ? String(localized: "Create Pixel") : String(localized: "Edit Pixel"))
             #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -348,7 +349,7 @@ struct PixelEditorSheet: View {
             .interactiveDismissDisabled(isDirty || isSaving)
             .task { [model] in await model.loadTypes() }
         }
-        .organiseSheetFrame()
+        .cardsiteSheet(.form)
     }
 
     @ViewBuilder
@@ -391,10 +392,10 @@ struct PixelEditorSheet: View {
                     Text(selectedType.description)
                 }
                 if selectedType.emitsBeacon {
-                    Text("Emits on your public pages, as the provider's own no-script beacon.")
+                    Text("Emits on your public pages, as the provider’s own no-script beacon.")
                 } else {
                     Label {
-                        Text("Can't emit yet: this provider has no beacon that works without scripts, so it counts nothing on your pages for now.")
+                        Text("Can’t emit yet: this provider has no beacon that works without scripts, so it counts nothing on your pages for now.")
                     } icon: {
                         Image(systemName: "exclamationmark.triangle")
                             .foregroundStyle(Color.studioWarning)

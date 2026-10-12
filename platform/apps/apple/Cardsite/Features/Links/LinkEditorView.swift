@@ -93,7 +93,7 @@ struct LinkEditorView: View {
                     FormErrorText(message: formError)
                 }
                 .padding(StudioSpace.s6)
-                .readableWidth(560)
+                .readableWidth(.sheet)
             }
             .background(Color.studioBg)
             .accessibilityElement(children: .contain)
@@ -121,9 +121,7 @@ struct LinkEditorView: View {
             .defaultFocus($focus, prefill == nil ? .destination : .slug)
             .interactiveDismissDisabled(isSaving)
         }
-        #if os(macOS)
-        .frame(minWidth: 460, minHeight: 340)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     private func save() async {

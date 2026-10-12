@@ -66,7 +66,7 @@ struct QuickSearchResults: View {
         case .failed(let error):
             Label {
                 VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                    Text(error == .offline ? String(localized: "You're offline") : String(localized: "Couldn't search links"))
+                    Text(error == .offline ? String(localized: "You’re offline") : String(localized: "Couldn’t search links"))
                     Text(error.localizedDescription)
                         .studioText(.uiSm)
                         .foregroundStyle(Color.studioText3)

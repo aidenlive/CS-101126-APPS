@@ -48,11 +48,7 @@ struct QRCodeEditorView: View {
                 builder = QRCodeBuilderModel(mode: mode, codes: codes, addresses: app.addresses)
             }
         }
-        #if os(iOS) || os(visionOS)
-        .presentationSizing(.page)
-        #else
-        .frame(minWidth: 720, idealWidth: 980, minHeight: 560, idealHeight: 760)
-        #endif
+        .cardsiteSheet(.page)
     }
 }
 
@@ -143,7 +139,7 @@ private struct QRCodeBuilderView: View {
                         .frame(height: StudioSpace.s10)
                 }
             }
-            .frame(maxWidth: 560)
+            .frame(maxWidth: CardsiteMeasure.sheet.width)
         }
         .padding(StudioSpace.s6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -211,12 +207,12 @@ private struct QRCodeBuilderView: View {
                           error: builder.nameError)
                     .accessibilityIdentifier("qr.editor.name")
             }
-            .listRowBackground(Color.studioSurface)
+            .studioRowBackground()
 
             Section {
                 typeRow
             }
-            .listRowBackground(Color.studioSurface)
+            .studioRowBackground()
 
             detailSections
 
@@ -225,9 +221,9 @@ private struct QRCodeBuilderView: View {
                 colorRow(String(localized: "Background"), hex: $builder.draft.background, fallback: .studioSurface)
                 transparencyRow
             } header: {
-                Text("Colours")
+                Text("Colors")
             }
-            .listRowBackground(Color.studioSurface)
+            .studioRowBackground()
 
             Section {
                 Stepper(value: $builder.draft.size, in: QRCodeDraft.sizeRange, step: QRCodeDraft.sizeStep) {
@@ -248,17 +244,16 @@ private struct QRCodeBuilderView: View {
             } footer: {
                 Text(QRErrorLevel(rawValue: builder.draft.errorLevel)?.explanation ?? "")
             }
-            .listRowBackground(Color.studioSurface)
+            .studioRowBackground()
 
             if let error = builder.formError {
                 Section {
                     FormErrorText(message: error)
                 }
-                .listRowBackground(Color.studioSurface)
+                .studioRowBackground()
             }
         }
-        .formStyle(.grouped)
-        .scrollContentBackground(.hidden)
+        .studioForm()
         .scrollDismissesKeyboard(.interactively)
     }
 
@@ -273,8 +268,8 @@ private struct QRCodeBuilderView: View {
             }
         case .failed, .loaded:
             LabeledContent("Type", value: builder.typeLabel)
-            Button("Couldn't load the other types. Try Again") {
-                Task { [builder] in await builder.retryTypes() }
+            FormRetryRow(message: String(localized: "Couldn’t load the other types.")) { [builder] in
+                await builder.retryTypes()
             }
         case .idle, .loading:
             LabeledContent("Type") {
@@ -295,9 +290,9 @@ private struct QRCodeBuilderView: View {
             } header: {
                 Text(detailsTitle)
             } footer: {
-                Text("Change the link's destination any time; printed codes follow it.")
+                Text("Change the link’s destination any time; printed codes follow it.")
             }
-            .listRowBackground(Color.studioSurface)
+            .studioRowBackground()
         } else {
             let groups = QRCodeCatalog.groups(for: builder.draft.type)
             ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
@@ -313,7 +308,7 @@ private struct QRCodeBuilderView: View {
                         Text(footer)
                     }
                 }
-                .listRowBackground(Color.studioSurface)
+                .studioRowBackground()
             }
             if builder.draft.type == "location" {
                 Section {
@@ -323,7 +318,7 @@ private struct QRCodeBuilderView: View {
                 } footer: {
                     Text("Fills in the coordinates. The code encodes the coordinates, not the address.")
                 }
-                .listRowBackground(Color.studioSurface)
+                .studioRowBackground()
             }
         }
     }
@@ -331,7 +326,7 @@ private struct QRCodeBuilderView: View {
     private var detailsFooter: String? {
         switch builder.draft.type {
         case "event":
-            return String(localized: "Times are the event's local time and read the same in every time zone.")
+            return String(localized: "Times are the event’s local time and read the same in every time zone.")
         case "url":
             return String(localized: "Fixed once printed. To change it later, use a Dynamic URL instead.")
         default:
@@ -571,7 +566,7 @@ private struct QRCodeBuilderView: View {
     private var previewStatus: some View {
         if let error = builder.preview.error {
             VStack(alignment: .leading, spacing: StudioSpace.s3) {
-                StudioBanner(lead: String(localized: "Couldn't preview."),
+                StudioBanner(lead: String(localized: "Couldn’t preview."),
                              message: error.localizedDescription,
                              tone: error == .offline ? .warning : .error)
                 StudioButton(String(localized: "Try Again"), systemImage: "arrow.clockwise", variant: .outline,

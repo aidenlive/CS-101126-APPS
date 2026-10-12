@@ -24,7 +24,16 @@ struct UploadsView: View {
     @State private var isImportingFile = false
     @State private var isPickingPhoto = false
     @State private var pendingDelete: UploadItem? = nil
-    @State private var errorMessage: String? = nil
+    @State private var failure: Failure? = nil
+    @Environment(\.studioViewport) private var viewport
+    @Environment(\.toasts) private var toasts
+    @ScaledMetric(relativeTo: .body) private var tileMin: CGFloat = StudioSpace.s16 * 2
+
+    struct Failure: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+    }
 
     init(client: APIClient, onError: @escaping @MainActor (any Error) -> Void) {
         _model = State(initialValue: UploadsModel(client: client, onError: onError))
@@ -51,9 +60,13 @@ struct UploadsView: View {
         ) { _ in
             gallery
         }
-        .safeAreaInset(edge: .top, spacing: 0) { filterBar }
+        .background(Color.studioBg)
         .navigationTitle("Uploads")
+        .inlineNavigationTitle()
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                filterPicker
+            }
             ToolbarItem(placement: .primaryAction) {
                 if model.isUploading {
                     ProgressView()
@@ -88,7 +101,8 @@ struct UploadsView: View {
         .fileImporter(isPresented: $isImportingFile, allowedContentTypes: UploadCandidate.importableTypes) { result in
             switch result {
             case .success(let url): Task { await uploadFile(at: url) }
-            case .failure(let error): errorMessage = error.localizedDescription
+            case .failure(let error):
+                failure = Failure(title: String(localized: "Couldn’t upload"), message: error.localizedDescription)
             }
         }
         .confirmationDialog(
@@ -97,51 +111,50 @@ struct UploadsView: View {
             titleVisibility: .visible,
             presenting: pendingDelete
         ) { item in
-            Button("Delete \(item.displayName)", role: .destructive) { Task { await delete(item) } }
+            Button("Delete", role: .destructive) { Task { await delete(item) } }
         } message: { _ in
-            Text("Anything that uses its address will stop showing it.")
+            Text("Anything that uses its address will stop showing it. This can’t be undone.")
         }
-        .alert("Couldn't complete that", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
+        .alert(
+            failure?.title ?? "",
+            isPresented: Binding(get: { failure != nil }, set: { if !$0 { failure = nil } }),
+            presenting: failure
+        ) { _ in
             Button("OK", role: .cancel) {}
-        } message: {
-            Text(errorMessage ?? "")
+        } message: { failure in
+            Text(failure.message)
         }
     }
 
     // MARK: Pieces
 
-    private var filterBar: some View {
-        HStack(spacing: StudioSpace.s3) {
-            Picker("Show", selection: Binding(
-                get: { model.filter },
-                set: { filter in Task { await model.setFilter(filter) } }
-            )) {
-                Text("All").tag(UploadsModel.Filter.all)
-                Text("Images").tag(UploadsModel.Filter.images)
-                Text("Files").tag(UploadsModel.Filter.files)
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
-
-            Spacer(minLength: StudioSpace.s2)
-
-            if let bytes = model.storageBytes {
-                Text("\(bytes.formatted(.byteCount(style: .file))) used")
-                    .studioText(.uiSm)
-                    .foregroundStyle(Color.studioText3)
-                    .monospacedDigit()
-                    .accessibilityLabel(Text("Storage used: \(bytes.formatted(.byteCount(style: .file)))"))
-            }
+    /// All / Images / Files, in the toolbar as Inbox has its filter.
+    private var filterPicker: some View {
+        Picker("Show", selection: Binding(
+            get: { model.filter },
+            set: { filter in Task { await model.setFilter(filter) } }
+        )) {
+            Text("All").tag(UploadsModel.Filter.all)
+            Text("Images").tag(UploadsModel.Filter.images)
+            Text("Files").tag(UploadsModel.Filter.files)
         }
-        .padding(.horizontal, StudioSpace.s4)
-        .padding(.vertical, StudioSpace.s2)
-        .background(Color.studioBg)
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
+    }
+
+    /// The web's page description, with the storage this workspace uses.
+    private var headDescription: String {
+        let lead = String(localized: "Images and files this workspace stores, to use anywhere an address is asked for.")
+        guard let bytes = model.storageBytes else { return lead }
+        return lead + " " + String(localized: "\(bytes.formatted(.byteCount(style: .file))) used.")
     }
 
     private var gallery: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: StudioSpace.s6) {
+                StudioPageHead(kicker: String(localized: "Tools"), title: String(localized: "Uploads"),
+                               description: headDescription)
                 if let error = model.list.refreshError {
                     RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
                 }
@@ -149,7 +162,7 @@ struct UploadsView: View {
                 if !model.images.isEmpty {
                     VStack(alignment: .leading, spacing: StudioSpace.s3) {
                         StudioSectionHeader(String(localized: "Images"))
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: StudioSpace.s16 * 2), spacing: StudioSpace.s3)],
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: tileMin), spacing: StudioSpace.s3)],
                                   spacing: StudioSpace.s3) {
                             ForEach(model.images) { item in
                                 LibraryImageTile(item: item)
@@ -184,8 +197,10 @@ struct UploadsView: View {
                     .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
                 }
             }
-            .padding(StudioSpace.s4)
-            .readableWidth(960)
+            .padding(.horizontal, viewport.contentPadding)
+            .padding(.top, StudioSpace.s6)
+            .padding(.bottom, StudioSpace.s12)
+            .readableWidth(.dashboard)
         }
         .background(Color.studioBg)
         .refreshable { [model] in await model.refresh() }
@@ -193,23 +208,20 @@ struct UploadsView: View {
 
     @ViewBuilder
     private func menu(for item: UploadItem) -> some View {
-        Button {
-            Pasteboard.copy(item.url)
-            Haptics.success()
-        } label: {
-            Label("Copy Address", systemImage: "doc.on.doc")
-        }
         if let address = item.address {
-            ShareLink(item: address) {
-                Label("Share…", systemImage: "square.and.arrow.up")
+            ResourceMenuItems(actions: ResourceActionSet(url: address, delete: { pendingDelete = item }))
+        } else {
+            Button {
+                Pasteboard.copy(item.url)
+                Haptics.success()
+                toasts?.show(String(localized: "Link copied"), variant: .success)
+            } label: {
+                ResourceVerb.copyLink.label
             }
-            Link(destination: address) {
-                Label("Open", systemImage: "safari")
+            Divider()
+            Button(role: .destructive) { pendingDelete = item } label: {
+                ResourceVerb.delete.label
             }
-        }
-        Divider()
-        Button(role: .destructive) { pendingDelete = item } label: {
-            Label("Delete…", systemImage: "trash")
         }
     }
 
@@ -218,14 +230,16 @@ struct UploadsView: View {
     private func uploadPhoto(_ item: PhotosPickerItem) async {
         do {
             guard let data = try await item.loadTransferable(type: Data.self) else {
-                errorMessage = String(localized: "That photo couldn't be read.")
+                failure = Failure(title: String(localized: "Couldn’t upload"),
+                                  message: String(localized: "That photo couldn’t be read."))
                 return
             }
             let candidate = try UploadCandidate.fromPhoto(data: data, contentType: item.supportedContentTypes.first)
             try await model.upload(candidate)
             Haptics.success()
         } catch {
-            errorMessage = (error as? APIError)?.localizedDescription ?? error.localizedDescription
+            failure = Failure(title: String(localized: "Couldn’t upload"),
+                              message: (error as? APIError)?.localizedDescription ?? error.localizedDescription)
         }
     }
 
@@ -235,7 +249,8 @@ struct UploadsView: View {
             try await model.upload(candidate)
             Haptics.success()
         } catch {
-            errorMessage = (error as? APIError)?.localizedDescription ?? error.localizedDescription
+            failure = Failure(title: String(localized: "Couldn’t upload"),
+                              message: (error as? APIError)?.localizedDescription ?? error.localizedDescription)
         }
     }
 
@@ -243,7 +258,7 @@ struct UploadsView: View {
         do {
             try await model.delete(item)
         } catch {
-            errorMessage = error.asAPIError.localizedDescription
+            failure = Failure(title: String(localized: "Couldn’t delete"), message: error.asAPIError.localizedDescription)
         }
         pendingDelete = nil
     }

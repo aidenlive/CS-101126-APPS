@@ -84,7 +84,7 @@ struct WorkspaceSwitcher: View {
 
     private var meta: String {
         guard let workspace = app.currentWorkspace else {
-            if case .failed = app.workspaces { return String(localized: "Couldn't load") }
+            if case .failed = app.workspaces { return String(localized: "Couldn’t load") }
             return " "
         }
         return WorkspaceMenuItems.describe(workspace)

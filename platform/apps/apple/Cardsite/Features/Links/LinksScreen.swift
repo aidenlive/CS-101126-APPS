@@ -12,7 +12,6 @@ import CardsiteKit
 struct LinksScreen: View {
     @Environment(AppModel.self) private var app
     @Environment(LinksModel.self) private var model
-    @Environment(\.openURL) private var openURL
     @State private var selection: Resource.ID? = nil
     /// The search text the list was last fetched with.
     @State private var fetchedSearch = ""
@@ -74,9 +73,9 @@ struct LinksScreen: View {
                     LinkDetailView(link: link) { selection = nil }
                         .id(link.id)
                 } else {
-                    ContentUnavailableView("Select a link", systemImage: "link",
-                                           description: Text("Its address, destination, settings and traffic appear here."))
-                        .background(Color.studioBg)
+                    SplitPlaceholder(systemImage: "link",
+                                     title: String(localized: "Select a link"),
+                                     message: String(localized: "Its address, destination, settings and traffic appear here."))
                 }
             }
         }
@@ -95,21 +94,19 @@ struct LinksScreen: View {
                         }
                     }
             }
-            #if os(macOS)
-            .frame(minWidth: 640, minHeight: 560)
-            #endif
+            .cardsiteSheet(.page)
         }
         .confirmationDialog(
-            "Delete this link?",
+            ResourceKind.shortLinkDeleteConfirmation,
             isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
             titleVisibility: .visible,
             presenting: pendingDelete
         ) { link in
-            Button("Delete \(app.addresses.display(for: link.slug))", role: .destructive) {
+            Button("Delete", role: .destructive) {
                 Task { await delete(link) }
             }
         } message: { _ in
-            Text("Anyone who opens or scans this address will get a not-found page. This can't be undone.")
+            Text(ResourceKind.shortLinkDeleteConsequence)
         }
         .alert(
             actionError?.title ?? "",
@@ -126,11 +123,11 @@ struct LinksScreen: View {
         List(selection: unsaved.guarding($selection)) {
             if let error = model.list.refreshError {
                 RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
-                    .listRowSeparator(.hidden)
+                    .studioClearRow()
             }
             if model.visibleLinks.isEmpty, !model.searchText.isEmpty {
                 ContentUnavailableView.search(text: model.searchText)
-                    .listRowSeparator(.hidden)
+                    .studioClearRow()
             }
             ForEach(model.visibleLinks) { link in
                 NavigationLink(value: link.id) {
@@ -141,36 +138,9 @@ struct LinksScreen: View {
                     )
                 }
                 .accessibilityIdentifier("links.row.\(link.id)")
-                .contextMenu { menu(for: link) }
-                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    Button(role: .destructive) { pendingDelete = link } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                    Button { Task { await duplicate(link) } } label: {
-                        Label("Duplicate", systemImage: "plus.square.on.square")
-                    }
-                    .tint(.studioInfo)
-                    Button { statisticsFor = link } label: {
-                        Label("Statistics", systemImage: "chart.bar.xaxis")
-                    }
-                    .tint(.studioAccentLine)
-                }
-                .swipeActions(edge: .leading) {
-                    Button {
-                        copy(link)
-                    } label: {
-                        Label("Copy", systemImage: "doc.on.doc")
-                    }
-                    .tint(.studioInfo)
-                    if let url = app.addresses.url(for: link.slug) {
-                        Button {
-                            openURL(url)
-                        } label: {
-                            Label("Open", systemImage: "safari")
-                        }
-                        .tint(.studioText2)
-                    }
-                }
+                .contextMenu { ResourceMenuItems(actions: actions(for: link)) }
+                .resourceSwipeActions(actions(for: link))
+                .studioRowBackground(isSelected: selection == link.id)
             }
             if model.list.hasMore {
                 HStack {
@@ -178,67 +148,31 @@ struct LinksScreen: View {
                     ProgressView()
                     Spacer()
                 }
+                .studioClearRow()
                 .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
             }
         }
+        .studioList()
         .refreshable { [list = model.list] in await list.refresh() }
     }
 
-    @ViewBuilder
-    private func menu(for link: Resource) -> some View {
-        if let url = app.addresses.url(for: link.slug) {
-            Button {
-                copy(link)
-            } label: {
-                Label("Copy public URL", systemImage: "doc.on.doc")
-            }
-            Link(destination: url) {
-                Label("Open public link", systemImage: "safari")
-            }
-            ShareLink(item: url) {
-                Label("Share…", systemImage: "square.and.arrow.up")
-            }
-        }
-        if let card = app.addresses.cardURL(for: link.slug) {
-            Link(destination: card) {
-                Label("Card View", systemImage: "rectangle.portrait.on.rectangle.portrait")
-            }
-        }
-        Divider()
-        Button {
-            statisticsFor = link
-        } label: {
-            Label("View statistics", systemImage: "chart.bar.xaxis")
-        }
-        Button {
-            Task { await duplicate(link) }
-        } label: {
-            Label("Duplicate", systemImage: "plus.square.on.square")
-        }
-        Button {
-            Task { await setEnabled(link, !link.isEnabled) }
-        } label: {
-            link.isEnabled
-                ? Label("Disable link", systemImage: "pause.circle")
-                : Label("Enable link", systemImage: "play.circle")
-        }
-        Divider()
-        Button(role: .destructive) { pendingDelete = link } label: {
-            Label("Delete link…", systemImage: "trash")
-        }
-    }
-
-    private func copy(_ link: Resource) {
-        guard let url = app.addresses.url(for: link.slug) else { return }
-        Pasteboard.copy(url.absoluteString)
-        Haptics.success()
+    private func actions(for link: Resource) -> ResourceActionSet {
+        ResourceActionSet(
+            url: app.addresses.url(for: link.slug),
+            cardURL: app.addresses.cardURL(for: link.slug),
+            isEnabled: link.isEnabled,
+            statistics: { statisticsFor = link },
+            duplicate: { Task { await duplicate(link) } },
+            setEnabled: { isEnabled in Task { await setEnabled(link, isEnabled) } },
+            delete: { pendingDelete = link }
+        )
     }
 
     private func setEnabled(_ link: Resource, _ isEnabled: Bool) async {
         do {
             try await model.setEnabled(link, isEnabled)
         } catch {
-            actionError = ActionError(title: String(localized: "Failed to update link status"),
+            actionError = ActionError(title: String(localized: "Couldn’t change the status"),
                                       message: error.asAPIError.localizedDescription)
         }
     }
@@ -266,8 +200,8 @@ struct LinksScreen: View {
     }
 }
 
-/// Row anatomy: leading glyph, address with its status, destination and
-/// clicks underneath, and the on/off switch trailing.
+/// A short link in the shared row anatomy: the address with its state,
+/// the destination and clicks underneath, the Live switch trailing.
 struct LinkRow: View {
     @Environment(AppModel.self) private var app
     let link: Resource
@@ -275,51 +209,18 @@ struct LinkRow: View {
     var setEnabled: (@MainActor (Bool) -> Void)?
 
     var body: some View {
-        HStack(spacing: StudioSpace.s3) {
-            RowGlyphTile(systemImage: "link", isActive: link.isEnabled)
-
-            VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                HStack(spacing: StudioSpace.s2) {
-                    Text(app.addresses.display(for: link.slug))
-                        .studioText(.ui)
-                        .foregroundStyle(Color.studioText)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    if !link.isEnabled {
-                        StudioStatusPill(String(localized: "Off"), tone: .neutral)
-                    } else if link.isLapsing {
-                        StudioStatusPill(String(localized: "Lapsing"), tone: .warning)
-                    }
-                }
-                HStack(spacing: StudioSpace.s2) {
-                    Text(link.destinationHost)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Spacer(minLength: StudioSpace.s2)
-                    Label(link.clicks.grouped, systemImage: "cursorarrow.click")
-                        .labelStyle(.titleAndIcon)
-                        .monospacedDigit()
-                        .accessibilityLabel(Text("\(link.clicks) clicks"))
-                }
-                .studioText(.uiSm)
-                .foregroundStyle(Color.studioText3)
-            }
-            .accessibilityElement(children: .combine)
-
+        CardsiteResourceRow(
+            systemImage: "link",
+            isLive: link.isEnabled,
+            title: Text(verbatim: app.addresses.display(for: link.slug)),
+            subtitle: Text(verbatim: link.destinationHost),
+            state: ResourceState(isEnabled: link.isEnabled, isLapsing: link.isLapsing),
+            clicks: link.clicks
+        ) {
             if let setEnabled {
-                Toggle(isOn: Binding(get: { [isOn = link.isEnabled] in isOn }, set: { [setEnabled] in setEnabled($0) })) {
-                    Text("Active")
-                }
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .tint(Color.studioAccent)
-                .disabled(isToggling)
-                .accessibilityLabel(Text("Active"))
-                .accessibilityValue(link.isEnabled ? Text("On") : Text("Off"))
+                LiveSwitch(isOn: link.isEnabled, isBusy: isToggling, set: setEnabled)
             }
         }
-        .padding(.vertical, StudioSpace.s1)
     }
 }
 

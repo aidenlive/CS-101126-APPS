@@ -1,1 +1,1 @@
-short link,url shortener,qr code,qr generator,link in bio,bio page,dynamic qr,custom url,analytics
+short link,url shortener,qr code,qr generator,link in bio,bio page,dynamic qr,vcard,widget,analytics

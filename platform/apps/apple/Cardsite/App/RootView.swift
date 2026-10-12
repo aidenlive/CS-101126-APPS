@@ -22,8 +22,8 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
-        .animation(.default, value: model.phase == .signedOut)
-        .animation(.default, value: model.workspaceScope)
+        .animation(StudioAnimation.base, value: model.phase == .signedOut)
+        .animation(StudioAnimation.base, value: model.workspaceScope)
         .background(Color.studioBg.ignoresSafeArea())
         // Widgets, the share extension and Siri open `cardsite://` links.
         // Held on the model so one that arrives at launch, or before

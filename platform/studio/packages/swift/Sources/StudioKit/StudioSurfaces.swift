@@ -18,7 +18,8 @@ import SwiftUI
 
 /// Kicker + two-tone display title on the left, actions on the right.
 /// Stacks below tablet; side by side from there up — the same rule the
-/// stylesheet applies at 720px.
+/// stylesheet applies at 720px — except at accessibility text sizes,
+/// where it always stacks.
 public struct StudioPageHead<Actions: View>: View {
     private let kicker: String?
     private let title: String
@@ -27,6 +28,7 @@ public struct StudioPageHead<Actions: View>: View {
     private let actions: Actions
 
     @Environment(\.studioViewport) private var viewport
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     public init(
         kicker: String? = nil,
@@ -75,8 +77,10 @@ public struct StudioPageHead<Actions: View>: View {
             }
         }
 
+        // Stacks below tablet, and at accessibility text sizes at any
+        // width: display type beside the actions would wrap a word a line.
         return Group {
-            if viewport == .compact {
+            if viewport == .compact || dynamicTypeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: StudioSpace.s4) {
                     text
                     HStack(spacing: StudioSpace.s3) { actions }

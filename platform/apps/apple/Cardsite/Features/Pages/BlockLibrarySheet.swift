@@ -43,9 +43,7 @@ struct BlockLibrarySheet: View {
         }
         .task { await pages.loadCatalogIfNeeded() }
         .interactiveDismissDisabled(adding != nil)
-        #if os(macOS)
-        .frame(minWidth: 460, minHeight: 560)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     private func library(_ types: [BlockType]) -> some View {
@@ -55,8 +53,8 @@ struct BlockLibrarySheet: View {
             if premiumLocked, query.isEmpty {
                 Section {
                     StudioBanner(
-                        lead: String(localized: "Some blocks aren't in your plan."),
-                        message: String(localized: "They're marked with a lock. Blocks of those types already on your pages keep working, and you can still edit them."),
+                        lead: String(localized: "Some blocks aren’t in your plan."),
+                        message: String(localized: "They’re marked with a lock. Blocks of those types already on your pages keep working, and you can still edit them."),
                         tone: .info
                     )
                     .listRowInsets(EdgeInsets())

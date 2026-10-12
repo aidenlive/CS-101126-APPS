@@ -22,7 +22,13 @@ struct WorkspaceView: View {
     @State private var model: WorkspaceModel
     @State private var sheet: Sheet? = nil
     @State private var confirm: Confirmation? = nil
-    @State private var actionError: String? = nil
+    @State private var actionError: ActionError? = nil
+
+    struct ActionError: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+    }
 
     enum Sheet: Identifiable {
         case create, rename(String), invite
@@ -57,7 +63,9 @@ struct WorkspaceView: View {
 
     var body: some View {
         content
+            .background(Color.studioBg)
             .navigationTitle(model.snapshot.map { title(for: $0.workspace) } ?? String(localized: "Workspace"))
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -111,11 +119,14 @@ struct WorkspaceView: View {
                     Text("They lose access to everything in this workspace.")
                 }
             }
-            .alert("Something went wrong",
-                   isPresented: Binding(get: { actionError != nil }, set: { if !$0 { actionError = nil } })) {
+            .alert(
+                actionError?.title ?? "",
+                isPresented: Binding(get: { actionError != nil }, set: { if !$0 { actionError = nil } }),
+                presenting: actionError
+            ) { _ in
                 Button("OK", role: .cancel) {}
-            } message: {
-                Text(actionError ?? "")
+            } message: { error in
+                Text(error.message)
             }
     }
 
@@ -132,10 +143,7 @@ struct WorkspaceView: View {
     private var content: some View {
         switch model.state {
         case .idle, .loading:
-            ProgressView()
-                .controlSize(.large)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .accessibilityLabel("Loading workspace")
+            ListSkeletonView(style: .textRows)
         case .failed(let error):
             ErrorStateView(error: error) { [model] in await model.refresh() }
         case .loaded(let snapshot):
@@ -149,39 +157,35 @@ struct WorkspaceView: View {
         let workspace = snapshot.workspace
         let role = workspace.workspaceRole
         return Form {
+            ListPageHead(
+                kicker: String(localized: "Account · Collaboration"),
+                title: title(for: workspace),
+                description: workspace.isPersonal
+                    ? String(localized: "Your private workspace. Create a shared workspace to collaborate.")
+                    : String(localized: "Members of this workspace see and manage everything in it.")
+            ) {
+                StudioStatusPill(roleTitle(role), tone: role == .owner ? .success : .neutral)
+            }
+
             if let error = model.refreshError {
                 RefreshErrorBanner(error: error) { model.dismissRefreshError() }
+                    .studioClearRow()
             }
 
             Section {
-                VStack(alignment: .leading, spacing: StudioSpace.s2) {
-                    HStack(spacing: StudioSpace.s2) {
-                        Text(verbatim: title(for: workspace))
-                            .studioText(.titleSm)
-                        StudioStatusPill(roleTitle(role), tone: role == .owner ? .success : .neutral)
-                    }
-                    Text(workspace.isPersonal
-                         ? String(localized: "Your private workspace. Create a shared workspace to collaborate.")
-                         : String(localized: "Members of this workspace see and manage everything in it."))
-                        .studioText(.uiSm)
-                        .studioMuted()
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.vertical, StudioSpace.s1)
-                .accessibilityElement(children: .combine)
-
                 LabeledContent {
                     Text((workspace.storageBytes ?? 0).formatted(.byteCount(style: .file)))
                         .monospacedDigit()
                 } label: {
                     VStack(alignment: .leading, spacing: StudioSpace.s1) {
                         Text("Storage used")
-                        Text("Everything this workspace's files, pages and bundles hold.")
+                        Text("Everything this workspace’s files, pages and bundles hold.")
                             .studioText(.uiSm)
                             .studioMuted()
                     }
                 }
             }
+            .studioRowBackground()
 
             membersSection(snapshot, role: role)
             activitySection(snapshot)
@@ -196,9 +200,10 @@ struct WorkspaceView: View {
                     }
                 } footer: {
                     if role == .owner {
-                        Text("Deleting a workspace removes every link, QR code and resource in it. It can't be undone.")
+                        Text("Deleting a workspace removes every link, QR code and resource in it. This can’t be undone.")
                     }
                 }
+                .studioRowBackground()
             }
         }
         .studioForm()
@@ -271,21 +276,18 @@ struct WorkspaceView: View {
                 Text("Admins can also add, re-role and remove members. Members create and edit resources.")
             }
         }
+        .studioRowBackground()
     }
 
     @ViewBuilder
     private func activitySection(_ snapshot: Snapshot) -> some View {
         Section("Activity") {
             if let error = snapshot.activityError {
-                Button {
-                    Task { await model.refresh() }
-                } label: {
-                    VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                        Text("Couldn't load the activity feed. Tap to try again.")
-                        Text(error.localizedDescription)
-                            .studioText(.uiSm)
-                            .studioMuted()
-                    }
+                FormRetryRow(
+                    message: String(localized: "Couldn’t load the activity feed. \(error.localizedDescription)"),
+                    systemImage: error == .offline ? "wifi.slash" : "exclamationmark.triangle"
+                ) { [model] in
+                    await model.refresh()
                 }
             } else if snapshot.activity.isEmpty {
                 VStack(alignment: .leading, spacing: StudioSpace.s1) {
@@ -305,7 +307,7 @@ struct WorkspaceView: View {
                         VStack(alignment: .leading, spacing: StudioSpace.s1) {
                             Text(event.sentence)
                                 .studioText(.ui)
-                            Text(event.at.formatted(.relative(presentation: .named)))
+                            RelativeTimeText(date: event.at)
                                 .studioText(.uiSm)
                                 .studioMuted()
                         }
@@ -314,6 +316,7 @@ struct WorkspaceView: View {
                 }
             }
         }
+        .studioRowBackground()
     }
 
     // MARK: Helpers
@@ -349,7 +352,8 @@ struct WorkspaceView: View {
         do {
             try await model.setRole(role, for: member)
         } catch {
-            actionError = error.asAPIError.localizedDescription
+            actionError = ActionError(title: String(localized: "Couldn’t change the role"),
+                                      message: error.asAPIError.localizedDescription)
         }
     }
 
@@ -368,7 +372,13 @@ struct WorkspaceView: View {
             }
             Haptics.success()
         } catch {
-            actionError = error.asAPIError.localizedDescription
+            let title: String
+            switch confirmation {
+            case .delete: title = String(localized: "Couldn’t delete the workspace")
+            case .leave: title = String(localized: "Couldn’t leave the workspace")
+            case .remove: title = String(localized: "Couldn’t remove the member")
+            }
+            actionError = ActionError(title: title, message: error.asAPIError.localizedDescription)
         }
     }
 }
@@ -446,6 +456,7 @@ private struct WorkspaceNameSheet: View {
                         FormErrorText(message: error)
                     }
                 }
+                .studioRowBackground()
             }
             .studioForm()
             .navigationTitle(isCreate ? "Create Workspace" : "Rename Workspace")
@@ -469,9 +480,7 @@ private struct WorkspaceNameSheet: View {
             }
         }
         .presentationDetents([.medium])
-        #if os(macOS)
-        .frame(minWidth: 420, minHeight: 220)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     private func save() async {
@@ -514,6 +523,7 @@ private struct InviteMemberSheet: View {
                 } footer: {
                     Text("Invite an existing Cardsite user by their account email.")
                 }
+                .studioRowBackground()
                 Section {
                     Picker("Role", selection: $role) {
                         Text("Member — create and edit resources").tag(WorkspaceRole.member)
@@ -526,6 +536,7 @@ private struct InviteMemberSheet: View {
                 } footer: {
                     FormErrorText(message: error)
                 }
+                .studioRowBackground()
             }
             .studioForm()
             .navigationTitle("Add Member")
@@ -545,9 +556,7 @@ private struct InviteMemberSheet: View {
             }
             .interactiveDismissDisabled(isSaving)
         }
-        #if os(macOS)
-        .frame(minWidth: 440, minHeight: 320)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     private func save() async {

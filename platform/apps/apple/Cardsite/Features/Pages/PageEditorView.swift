@@ -77,7 +77,7 @@ struct BlockListColumn: View {
                 Task { await editor.delete(block) }
             }
         } message: { _ in
-            Text("It comes off the public page straight away. This can't be undone.")
+            Text("It comes off the public page straight away. This can’t be undone.")
         }
     }
 
@@ -92,7 +92,7 @@ struct BlockListColumn: View {
         List(selection: $editor.selection) {
             if let error = editor.refreshError {
                 RefreshErrorBanner(error: error) { editor.dismissRefreshError() }
-                    .listRowSeparator(.hidden)
+                    .studioClearRow()
             }
             Section {
                 PageStatusRow(page: document.page, isToggling: isTogglingPage) { isOn in
@@ -104,7 +104,7 @@ struct BlockListColumn: View {
                     StudioEmptyState(
                         systemImage: "square.stack.3d.up",
                         title: String(localized: "Add your first block"),
-                        message: String(localized: "Pick one from the library. It appears on your page as soon as it's added, and you fill it in here."),
+                        message: String(localized: "Pick one from the library. It appears on your page as soon as it’s added, and you fill it in here."),
                         compact: true
                     ) {
                         StudioButton(String(localized: "Add Block"), systemImage: "plus", variant: .primary) {
@@ -210,7 +210,7 @@ struct BlockListColumn: View {
         do {
             try await editor.savePage(BioPageChanges(isEnabled: isOn))
         } catch {
-            editor.announce(String(localized: "Couldn't update this page. \(error.asAPIError.localizedDescription)"), .error)
+            editor.announce(String(localized: "Couldn’t update this page. \(error.asAPIError.localizedDescription)"), .error)
         }
     }
 
@@ -356,32 +356,17 @@ struct BlockRow: View {
     }
 }
 
-/// Copy, share, open, card view and the web editor for the page.
+/// Copy Link, Open in Browser, Share, Show Card and the web editor for the page.
 struct PageShareMenu: View {
     @Environment(AppModel.self) private var app
     let page: BioPage
 
     var body: some View {
         Menu {
-            if let url = app.addresses.url(for: page.slug) {
-                Button {
-                    Pasteboard.copy(url.absoluteString)
-                    Haptics.success()
-                } label: {
-                    Label("Copy Address", systemImage: "doc.on.doc")
-                }
-                ShareLink(item: url) {
-                    Label("Share…", systemImage: "square.and.arrow.up")
-                }
-                Link(destination: url) {
-                    Label("Open Page", systemImage: "safari")
-                }
-            }
-            if let card = app.addresses.cardURL(for: page.slug) {
-                Link(destination: card) {
-                    Label("View Card", systemImage: "rectangle.portrait.on.rectangle.portrait")
-                }
-            }
+            ResourceMenuItems(actions: ResourceActionSet(
+                url: app.addresses.url(for: page.slug),
+                cardURL: app.addresses.cardURL(for: page.slug)
+            ))
             Divider()
             Link(destination: app.configuration.bioPageEditorURL(pageID: page.id)) {
                 Label("Open in Web Editor", systemImage: "arrow.up.forward.square")
@@ -445,7 +430,7 @@ struct EditorDetailColumn: View {
                     ContentUnavailableView(
                         "Nothing selected",
                         systemImage: "cursorarrow.click",
-                        description: Text("Choose a block to edit it here. The page's title, theme and SEO are in Page Settings.")
+                        description: Text("Choose a block to edit it here. The page’s title, theme and SEO are in Page Settings.")
                     )
                     .background(Color.studioBg)
                 }

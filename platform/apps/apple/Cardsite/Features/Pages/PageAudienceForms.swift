@@ -48,13 +48,13 @@ struct DisplayRulesForm: View {
                         .foregroundStyle(Color.studioText3)
                 }
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             if case .failed = options {
                 Section {
                     Button("Try Again") { Task { await load() } }
                 }
-                .editorRowBackground()
+                .studioRowBackground()
             }
 
             DisplayRulesSection(
@@ -127,11 +127,12 @@ struct PixelsForm: View {
     var body: some View {
         Form {
             Section {
-                Text("Pixels emit on your public page as the provider's own no-script beacon. Providers without one can't emit here, and are marked.")
+                Text("Pixels emit on your public page as the provider’s own no-script beacon. Providers without one can’t emit here, and are marked.")
                     .studioText(.uiSm)
                     .foregroundStyle(Color.studioText3)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .studioRowBackground()
             switch pixels {
             case .idle, .loading:
                 Section {
@@ -141,17 +142,20 @@ struct PixelsForm: View {
                         Spacer()
                     }
                 }
+                .studioRowBackground()
             case .failed(let error):
                 Section {
-                    StudioBanner(lead: String(localized: "Pixels didn't load."), message: error.localizedDescription, tone: .warning)
+                    StudioBanner(lead: String(localized: "Pixels didn’t load."), message: error.localizedDescription, tone: .warning)
                     Button("Try Again") { Task { await catalog.load(from: pages) } }
                 }
+                .studioRowBackground()
             case .loaded(let list) where list.isEmpty:
                 Section {
                     Text("No pixels yet. Create one under Pixels to attach it here.")
                         .studioText(.ui)
                         .foregroundStyle(Color.studioText2)
                 }
+                .studioRowBackground()
             case .loaded(let list):
                 Section {
                     ForEach(list) { pixel in
@@ -172,6 +176,7 @@ struct PixelsForm: View {
                             .foregroundStyle(Color.studioError)
                     }
                 }
+                .studioRowBackground()
             }
         }
         .task { [catalog, pages] in if catalog.pixels.value == nil { await catalog.load(from: pages) } }
@@ -182,7 +187,7 @@ struct PixelsForm: View {
         let type = types[pixel.type]
         let provider = type?.name ?? pixel.type
         if type?.emitsBeacon == false {
-            return String(localized: "\(provider) · can't emit on this page")
+            return String(localized: "\(provider) · can’t emit on this page")
         }
         return provider
     }

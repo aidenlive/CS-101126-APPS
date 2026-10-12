@@ -85,7 +85,7 @@ struct PaymentLinkEditorView: View {
                     message: String(localized: "Cardsite doesn’t process this payment. The address only sends buyers to your checkout; the payment is taken there, by your payment provider.")
                 )
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             Section {
                 ResourceAddressRows(kind: .paymentLink, address: $model.form.address, list: list, isNew: model.isNew,
@@ -104,7 +104,7 @@ struct PaymentLinkEditorView: View {
             } footer: {
                 ResourceAddressFooter(list: list, isNew: model.isNew)
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             GatingSection(
                 password: $model.form.gate.password,

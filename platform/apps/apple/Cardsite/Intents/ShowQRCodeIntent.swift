@@ -35,7 +35,7 @@ struct ShowQRCodeIntent: AppIntent {
         let (png, design) = try await QRImageCache.image(for: qrCode.id, in: session)
         let code = design.map { QRCodeEntity($0) } ?? qrCode
         return .result(
-            dialog: IntentDialog("Here's \(code.name)."),
+            dialog: IntentDialog("Here’s \(code.name)."),
             view: QRCodeSnippetView(name: code.name, target: code.target, png: png)
         )
     }

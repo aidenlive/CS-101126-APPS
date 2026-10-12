@@ -113,12 +113,16 @@ struct DataRecordsView: View {
                 title: String(localized: "No data records yet"),
                 message: String(localized: "Records are created when visitors submit forms on your bio page blocks.")
             ),
+            skeleton: .textRows,
             retry: { [list = model.list] in await list.refresh() }
         ) { records in
             List {
+                ListPageHead(kicker: String(localized: "Content"),
+                             title: String(localized: "Data Records"),
+                             description: String(localized: "What visitors submit through the forms on your bio pages."))
                 if let error = model.list.refreshError {
                     RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
-                        .listRowSeparator(.hidden)
+                        .studioClearRow()
                 }
                 ForEach(records) { record in
                     NavigationLink {
@@ -126,33 +130,30 @@ struct DataRecordsView: View {
                     } label: {
                         DataRecordRow(record: record)
                     }
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) { pendingDelete = record } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    }
-                    .contextMenu {
-                        Button(role: .destructive) { pendingDelete = record } label: {
-                            Label("Delete…", systemImage: "trash")
-                        }
-                    }
+                    .contextMenu { ResourceMenuItems(actions: ResourceActionSet(delete: { pendingDelete = record })) }
+                    .resourceSwipeActions(ResourceActionSet(delete: { pendingDelete = record }))
                 }
+                .studioRowBackground()
                 if model.list.hasMore {
                     HStack {
                         Spacer()
                         ProgressView()
                         Spacer()
                     }
+                    .studioClearRow()
                     .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
                 }
             }
+            .studioList()
             .refreshable { [list = model.list] in await list.refresh() }
         }
+        .background(Color.studioBg)
         .navigationTitle("Data Records")
+        .inlineNavigationTitle()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Picker("Filter by record type", selection: Binding(
+                    Picker("Filter by Record Type", selection: Binding(
                         get: { model.kind },
                         set: { kind in Task { await model.setKind(kind) } }
                     )) {
@@ -162,7 +163,7 @@ struct DataRecordsView: View {
                         Text("Phone").tag(DataRecordKind?.some(.phone))
                     }
                 } label: {
-                    Label("Filter by record type",
+                    Label("Filter by Record Type",
                           systemImage: model.kind == nil
                               ? "line.3.horizontal.decrease.circle"
                               : "line.3.horizontal.decrease.circle.fill")
@@ -178,11 +179,11 @@ struct DataRecordsView: View {
             titleVisibility: .visible,
             presenting: pendingDelete
         ) { record in
-            Button("Delete Record", role: .destructive) { Task { await delete(record) } }
+            Button("Delete", role: .destructive) { Task { await delete(record) } }
         } message: { _ in
-            Text("The submission is removed for everyone in this workspace. This can't be undone.")
+            Text("The submission is removed for everyone in this workspace. This can’t be undone.")
         }
-        .alert("Couldn't delete", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
+        .alert(String(localized: "Couldn’t delete"), isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(deleteError ?? "")
@@ -200,39 +201,24 @@ struct DataRecordsView: View {
     }
 }
 
+/// A record in the shared row anatomy: what was submitted, its fields,
+/// and its type and date. Stacks at accessibility sizes.
 struct DataRecordRow: View {
     let record: DataRecord
 
+    private var meta: Text {
+        guard let date = record.createdAt else { return Text(record.kindTitle) }
+        return Text(record.kindTitle) + Text(verbatim: " · ")
+            + Text(date.formatted(date: .abbreviated, time: .omitted))
+    }
+
     var body: some View {
-        HStack(spacing: StudioSpace.s3) {
-            Image(systemName: record.kindSymbol)
-                .foregroundStyle(Color.studioText3)
-                .frame(width: StudioSpace.s6)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                HStack(spacing: StudioSpace.s2) {
-                    Text(verbatim: record.headline)
-                        .studioText(.ui)
-                        .foregroundStyle(Color.studioText)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    StudioStatusPill(record.kindTitle, tone: .accent)
-                }
-                HStack(spacing: StudioSpace.s2) {
-                    Text(verbatim: record.fields.map { "\($0.key): \($0.value)" }.joined(separator: ", "))
-                        .lineLimit(1)
-                    Spacer(minLength: StudioSpace.s2)
-                    if let date = record.createdAt {
-                        Text(date.formatted(date: .abbreviated, time: .omitted))
-                            .monospacedDigit()
-                    }
-                }
-                .studioText(.uiSm)
-                .foregroundStyle(Color.studioText3)
-            }
-        }
-        .padding(.vertical, StudioSpace.s1)
-        .accessibilityElement(children: .combine)
+        CardsiteResourceRow(
+            systemImage: record.kindSymbol,
+            title: Text(verbatim: record.headline),
+            subtitle: Text(verbatim: record.fields.map { "\($0.key): \($0.value)" }.joined(separator: ", ")),
+            detail: meta
+        )
     }
 }
 
@@ -264,6 +250,7 @@ struct DataRecordDetailView: View {
                     }
                 }
             }
+            .studioRowBackground()
 
             Section("Details") {
                 LabeledContent("Type", value: record.kindTitle)
@@ -272,10 +259,12 @@ struct DataRecordDetailView: View {
                 }
                 LabeledContent("Record", value: "#\(record.id)")
             }
+            .studioRowBackground()
 
             Section {
                 Button("Delete Record…", role: .destructive, action: requestDelete)
             }
+            .studioRowBackground()
         }
         .studioForm()
         .navigationTitle(record.kindTitle)

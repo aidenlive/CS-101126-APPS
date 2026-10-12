@@ -256,9 +256,7 @@ struct OptionPickerSheet: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 420, minHeight: 480)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     private func choose(_ option: PickerOption) {

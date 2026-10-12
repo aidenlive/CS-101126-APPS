@@ -84,7 +84,7 @@ struct FileLinkEditorView: View {
                 Link(destination: url) {
                     Label("Download", systemImage: "arrow.down.circle")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(StudioButtonStyle(.outline))
                 .accessibilityHint(Text("Opens the file’s address, as visitors get it"))
             }
         } fields: {
@@ -97,7 +97,7 @@ struct FileLinkEditorView: View {
             } footer: {
                 ResourceAddressFooter(list: list, isNew: model.isNew)
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             Section {
                 ResourceFileRows(
@@ -127,7 +127,7 @@ struct FileLinkEditorView: View {
                         .foregroundStyle(Color.studioText3)
                 }
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             GatingSection(
                 password: $model.form.gate.password,

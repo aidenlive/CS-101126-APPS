@@ -43,6 +43,8 @@ struct MainView: View {
     @State private var search: QuickSearchModel
     /// One for the session, so the badge and the Inbox list agree.
     @State private var inbox: InboxModel
+    /// Success feedback for every screen (`\.toasts`).
+    @StateObject private var toasts = StudioToastCenter()
 
     init(client: APIClient) {
         _links = State(initialValue: LinksModel(client: client))
@@ -142,9 +144,7 @@ struct MainView: View {
                 composerSheet(composer)
             }
             .environment(links)
-            #if os(macOS)
-            .frame(minWidth: 520, minHeight: 560)
-            #endif
+            .cardsiteSheet(.page)
         }
         .environment(router)
         .environment(links)
@@ -153,6 +153,8 @@ struct MainView: View {
         .environment(home)
         .environment(search)
         .environment(inbox)
+        .studioToasts(toasts)
+        .environment(\.toasts, toasts)
         // The Workspace screen calls this after creating, leaving or
         // deleting a workspace; the reload drops a workspace that is gone.
         .environment(\.switchWorkspace, SwitchWorkspaceAction { [model] id in
@@ -276,22 +278,24 @@ struct MoreScreen: View {
                 } header: {
                     Text("Workspace")
                 } footer: {
-                    Text("Links, pages and codes belong to a workspace. Switch to see another one's.")
+                    Text("Links, pages and codes belong to a workspace. Switch to see another one’s.")
                 }
+                .studioRowBackground()
 
                 ForEach(groups) { group in
                     Section(group.title) {
                         ForEach(group.destinations.filter { $0.iPhoneTab == .more }) { destination in
                             NavigationLink(value: destination) {
                                 Label(destination.title, systemImage: destination.systemImage)
-                                    .studioText(.ui)
                             }
                             .badge(destination == .inbox ? inbox.unreadCount : 0)
                             .accessibilityIdentifier(destination.navIdentifier)
                         }
                     }
+                    .studioRowBackground()
                 }
             }
+            .studioList()
             .navigationTitle("More")
             .navigationDestination(for: AppDestination.self) { destination in
                 DestinationView(destination: destination)

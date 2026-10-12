@@ -52,7 +52,7 @@ struct PagePreviewPane: View {
                 Color.studioBg
                 StudioEmptyState(
                     systemImage: "wifi.exclamationmark",
-                    title: String(localized: "Couldn't load the preview"),
+                    title: String(localized: "Couldn’t load the preview"),
                     message: failure,
                     compact: true
                 ) {
@@ -75,8 +75,7 @@ struct PagePreviewPane: View {
                         .strokeBorder(Color.studioBorder, lineWidth: 0.5)
                 )
                 .studioElevation(.raised)
-                .frame(maxWidth: 440)
-                .frame(maxWidth: .infinity)
+                .readableWidth(.narrow)
         } else {
             web
         }

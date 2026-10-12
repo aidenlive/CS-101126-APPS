@@ -1,1 +1,8 @@
-Cardsite for iPhone, iPad and Mac. Create short links and QR codes, see their traffic, and share your pages from anywhere.
+Welcome to Cardsite for iPhone, iPad, Mac, Apple Vision Pro and Apple Watch.
+
+• Create short links and every other link type: contact cards, events, payment links, files, static pages and splash pages.
+• Edit your bio pages block by block, with a live preview.
+• Build QR codes of every type, with your own colours.
+• See traffic for every link and page, with 11 breakdowns.
+• Organise with projects, domains, pixels and workspaces.
+• Widgets, Siri shortcuts, a share extension and a full-screen QR code on Apple Watch.

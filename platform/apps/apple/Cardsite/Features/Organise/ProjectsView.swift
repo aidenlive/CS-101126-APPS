@@ -3,7 +3,7 @@ import Observation
 import StudioKit
 import CardsiteKit
 
-/// Colour-coded folders for links: list, create, rename, recolour, delete.
+/// Color-coded folders for links: list, create, rename, recolour, delete.
 /// The web's `/projects`.
 @MainActor
 @Observable
@@ -87,9 +87,12 @@ struct ProjectsView: View {
             retry: { [list = model.list] in await list.refresh() }
         ) { projects in
             List {
+                ListPageHead(kicker: String(localized: "Organize"),
+                             title: String(localized: "Projects"),
+                             description: String(localized: "Group resources into color-coded projects."))
                 if let error = model.list.refreshError {
                     RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
-                        .listRowSeparator(.hidden)
+                        .studioClearRow()
                 }
                 Section {
                     ForEach(Array(projects.enumerated()), id: \.element.id) { index, project in
@@ -100,32 +103,20 @@ struct ProjectsView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("org.projects.row.\(index)")
-                        .accessibilityHint(Text("Edits the name and colour"))
-                        .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) { pendingDelete = project } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                            Button { editing = .existing(project) } label: {
-                                Label("Edit", systemImage: "pencil")
-                            }
-                        }
-                        .contextMenu {
-                            Button { editing = .existing(project) } label: {
-                                Label("Edit…", systemImage: "pencil")
-                            }
-                            Button(role: .destructive) { pendingDelete = project } label: {
-                                Label("Delete…", systemImage: "trash")
-                            }
-                        }
+                        .accessibilityHint(Text("Edits the name and color"))
+                        .contextMenu { ResourceMenuItems(actions: actions(for: project)) }
+                        .resourceSwipeActions(actions(for: project))
                     }
+                    .studioRowBackground()
                     OrganiseLoadMoreRow(list: model.list)
-                } footer: {
-                    Text("Group resources into color-coded projects.")
                 }
             }
+            .studioList()
             .refreshable { [list = model.list] in await list.refresh() }
         }
+        .background(Color.studioBg)
         .navigationTitle("Projects")
+        .inlineNavigationTitle()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { editing = .new } label: {
@@ -142,10 +133,14 @@ struct ProjectsView: View {
         .organiseDeleteFlow(
             $pendingDelete,
             title: String(localized: "Delete this project?"),
-            confirmTitle: { String(localized: "Delete \($0.name)") },
-            message: String(localized: "Are you sure you want to delete this project? Its links are kept, outside any project. This can't be undone."),
+            confirmTitle: { _ in String(localized: "Delete") },
+            message: String(localized: "Its links are kept, outside any project. This can’t be undone."),
             delete: { [model] project in try await model.delete(project) }
         )
+    }
+
+    private func actions(for project: Project) -> ResourceActionSet {
+        ResourceActionSet(edit: { editing = .existing(project) }, delete: { pendingDelete = project })
     }
 }
 
@@ -233,16 +228,16 @@ struct ProjectEditorSheet: View {
                         .onSubmit { Task { await save() } }
                         .accessibilityIdentifier("org.projects.editor.name")
                 } footer: {
-                    Text("A folder for grouping links, with a colour to find it by.")
+                    Text("A folder for grouping links, with a color to find it by.")
                 }
-                .editorRowBackground()
+                .studioRowBackground()
 
                 Section {
                     swatches
                     ColorPicker(selection: HexColor.binding($input.color, fallback: Color.studioAccent),
                                 supportsOpacity: false) {
                         HStack(spacing: StudioSpace.s2) {
-                            Text("Custom colour")
+                            Text("Custom color")
                             Spacer(minLength: StudioSpace.s2)
                             Text(verbatim: input.color.uppercased())
                                 .studioText(.mono)
@@ -251,9 +246,9 @@ struct ProjectEditorSheet: View {
                     }
                     .accessibilityValue(Text(verbatim: input.color.uppercased()))
                 } header: {
-                    EditorSectionHeader(String(localized: "Colour"))
+                    EditorSectionHeader(String(localized: "Color"))
                 }
-                .editorRowBackground()
+                .studioRowBackground()
 
                 Section {
                     HStack(spacing: StudioSpace.s3) {
@@ -270,10 +265,10 @@ struct ProjectEditorSheet: View {
                 } footer: {
                     FormErrorText(message: error)
                 }
-                .editorRowBackground()
+                .studioRowBackground()
             }
             .resourceEditorForm()
-            .navigationTitle(project == nil ? String(localized: "Create project") : String(localized: "Edit project"))
+            .navigationTitle(project == nil ? String(localized: "Create Project") : String(localized: "Edit Project"))
             #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -298,7 +293,7 @@ struct ProjectEditorSheet: View {
             }
             .interactiveDismissDisabled(isDirty || isSaving)
         }
-        .organiseSheetFrame()
+        .cardsiteSheet(.form)
     }
 
     private var swatches: some View {
@@ -319,7 +314,7 @@ struct ProjectEditorSheet: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(Text("Colour \(index + 1)"))
+                .accessibilityLabel(Text("Color \(index + 1)"))
                 .accessibilityValue(Text(verbatim: hex.uppercased()))
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }

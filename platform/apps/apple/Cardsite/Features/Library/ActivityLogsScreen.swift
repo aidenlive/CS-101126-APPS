@@ -114,12 +114,16 @@ struct ActivityLogsView: View {
                     ? String(localized: "Try another search or device.")
                     : String(localized: "Sign-ins and account activity will appear here.")
             ),
+            skeleton: .textRows,
             retry: { [list = model.list] in await list.refresh() }
         ) { entries in
             List {
+                ListPageHead(kicker: String(localized: "Account"),
+                             title: String(localized: "Activity Logs"),
+                             description: String(localized: "Sign-ins and security changes on your account."))
                 if let error = model.list.refreshError {
                     RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
-                        .listRowSeparator(.hidden)
+                        .studioClearRow()
                 }
                 ForEach(entries) { entry in
                     ActivityLogRow(entry: entry)
@@ -133,19 +137,24 @@ struct ActivityLogsView: View {
                             }
                         }
                 }
+                .studioRowBackground()
                 if model.list.hasMore {
                     HStack {
                         Spacer()
                         ProgressView()
                         Spacer()
                     }
+                    .studioClearRow()
                     .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
                 }
             }
+            .studioList()
             .refreshable { [list = model.list] in await list.refresh() }
         }
+        .background(Color.studioBg)
         .navigationTitle("Activity Logs")
-        .searchable(text: $model.searchText, prompt: Text("Search by IP, city, browser..."))
+        .inlineNavigationTitle()
+        .searchable(text: $model.searchText, prompt: Text("Search by IP, city, browser…"))
         .onSubmit(of: .search) { Task { await model.applySearch() } }
         .onChange(of: model.searchText) { _, text in
             // Clearing the field shows everything again without a submit.
@@ -154,7 +163,7 @@ struct ActivityLogsView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Picker("Filter by device type", selection: Binding(
+                    Picker("Filter by Device Type", selection: Binding(
                         get: { [model] in model.device },
                         set: { [model] device in Task { await model.setDevice(device) } }
                     )) {
@@ -164,7 +173,7 @@ struct ActivityLogsView: View {
                         Text("Tablet").tag(LogDeviceType?.some(.tablet))
                     }
                 } label: {
-                    Label("Filter by device type",
+                    Label("Filter by Device Type",
                           systemImage: model.device == nil
                               ? "line.3.horizontal.decrease.circle"
                               : "line.3.horizontal.decrease.circle.fill")

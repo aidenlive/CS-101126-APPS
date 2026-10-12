@@ -41,6 +41,7 @@ struct AccountView: View {
                 Section("Plan") {
                     planRow
                 }
+                .studioRowBackground()
 
                 securitySection
 
@@ -56,6 +57,7 @@ struct AccountView: View {
                         Label("Activity Logs", systemImage: "list.bullet.rectangle")
                     }
                 }
+                .studioRowBackground()
             }
 
             Section("About") {
@@ -64,14 +66,16 @@ struct AccountView: View {
                 Link("Contact Support", destination: app.configuration.supportURL)
                 LabeledContent("Version", value: Bundle.main.versionDescription)
             }
+            .studioRowBackground()
 
             Section {
                 Button("Sign Out") { confirmSignOut = true }
                 Button("Delete Account…", role: .destructive) { sheet = .deleteAccount }
                     .accessibilityIdentifier("account.delete")
             } footer: {
-                Text("Deleting your account removes your links, QR codes, pages and files, and frees their addresses. It can't be undone.")
+                Text("Deleting your account removes your links, QR codes, pages and files, and frees their addresses. This can’t be undone.")
             }
+            .studioRowBackground()
         }
         .studioForm()
         .navigationTitle("Account")
@@ -138,6 +142,7 @@ struct AccountView: View {
             }
             .disabled(app.needsProfile)
         }
+        .studioRowBackground()
     }
 
     // MARK: Security
@@ -157,6 +162,7 @@ struct AccountView: View {
         } footer: {
             Text("Two-factor authentication adds a time-based one-time password (TOTP) from an authenticator app to every sign-in.")
         }
+        .studioRowBackground()
     }
 
     @ViewBuilder
@@ -169,17 +175,13 @@ struct AccountView: View {
                 ProgressView()
             }
         case .failed(let error):
-            Button {
-                Task { await settings.loadTwoFactor(force: true) }
-            } label: {
-                VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                    Text("Two-factor authentication")
-                    Text(error == .offline
-                         ? String(localized: "You're offline. Tap to try again.")
-                         : String(localized: "Couldn't load its status. Tap to try again."))
-                        .studioText(.uiSm)
-                        .foregroundStyle(Color.studioError)
-                }
+            FormRetryRow(
+                message: error == .offline
+                    ? String(localized: "Two-factor authentication: you’re offline.")
+                    : String(localized: "Couldn’t load the two-factor status."),
+                systemImage: error == .offline ? "wifi.slash" : "exclamationmark.triangle"
+            ) { [settings] in
+                await settings.loadTwoFactor(force: true)
             }
         case .loaded(let status):
             LabeledContent("Two-factor authentication") {
@@ -207,8 +209,15 @@ struct AccountView: View {
         switch settings.plan {
         case .idle, .loading:
             HStack { Text("Current plan"); Spacer(); ProgressView() }
-        case .failed:
-            Button("Couldn't load your plan. Try again.") { Task { await settings.loadPlan(force: true) } }
+        case .failed(let error):
+            FormRetryRow(
+                message: error == .offline
+                    ? String(localized: "Your plan: you’re offline.")
+                    : String(localized: "Couldn’t load your plan."),
+                systemImage: error == .offline ? "wifi.slash" : "exclamationmark.triangle"
+            ) { [settings] in
+                await settings.loadPlan(force: true)
+            }
         case .loaded(let (account, details)):
             LabeledContent("Current plan", value: details?.name ?? String(localized: "Unknown"))
             if let limit = details?.settings?.customSlugsLimit {
@@ -256,9 +265,7 @@ struct AccountNameEditor: View {
             .onAppear { name = app.user?.name ?? "" }
         }
         .presentationDetents([.medium])
-        #if os(macOS)
-        .frame(minWidth: 400, minHeight: 200)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     private func save() async {

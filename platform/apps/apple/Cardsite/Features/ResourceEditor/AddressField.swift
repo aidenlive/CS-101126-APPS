@@ -70,12 +70,12 @@ struct AddressField: View {
                             .contentTransition(.symbolEffect(.replace))
                     }
                     .buttonStyle(.borderless)
-                    .accessibilityLabel(copied ? Text("Copied") : Text("Copy address"))
+                    .accessibilityLabel(copied ? Text("Copied") : Text(ResourceVerb.copyLink.title))
                     Link(destination: url) {
                         Image(systemName: "arrow.up.right.square")
                     }
                     .buttonStyle(.borderless)
-                    .accessibilityLabel(Text("Open address"))
+                    .accessibilityLabel(Text(ResourceVerb.openInBrowser.title))
                 }
             }
         } label: {
@@ -131,7 +131,7 @@ struct AddressField: View {
                          domains: [DomainOption(id: 3, host: "go.example.com")],
                          defaultHost: "card.site")
         }
-        .editorRowBackground()
+        .studioRowBackground()
     }
     .resourceEditorForm()
 }

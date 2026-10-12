@@ -37,7 +37,7 @@ struct ResourceAddressRows: View {
             Button {
                 address.slug = Slug.random()
             } label: {
-                Label("Shuffle address", systemImage: "shuffle")
+                Label("Shuffle Address", systemImage: "shuffle")
             }
             .accessibilityHint(Text("Generates a new random address"))
         } else {

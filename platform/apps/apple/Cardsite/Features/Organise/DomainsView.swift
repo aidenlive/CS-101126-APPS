@@ -150,9 +150,12 @@ struct DomainsView: View {
             retry: { [list = model.list] in await list.refresh() }
         ) { domains in
             List {
+                ListPageHead(kicker: String(localized: "Organize"),
+                             title: String(localized: "Domains"),
+                             description: String(localized: "Serve links from your own branded domains."))
                 if let error = model.list.refreshError {
                     RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
-                        .listRowSeparator(.hidden)
+                        .studioClearRow()
                 }
                 Section {
                     ForEach(Array(domains.enumerated()), id: \.element.id) { index, domain in
@@ -164,7 +167,7 @@ struct DomainsView: View {
                         .accessibilityIdentifier("org.domains.row.\(index)")
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) { pendingDelete = domain } label: {
-                                Label("Delete", systemImage: "trash")
+                                ResourceVerb.delete.label
                             }
                         }
                         .swipeActions(edge: .leading) {
@@ -186,18 +189,20 @@ struct DomainsView: View {
                             }
                             Divider()
                             Button(role: .destructive) { pendingDelete = domain } label: {
-                                Label("Delete…", systemImage: "trash")
+                                ResourceVerb.delete.label
                             }
                         }
                     }
+                    .studioRowBackground()
                     OrganiseLoadMoreRow(list: model.list)
-                } footer: {
-                    Text("Serve links from your own branded domains.")
                 }
             }
+            .studioList()
             .refreshable { [list = model.list] in await list.refresh() }
         }
+        .background(Color.studioBg)
         .navigationTitle("Domains")
+        .inlineNavigationTitle()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { isAdding = true } label: {
@@ -223,8 +228,8 @@ struct DomainsView: View {
         .organiseDeleteFlow(
             $pendingDelete,
             title: String(localized: "Delete this domain?"),
-            confirmTitle: { String(localized: "Delete \($0.host)") },
-            message: String(localized: "Are you sure you want to delete this domain? This can't be undone."),
+            confirmTitle: { _ in String(localized: "Delete") },
+            message: String(localized: "Links served from it stop resolving there. This can’t be undone."),
             delete: { [model] domain in try await model.delete(domain) }
         )
     }
@@ -326,7 +331,7 @@ enum DomainCheckCopy {
         switch check {
         case .verified: return String(localized: "Domain verified.")
         case .pending(let title, _): return title
-        case .unavailable: return String(localized: "Couldn't check \(host)")
+        case .unavailable: return String(localized: "Couldn’t check \(host)")
         case .failed: return String(localized: "Could not verify this domain.")
         }
     }

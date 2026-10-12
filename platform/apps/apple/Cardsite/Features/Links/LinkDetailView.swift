@@ -36,10 +36,10 @@ struct LinkDetailView: View {
             if let model {
                 LinkDetailForm(model: model, options: links.options, onDeleted: onDeleted)
             } else {
-                ProgressView()
-                    .controlSize(.large)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.studioBg)
+                // The model exists one frame later (`.task`): an empty page
+                // rather than a spinner that flashes.
+                Color.studioBg
+                    .accessibilityElement()
                     .accessibilityLabel(Text("Loading"))
             }
         }
@@ -63,7 +63,6 @@ private struct LinkDetailForm: View {
     @State private var isConfirmingDelete = false
     @State private var isDeleting = false
     @State private var deleteError: String? = nil
-    @State private var copied = false
 
     var body: some View {
         Group {
@@ -103,13 +102,13 @@ private struct LinkDetailForm: View {
         .task { [options] in await options.loadIfNeeded() }
         .onChange(of: model.form) { old, new in model.formChanged(from: old, to: new) }
         .confirmationDialog(
-            String(localized: "Delete /\(model.slug)?"),
+            ResourceKind.shortLinkDeleteConfirmation,
             isPresented: $isConfirmingDelete,
             titleVisibility: .visible
         ) {
             Button("Delete", role: .destructive) { Task { await delete() } }
         } message: {
-            Text("Its address stops resolving immediately. This cannot be undone.")
+            Text(ResourceKind.shortLinkDeleteConsequence)
         }
         .alert("Couldn’t delete", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
             Button("OK", role: .cancel) {}
@@ -125,7 +124,7 @@ private struct LinkDetailForm: View {
                 Section {
                     RefreshErrorBanner(error: error) { model.dismissRefreshError() }
                 }
-                .listRowBackground(Color.clear)
+                .studioClearRow()
             }
             if let current = model.form {
                 editor(binding(fallback: current))
@@ -139,7 +138,7 @@ private struct LinkDetailForm: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .editorRowBackground()
+                .studioRowBackground()
             }
             dangerZone
         }
@@ -176,137 +175,41 @@ private struct LinkDetailForm: View {
     // MARK: Header
 
     private var header: some View {
-        Section {
-            VStack(alignment: .leading, spacing: StudioSpace.s3) {
-                HStack(spacing: StudioSpace.s2) {
-                    statusPill
-                    if model.didJustSave {
-                        StudioStatusPill(String(localized: "Saved"), tone: .success)
-                            .transition(.opacity)
-                    }
-                }
-                Text(verbatim: displayAddress)
-                    .studioText(.title)
-                    .foregroundStyle(Color.studioText)
-                    .textSelection(.enabled)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.7)
-                if let destination = model.destination, !destination.isEmpty {
-                    Text(verbatim: destination)
-                        .studioText(.uiSm)
-                        .foregroundStyle(Color.studioText3)
-                        .lineLimit(2)
-                        .truncationMode(.middle)
-                }
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: StudioSpace.s2) { headerActions }
-                    VStack(alignment: .leading, spacing: StudioSpace.s2) { headerActions }
-                }
-                .padding(.top, StudioSpace.s1)
-            }
-            .padding(.vertical, StudioSpace.s2)
-
-            Toggle(isOn: Binding(
-                get: { model.isEnabled },
-                set: { newValue in Task { await model.setEnabled(newValue) } }
-            )) {
-                VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                    model.isEnabled ? Text("Active") : Text("Disabled")
-                    Text(model.isEnabled
-                         ? String(localized: "Resolving")
-                         : String(localized: "Returns 404. The address stays yours."))
-                        .studioText(.uiSm)
-                        .foregroundStyle(Color.studioText3)
-                }
-            }
-            .toggleStyle(.switch)
-            .accessibilityIdentifier("link.detail.enabled")
-            .disabled(model.isTogglingEnabled || model.detail == nil)
-            if let error = model.toggleError {
-                FormErrorText(message: error)
-            }
-
-            figures
-
+        ResourceHeaderSection(
+            state: ResourceState(isEnabled: model.isEnabled, isLapsing: model.isLapsing),
+            didJustSave: model.didJustSave,
+            title: displayAddress,
+            subtitle: model.destination,
+            url: publicURL,
+            cardURL: app.addresses.cardURL(for: model.slug),
+            cardHint: String(localized: "Opens the summary card at \(app.addresses.display(for: "@" + model.slug))"),
+            toggle: ResourceLiveToggle(
+                isOn: model.isEnabled,
+                isBusy: model.isTogglingEnabled || model.detail == nil,
+                error: model.toggleError,
+                identifier: "link.detail.enabled",
+                set: { [model] isOn in Task { await model.setEnabled(isOn) } }
+            ),
+            figures: [
+                ResourceFigure(title: String(localized: "Clicks · 30d"), value: model.recent?.pageviews),
+                ResourceFigure(title: String(localized: "Visitors · 30d"), value: model.recent?.visitors),
+                ResourceFigure(title: String(localized: "Clicks · all time"), value: model.clicks),
+            ],
+            isLapsing: model.isLapsing
+        ) {
+            EmptyView()
+        } rows: {
             NavigationLink(value: StatisticsRoute(linkID: model.linkID, subtitle: displayAddress)) {
-                Label("Full statistics", systemImage: "chart.bar.xaxis")
+                ResourceVerb.statistics.label
             }
             if let url = publicURL {
                 Button {
                     app.composeQRCode(for: url)
                 } label: {
-                    Label("Create QR code", systemImage: "qrcode")
+                    Label("Create QR Code", systemImage: "qrcode")
                 }
                 .accessibilityIdentifier("link.detail.qr")
             }
-
-            if model.isLapsing {
-                StudioBanner(
-                    lead: String(localized: "This address is in its release window."),
-                    message: String(localized: "It may be released to others soon. How addresses are kept: cardsite.com/url-lifecycle."),
-                    tone: .warning
-                )
-            }
-        }
-        .editorRowBackground()
-    }
-
-    @ViewBuilder
-    private var statusPill: some View {
-        if !model.isEnabled {
-            StudioStatusPill(String(localized: "Off"), tone: .neutral)
-        } else if model.isLapsing {
-            StudioStatusPill(String(localized: "Lapsing"), tone: .warning)
-        } else {
-            StudioStatusPill(String(localized: "Live"), tone: .success)
-        }
-    }
-
-    @ViewBuilder
-    private var headerActions: some View {
-        StudioButton(copied ? String(localized: "Copied") : String(localized: "Copy"),
-                     systemImage: copied ? "checkmark" : "doc.on.doc",
-                     variant: .primary) {
-            copy()
-        }
-        if let url = publicURL {
-            Link(destination: url) {
-                Label("Open", systemImage: "safari")
-            }
-            .buttonStyle(.bordered)
-        }
-        if let card = app.addresses.cardURL(for: model.slug) {
-            Link(destination: card) {
-                Label("Card View", systemImage: "rectangle.portrait.on.rectangle.portrait")
-            }
-            .buttonStyle(.bordered)
-            .accessibilityHint(Text("Opens the summary card at \(app.addresses.display(for: "@" + model.slug))"))
-        }
-    }
-
-    private var figures: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .top, spacing: StudioSpace.s4) { figureItems }
-            VStack(alignment: .leading, spacing: StudioSpace.s3) { figureItems }
-        }
-        .padding(.vertical, StudioSpace.s1)
-    }
-
-    @ViewBuilder
-    private var figureItems: some View {
-        HeaderFigure(title: String(localized: "Clicks (30 d)"), value: model.recent?.pageviews)
-        HeaderFigure(title: String(localized: "Visitors (30 d)"), value: model.recent?.visitors)
-        HeaderFigure(title: String(localized: "All time"), value: model.clicks)
-    }
-
-    private func copy() {
-        guard let url = publicURL else { return }
-        Pasteboard.copy(url.absoluteString)
-        Haptics.success()
-        copied = true
-        Task {
-            try? await Task.sleep(for: .seconds(2))
-            copied = false
         }
     }
 
@@ -351,20 +254,19 @@ private struct LinkDetailForm: View {
                 }
                 .padding(.vertical, StudioSpace.s1)
             }
+            if options.pickersFailed {
+                FormRetryRow(message: String(localized: "Domains, projects and splash pages couldn’t be loaded.")) { [options] in
+                    await options.load()
+                }
+            }
         } header: {
             EditorSectionHeader(String(localized: "Address & destination"))
         } footer: {
-            if options.pickersFailed {
-                Text("Domains, projects and splash pages couldn’t be loaded. Pull to refresh to try again.")
-                    .studioText(.uiSm)
-                    .foregroundStyle(Color.studioText3)
-            } else if options.usableDomains().isEmpty {
+            if !options.pickersFailed, options.usableDomains().isEmpty {
                 Text("Verified custom domains appear here as address options.")
-                    .studioText(.uiSm)
-                    .foregroundStyle(Color.studioText3)
             }
         }
-        .editorRowBackground()
+        .studioRowBackground()
 
         ScheduleSection(
             isScheduled: form.isScheduled,
@@ -417,7 +319,7 @@ private struct LinkDetailForm: View {
                 .studioText(.uiSm)
                 .foregroundStyle(Color.studioText3)
         }
-        .editorRowBackground()
+        .studioRowBackground()
 
         Section {
             Picker(selection: form.settings.redirectStatus) {
@@ -450,13 +352,13 @@ private struct LinkDetailForm: View {
         } header: {
             EditorSectionHeader(String(localized: "Advanced"))
         }
-        .editorRowBackground()
+        .studioRowBackground()
 
         if let message = model.formError {
             Section {
                 FormErrorText(message: message)
             }
-            .editorRowBackground()
+            .studioRowBackground()
         }
     }
 
@@ -486,7 +388,7 @@ private struct LinkDetailForm: View {
                 isConfirmingDelete = true
             } label: {
                 HStack {
-                    Label("Delete link", systemImage: "trash")
+                    ResourceVerb.delete.label
                     Spacer()
                     if isDeleting { ProgressView() }
                 }
@@ -495,11 +397,9 @@ private struct LinkDetailForm: View {
         } header: {
             EditorSectionHeader(String(localized: "Danger zone"))
         } footer: {
-            Text("The address stops resolving immediately. This cannot be undone.")
-                .studioText(.uiSm)
-                .foregroundStyle(Color.studioText3)
+            Text(ResourceKind.shortLinkDeleteConsequence)
         }
-        .editorRowBackground()
+        .studioRowBackground()
     }
 
     private func delete() async {
@@ -513,26 +413,6 @@ private struct LinkDetailForm: View {
         } catch {
             deleteError = error.asAPIError.localizedDescription
         }
-    }
-}
-
-/// A figure in the header: label over number, "—" while unknown.
-private struct HeaderFigure: View {
-    let title: String
-    let value: Int?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: StudioSpace.s1) {
-            Text(title)
-                .studioText(.label)
-                .foregroundStyle(Color.studioText3)
-            Text(verbatim: value?.grouped ?? "—")
-                .studioText(.titleSm)
-                .foregroundStyle(Color.studioText)
-                .monospacedDigit()
-                .contentTransition(.numericText())
-        }
-        .accessibilityElement(children: .combine)
     }
 }
 

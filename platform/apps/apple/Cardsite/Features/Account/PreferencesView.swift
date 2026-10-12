@@ -140,7 +140,7 @@ struct PreferencesView: View {
             }
             .task { [model] in await model.loadIfNeeded() }
             .onChange(of: model.draft) { _, _ in model.acknowledgeSave() }
-            .alert("Couldn't save preferences",
+            .alert("Couldn’t save preferences",
                    isPresented: Binding(get: { saveError != nil }, set: { if !$0 { saveError = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -174,6 +174,7 @@ struct PreferencesView: View {
         return Form {
             if let error = model.refreshError {
                 RefreshErrorBanner(error: error) { model.dismissRefreshError() }
+                    .studioClearRow()
             }
 
             Section("Display defaults") {
@@ -191,6 +192,7 @@ struct PreferencesView: View {
                     Text("Oldest first (Ascending)").tag("ASC")
                 }
             }
+            .listRowBackground(inlineSave ? nil : Color.studioSurface)
 
             Section("Default sort field per resource") {
                 ForEach(Self.orderFields) { field in
@@ -205,11 +207,13 @@ struct PreferencesView: View {
                     }
                 }
             }
+            .listRowBackground(inlineSave ? nil : Color.studioSurface)
 
-            Section("Link behaviour") {
+            Section("Link behavior") {
                 Toggle("Auto-copy short link after creation", isOn: $model.draft.autoCopyLink)
                 Toggle("Auto-save link settings on change", isOn: $model.draft.autoSaveLinkSettings)
             }
+            .listRowBackground(inlineSave ? nil : Color.studioSurface)
 
             Section {
                 TextEditor(text: $model.draft.excludedIPs)
@@ -222,12 +226,14 @@ struct PreferencesView: View {
             } footer: {
                 Text("Clicks from these IPs will not be counted in your statistics.")
             }
+            .listRowBackground(inlineSave ? nil : Color.studioSurface)
 
             Section {
                 Text("Your own OpenAI key and white-label settings are managed on cardsite.com.")
                     .studioText(.uiSm)
                     .studioMuted()
             }
+            .listRowBackground(inlineSave ? nil : Color.studioSurface)
 
             if inlineSave {
                 Section {
@@ -237,6 +243,7 @@ struct PreferencesView: View {
                             .buttonStyle(.borderedProminent)
                     }
                 }
+                .listRowBackground(inlineSave ? nil : Color.studioSurface)
             }
         }
         .refreshable { [model] in await model.refresh() }

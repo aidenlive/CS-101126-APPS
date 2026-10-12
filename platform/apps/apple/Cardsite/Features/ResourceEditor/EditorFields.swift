@@ -123,33 +123,22 @@ struct LockedFeatureNote: View {
 }
 
 extension View {
-    /// The Studio look for a native grouped form: opaque Studio background,
-    /// Studio body type and tint. Every in-app form uses it (editors,
-    /// Account, Preferences, Workspace), so they all sit on the same page
-    /// colour as the dashboards. The Mac Settings window keeps the system look.
-    func studioForm() -> some View {
-        self
-            .formStyle(.grouped)
-            .scrollContentBackground(.hidden)
-            .background(Color.studioBg)
-            .studioText(.ui)
-            .tint(Color.studioAccentLine)
-    }
-
-    /// A resource editor's form: ``studioForm()``; give each section
-    /// ``editorRowBackground()`` for Studio row surfaces.
+    /// A resource editor's form: ``studioForm(measure:)``.
     func resourceEditorForm() -> some View {
         studioForm()
     }
 
-    /// Row surface for a section inside ``resourceEditorForm()``.
+    /// The old name of ``studioRowBackground()``, kept so in-flight
+    /// branches still build. Use `studioRowBackground()`.
     func editorRowBackground() -> some View {
-        listRowBackground(Color.studioSurface)
+        studioRowBackground()
     }
 }
 
-/// A section header in Studio label type. Keep it to a few words: the
-/// label style is uppercase.
+/// A form section header: the native grouped-form header, so every
+/// Form in the app (editors, Account, Workspace, Preferences) has one
+/// header style with Dynamic Type metrics (DESIGN-REVIEW P1-7). Write it in
+/// sentence case.
 struct EditorSectionHeader: View {
     let title: String
 
@@ -157,8 +146,6 @@ struct EditorSectionHeader: View {
 
     var body: some View {
         Text(title)
-            .studioText(.label)
-            .foregroundStyle(Color.studioText3)
             .accessibilityAddTraits(.isHeader)
     }
 }

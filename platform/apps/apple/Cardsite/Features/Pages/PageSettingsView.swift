@@ -31,7 +31,7 @@ struct PageSettingsView: View {
             switch self {
             case .page: return String(localized: "Name, bio, picture and address")
             case .seo: return String(localized: "How the page appears in search and shares")
-            case .theme: return String(localized: "Background, colours, alignment and spacing")
+            case .theme: return String(localized: "Background, colors, alignment and spacing")
             case .branding: return String(localized: "The branding bar at the foot of the page")
             case .targeting: return String(localized: "Who the page shows to")
             case .pixels: return String(localized: "Measurement pixels the page emits")
@@ -77,8 +77,9 @@ struct PageSettingsView: View {
                         } footer: {
                             SettingsSaveStatus(settings: settings)
                         }
+                        .studioRowBackground()
                     }
-                    .scrollContentBackground(.hidden)
+                    .studioList()
                     .navigationDestination(for: Pane.self) { section in
                         PageSettingsSectionView(section: section, settings: settings)
                     }
@@ -109,9 +110,7 @@ struct PageSettingsView: View {
         .onDisappear {
             if let settings { Task { await settings.flush() } }
         }
-        #if os(macOS)
-        .frame(minWidth: 520, minHeight: 600)
-        #endif
+        .cardsiteSheet(.form)
     }
 }
 
@@ -154,9 +153,7 @@ struct PageSettingsSectionView: View {
             case .pixels: PixelsForm(editor: settings.editor)
             }
         }
-        .formStyle(.grouped)
-        .scrollContentBackground(.hidden)
-        .background(Color.studioBg)
+        .studioForm()
         .navigationTitle(section.title)
         #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -221,6 +218,7 @@ private struct PageSection: View {
                 }
                 AssetFieldRow(label: String(localized: "Picture"), imagesOnly: true, text: settings.text("image"))
             }
+            .studioRowBackground()
             Section {
                 EditorFieldRow(
                     label: String(localized: "Address"),
@@ -254,6 +252,7 @@ private struct PageSection: View {
             } footer: {
                 Text("Changing the address frees the old one. Anything printed or shared with it stops working.")
             }
+            .studioRowBackground()
             Section {
                 EditorToggleRow(label: String(localized: "Sensitive content warning"),
                                 isOn: settings.toggle("sensitive_content"))
@@ -270,7 +269,9 @@ private struct PageSection: View {
                     EditorToggleRow(label: String(localized: "Scroll buttons"), isOn: settings.toggle("scroll_buttons_is_enabled"))
                 }
             }
+            .studioRowBackground()
             Section { SettingsSaveStatus(settings: settings) }
+            .studioRowBackground()
         }
         .onAppear { slug = settings.editor.page?.slug ?? "" }
         .onChange(of: slug) { slugError = nil }
@@ -307,7 +308,9 @@ private struct SEOSection: View {
                                     prompt: String(localized: "comma, separated, keywords"))
                 }
             }
+            .studioRowBackground()
             Section { SettingsSaveStatus(settings: settings) }
+            .studioRowBackground()
         }
     }
 }
@@ -321,7 +324,7 @@ private struct ThemeSection: View {
         Form {
             Section {
                 Picker(selection: background) {
-                    Text("Solid colour").tag("color")
+                    Text("Solid color").tag("color")
                     Text("Gradient").tag("gradient")
                     Text("Image").tag("image")
                 } label: {
@@ -330,27 +333,29 @@ private struct ThemeSection: View {
                 .pickerStyle(.menu)
                 switch background.wrappedValue {
                 case "gradient":
-                    ColorFieldRow(label: String(localized: "Colour 1"), hex: settings.hex("background_color_one"))
-                    ColorFieldRow(label: String(localized: "Colour 2"), hex: settings.hex("background_color_two"))
+                    ColorFieldRow(label: String(localized: "Color 1"), hex: settings.hex("background_color_one"))
+                    ColorFieldRow(label: String(localized: "Color 2"), hex: settings.hex("background_color_two"))
                 case "image":
                     AssetFieldRow(label: String(localized: "Background image"), imagesOnly: true, text: settings.text("background"))
                 default:
-                    ColorFieldRow(label: String(localized: "Background colour"), hex: settings.hex("background_color"))
+                    ColorFieldRow(label: String(localized: "Background color"), hex: settings.hex("background_color"))
                 }
             } header: {
                 Text("Background")
             }
+            .studioRowBackground()
             Section {
-                ColorFieldRow(label: String(localized: "Text colour"), hex: settings.hex("text_color"))
-                ColorFieldRow(label: String(localized: "Button colour"), hex: settings.hex("btn_background_color"))
-                ColorFieldRow(label: String(localized: "Button text colour"), hex: settings.hex("btn_text_color"))
+                ColorFieldRow(label: String(localized: "Text color"), hex: settings.hex("text_color"))
+                ColorFieldRow(label: String(localized: "Button color"), hex: settings.hex("btn_background_color"))
+                ColorFieldRow(label: String(localized: "Button text color"), hex: settings.hex("btn_text_color"))
             } header: {
-                Text("Colours")
+                Text("Colors")
             }
+            .studioRowBackground()
             Section {
                 Picker(selection: settings.choice("text_alignment", default: "center")) {
                     Text("Left").tag("left")
-                    Text("Centre").tag("center")
+                    Text("Center").tag("center")
                     Text("Right").tag("right")
                 } label: {
                     Text("Text alignment").studioText(.ui)
@@ -362,6 +367,7 @@ private struct ThemeSection: View {
             } header: {
                 Text("Layout")
             }
+            .studioRowBackground()
             if showUnwired {
                 Section {
                     Picker(selection: settings.choice("font", default: "")) {
@@ -377,8 +383,10 @@ private struct ThemeSection: View {
                 } header: {
                     Text("Type and motion")
                 }
+                .studioRowBackground()
             }
             Section { SettingsSaveStatus(settings: settings) }
+            .studioRowBackground()
         }
     }
 
@@ -457,6 +465,7 @@ private struct BrandingSection: View {
                         #endif
                 }
             }
+            .studioRowBackground()
             if showUnwired {
                 Section {
                     EditorToggleRow(label: String(localized: "Branded button"),
@@ -470,8 +479,10 @@ private struct BrandingSection: View {
                         }
                     }
                 }
+                .studioRowBackground()
             }
             Section { SettingsSaveStatus(settings: settings) }
+            .studioRowBackground()
         }
     }
 }

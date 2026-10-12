@@ -26,7 +26,7 @@ struct DeleteAccountView: View {
                 VStack(alignment: .leading, spacing: StudioSpace.s5) {
                     StudioBanner(
                         lead: String(localized: "This is permanent."),
-                        message: String(localized: "Your links, QR codes, pages and files are deleted, and their addresses are freed for others. A paid plan is cancelled. Printed QR codes will stop working."),
+                        message: String(localized: "Your links, QR codes, pages and files are deleted, and their addresses are freed for others. A paid plan is canceled. Printed QR codes will stop working."),
                         tone: .error
                     )
 
@@ -51,14 +51,14 @@ struct DeleteAccountView: View {
                     Divider()
 
                     VStack(alignment: .leading, spacing: StudioSpace.s2) {
-                        Text("Don't know your password?").studioText(.ui)
-                        Text("We'll email you a link to set a new one, then come back here. This also covers accounts first created with Google or another provider on the web.")
+                        Text("Don’t know your password?").studioText(.ui)
+                        Text("We’ll email you a link to set a new one, then come back here. This also covers accounts first created with Google or another provider on the web.")
                             .studioText(.uiSm).studioMuted()
                         resetControl
                     }
                 }
                 .padding(StudioSpace.s6)
-                .readableWidth(560)
+                .readableWidth(.sheet)
             }
             .background(Color.studioBg)
             .navigationTitle("Delete Account")
@@ -73,12 +73,10 @@ struct DeleteAccountView: View {
                 Button("Delete", role: .destructive) { Task { await delete() } }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("Everything in it is deleted and can't be recovered.")
+                Text("Everything in it is deleted and can’t be recovered.")
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 480, minHeight: 520)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     @ViewBuilder

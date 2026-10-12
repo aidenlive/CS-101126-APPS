@@ -44,7 +44,7 @@ final class UploadPickerModel {
         // HEIC and other image types the server refuses become JPEG.
         if isImage, let current = type, !Self.imageTypes.contains(where: { current.conforms(to: $0) }) {
             guard let jpeg = await Self.jpeg(from: data) else {
-                uploadError = String(localized: "This image couldn't be read. Try a JPEG or PNG.")
+                uploadError = String(localized: "This image couldn’t be read. Try a JPEG or PNG.")
                 return nil
             }
             data = jpeg
@@ -149,9 +149,7 @@ struct UploadPickerSheet: View {
                 Task { await importFile(url) }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 520, minHeight: 520)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     @ViewBuilder
@@ -235,7 +233,7 @@ struct UploadPickerSheet: View {
                 dismiss()
             }
         } catch {
-            model.uploadError = String(localized: "This photo couldn't be read.")
+            model.uploadError = String(localized: "This photo couldn’t be read.")
         }
     }
 
@@ -251,7 +249,7 @@ struct UploadPickerSheet: View {
                 dismiss()
             }
         } catch {
-            model.uploadError = String(localized: "This file couldn't be read.")
+            model.uploadError = String(localized: "This file couldn’t be read.")
         }
     }
 }

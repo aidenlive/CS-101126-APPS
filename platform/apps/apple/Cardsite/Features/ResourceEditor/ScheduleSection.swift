@@ -65,7 +65,7 @@ struct ScheduleSection: View {
             }
         }
         .environment(\.timeZone, zone)
-        .editorRowBackground()
+        .studioRowBackground()
     }
 
     /// Moving the start past the end pulls the end along.
@@ -151,9 +151,7 @@ struct TimeZonePickerSheet: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 420, minHeight: 480)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     private var filtered: [String] {

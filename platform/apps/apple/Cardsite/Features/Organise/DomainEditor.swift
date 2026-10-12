@@ -30,7 +30,7 @@ struct DomainFormSections: View {
         } header: {
             EditorSectionHeader(String(localized: "Address"))
         }
-        .editorRowBackground()
+        .studioRowBackground()
 
         Section {
             Picker("Domain type", selection: $input.kind) {
@@ -44,9 +44,9 @@ struct DomainFormSections: View {
                 }
             }
         } header: {
-            EditorSectionHeader(String(localized: "Behaviour"))
+            EditorSectionHeader(String(localized: "Behavior"))
         }
-        .editorRowBackground()
+        .studioRowBackground()
 
         Section {
             EditorTextField(String(localized: "Custom index URL"), text: $input.customIndexURL,
@@ -56,7 +56,7 @@ struct DomainFormSections: View {
         } header: {
             EditorSectionHeader(String(localized: "Pages"))
         }
-        .editorRowBackground()
+        .studioRowBackground()
 
         Section {
             Toggle("SSL enabled", isOn: $input.sslIsEnabled.animation(StudioAnimation.base))
@@ -77,7 +77,7 @@ struct DomainFormSections: View {
         } header: {
             EditorSectionHeader(String(localized: "Options"))
         }
-        .editorRowBackground()
+        .studioRowBackground()
     }
 }
 
@@ -109,11 +109,11 @@ struct DomainDNSInstructions: View {
                     .accessibilityLabel(Text("Copy host"))
                 }
             }
-            Text("Add a CNAME record for this host that points at this Cardsite deployment. An apex domain (one without a subdomain) can't carry a CNAME: give it A and AAAA records with the deployment's addresses instead.")
+            Text("Add a CNAME record for this host that points at this Cardsite deployment. An apex domain (one without a subdomain) can’t carry a CNAME: give it A and AAAA records with the deployment’s addresses instead.")
                 .studioText(.uiSm)
                 .foregroundStyle(Color.studioText2)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Then verify. If the host doesn't point here yet, verification names the exact target. DNS changes can take a while to propagate.")
+            Text("Then verify. If the host doesn’t point here yet, verification names the exact target. DNS changes can take a while to propagate.")
                 .studioText(.uiSm)
                 .foregroundStyle(Color.studioText3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -206,14 +206,14 @@ struct DomainDetailView: View {
                     Text("Save your changes before verifying.")
                 }
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             Section {
                 DomainDNSInstructions(host: domain.host)
             } header: {
                 EditorSectionHeader(String(localized: "DNS"))
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             DomainFormSections(input: $draft, hostError: hostError)
 
@@ -223,7 +223,7 @@ struct DomainDetailView: View {
             } footer: {
                 FormErrorText(message: saveError)
             }
-            .editorRowBackground()
+            .studioRowBackground()
         }
         .resourceEditorForm()
         .navigationTitle(domain.host)
@@ -239,8 +239,8 @@ struct DomainDetailView: View {
         .organiseDeleteFlow(
             $pendingDelete,
             title: String(localized: "Delete this domain?"),
-            confirmTitle: { String(localized: "Delete \($0.host)") },
-            message: String(localized: "Are you sure you want to delete this domain? This can't be undone."),
+            confirmTitle: { _ in String(localized: "Delete") },
+            message: String(localized: "Links served from it stop resolving there. This can’t be undone."),
             delete: { [model] domain in
                 try await model.delete(domain)
                 dismiss()
@@ -317,7 +317,7 @@ struct DomainCreateSheet: View {
                     .onChange(of: input.host) { _, _ in hostError = nil }
                 }
             }
-            .navigationTitle(created == nil ? String(localized: "Add domain") : (created?.host ?? ""))
+            .navigationTitle(created == nil ? String(localized: "Add Domain") : (created?.host ?? ""))
             #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -346,7 +346,7 @@ struct DomainCreateSheet: View {
             }
             .interactiveDismissDisabled(created == nil && (isDirty || isSaving))
         }
-        .organiseSheetFrame()
+        .cardsiteSheet(.form)
     }
 
     private func createdForm(_ domain: CustomDomain) -> some View {
@@ -360,14 +360,14 @@ struct DomainCreateSheet: View {
                     .listRowInsets(EdgeInsets(top: StudioSpace.s2, leading: StudioSpace.s2,
                                               bottom: StudioSpace.s2, trailing: StudioSpace.s2))
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             Section {
                 DomainDNSInstructions(host: current.host)
             } header: {
                 EditorSectionHeader(String(localized: "DNS"))
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             Section {
                 if let check = model.checks[domain.id] {
@@ -393,9 +393,9 @@ struct DomainCreateSheet: View {
                 .disabled(verifying || current.isVerified)
                 .accessibilityIdentifier("org.domains.verify")
             } footer: {
-                Text("You can also verify later from the domain's page.")
+                Text("You can also verify later from the domain’s page.")
             }
-            .editorRowBackground()
+            .studioRowBackground()
         }
         .resourceEditorForm()
     }

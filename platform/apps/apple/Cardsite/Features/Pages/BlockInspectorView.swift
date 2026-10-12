@@ -32,16 +32,17 @@ struct BlockInspectorView: View {
             Section {
                 InspectorHeader(block: block, type: type, isDirty: isDirty)
                 if let type, type.isPremium, !pages.allows(PagesModel.Capability.premiumBlocks) {
-                    Text("Your plan doesn't include this block type. This one keeps working and you can still edit it; new ones can't be added.")
+                    Text("Your plan doesn’t include this block type. This one keeps working and you can still edit it; new ones can’t be added.")
                         .studioText(.uiSm)
                         .foregroundStyle(Color.studioText3)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            .studioRowBackground()
             if type == nil, pages.blockTypes.error != nil {
                 Section {
                     StudioBanner(
-                        lead: String(localized: "Block types didn't load."),
+                        lead: String(localized: "Block types didn’t load."),
                         message: String(localized: "Fields are shown from what this block stores. Try again for the full set."),
                         tone: .warning
                     )
@@ -49,6 +50,7 @@ struct BlockInspectorView: View {
                         Task { await pages.loadCatalog() }
                     }
                 }
+                .studioRowBackground()
             }
             ForEach(InspectorGroup.groups(for: fields)) { group in
                 Section {
@@ -58,6 +60,7 @@ struct BlockInspectorView: View {
                 } header: {
                     Text(group.title)
                 }
+                .studioRowBackground()
             }
             if fields.isEmpty {
                 Section {
@@ -65,11 +68,10 @@ struct BlockInspectorView: View {
                         .studioText(.ui)
                         .foregroundStyle(Color.studioText2)
                 }
+                .studioRowBackground()
             }
         }
-        .formStyle(.grouped)
-        .scrollContentBackground(.hidden)
-        .background(Color.studioBg)
+        .studioForm()
         .navigationTitle(type?.name ?? BlockFieldInference.humanized(block.type))
         #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)

@@ -181,7 +181,7 @@ private struct SecuritySettingsPane: View {
         } message: { _ in
             Text("Requests using this token will be rejected immediately.")
         }
-        .alert("Couldn't revoke", isPresented: Binding(get: { revokeError != nil }, set: { if !$0 { revokeError = nil } })) {
+        .alert("Couldn’t revoke", isPresented: Binding(get: { revokeError != nil }, set: { if !$0 { revokeError = nil } })) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(revokeError ?? "")

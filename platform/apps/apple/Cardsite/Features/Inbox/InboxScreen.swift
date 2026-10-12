@@ -37,6 +37,7 @@ private struct OwnedInbox: View {
 struct InboxView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.openURL) private var openURL
+    @Environment(\.toasts) private var toasts
     let model: InboxModel
     @State private var actionError: String? = nil
 
@@ -46,14 +47,17 @@ struct InboxView: View {
             state: model.list.state,
             empty: .init(
                 systemImage: "tray",
-                title: String(localized: "No inbox notifications yet."),
+                title: String(localized: "No inbox notifications yet"),
                 message: String(localized: "Announcements and updates about your account and workspaces arrive here.")
             ),
+            skeleton: .textRows,
             retry: { [model] in await model.refresh() }
         ) { _ in
             list
         }
+        .background(Color.studioBg)
         .navigationTitle("Inbox")
+        .inlineNavigationTitle()
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Picker("Show", selection: $model.filter) {
@@ -71,7 +75,7 @@ struct InboxView: View {
                     Button {
                         Task { await markAllRead() }
                     } label: {
-                        Label("Mark all as read", systemImage: "envelope.open")
+                        Label("Mark All as Read", systemImage: "envelope.open")
                     }
                     .disabled(model.unreadCount == 0 && !model.list.items.contains { !$0.isRead })
                 }
@@ -81,7 +85,7 @@ struct InboxView: View {
             await model.list.loadIfNeeded()
             await model.refreshUnreadCount()
         }
-        .alert("Couldn't update the inbox",
+        .alert(String(localized: "Couldn’t update the inbox"),
                isPresented: Binding(get: { actionError != nil }, set: { if !$0 { actionError = nil } })) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -91,17 +95,21 @@ struct InboxView: View {
 
     private var list: some View {
         List {
+            ListPageHead(kicker: String(localized: "Account"),
+                         title: String(localized: "Inbox"),
+                         description: String(localized: "Announcements and updates about your account and workspaces."))
             if let error = model.list.refreshError {
                 RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
-                    .listRowSeparator(.hidden)
+                    .studioClearRow()
             }
             if model.visibleItems.isEmpty {
-                ContentUnavailableView(
-                    "You're all caught up",
-                    systemImage: "checkmark.circle",
-                    description: Text("Nothing unread.")
-                )
-                .listRowSeparator(.hidden)
+                StudioEmptyState(systemImage: "checkmark.circle",
+                                 title: String(localized: "You’re all caught up"),
+                                 message: String(localized: "Nothing unread."),
+                                 compact: true) {
+                    EmptyView()
+                }
+                .studioClearRow()
             }
             ForEach(model.visibleItems) { item in
                 let destination = item.destination(relativeTo: app.configuration.webURL)
@@ -117,21 +125,24 @@ struct InboxView: View {
                         Button {
                             Task { await markRead(item) }
                         } label: {
-                            Label("Mark as read", systemImage: "envelope.open")
+                            Label("Mark as Read", systemImage: "envelope.open")
                         }
                         .tint(.studioInfo)
                     }
                 }
             }
+            .studioRowBackground()
             if model.list.hasMore, model.filter == .all {
                 HStack {
                     Spacer()
                     ProgressView()
                     Spacer()
                 }
+                .studioClearRow()
                 .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
             }
         }
+        .studioList()
         .refreshable { [model] in await model.refresh() }
         .animation(StudioAnimation.base, value: model.filter)
     }
@@ -142,19 +153,19 @@ struct InboxView: View {
             Button {
                 Task { await markRead(item) }
             } label: {
-                Label("Mark as read", systemImage: "envelope.open")
+                Label("Mark as Read", systemImage: "envelope.open")
             }
         }
         if let destination {
             Button {
                 Task { await open(item, at: destination) }
             } label: {
-                Label("View details", systemImage: "safari")
+                ResourceVerb.openInBrowser.label
             }
             Button {
-                Pasteboard.copy(destination.absoluteString)
+                ResourceActionSet.copy(destination, toasts: toasts)
             } label: {
-                Label("Copy Link", systemImage: "doc.on.doc")
+                ResourceVerb.copyLink.label
             }
         }
     }
@@ -208,7 +219,7 @@ struct InboxRow: View {
                         .lineLimit(3)
                 }
                 if let date = item.createdAt {
-                    Text(date.formatted(.relative(presentation: .named)))
+                    RelativeTimeText(date: date)
                         .studioText(.uiSm)
                         .foregroundStyle(Color.studioText3)
                 }

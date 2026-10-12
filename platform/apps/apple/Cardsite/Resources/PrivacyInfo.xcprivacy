@@ -1,9 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Privacy manifest. Must agree with the App Store Connect privacy label
-  (AppStore/privacy-label.md) and the Privacy Policy.
+  Privacy manifest for the Cardsite app bundle (iOS, macOS, visionOS).
+  Must agree with the App Store Connect privacy label
+  (AppStore/README.md, "Privacy label") and the Privacy Policy.
   No tracking, no third-party SDKs, no analytics in the app.
+
+  Required-reason APIs, checked by grep on 2026-10-12:
+    UserDefaults: yes (below).
+    File timestamps (creationDate, modificationDate, stat, getattrlist): not used.
+      Uploads read only .fileSizeKey and .contentTypeKey, which are not
+      required-reason APIs.
+    Disk space (volumeAvailableCapacity*, systemFreeSize, statfs): not used.
+    System boot time (systemUptime, mach_absolute_time): not used.
+    Active keyboards: not used.
+  The widget, share extension and watch bundles need manifests of their own
+  (native-apple.md A27).
 -->
 <plist version="1.0">
 <dict>
@@ -50,9 +62,25 @@
 			</array>
 		</dict>
 		<dict>
-			<!-- Links, QR codes and pages the user creates. -->
+			<!-- Links, QR codes, pages, vCards, events, files and other
+			     resources the user creates. -->
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeOtherUserContent</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<!-- Images the user uploads (Uploads, file links, bio page blocks),
+			     picked with PhotosPicker or from Files. The app never reads
+			     the photo library itself. -->
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePhotosorVideos</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
@@ -80,12 +108,17 @@
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>
-			<!-- SceneStorage (selected tab) is backed by user defaults. -->
+			<!-- CA92.1: the app's own defaults (AppModel's selected workspace,
+			     @SceneStorage for the selected tab, @AppStorage for the Mac
+			     Settings pane).
+			     1C8F.1: the App Group's defaults (SharedSession in CardsiteKit),
+			     which the app writes for its widgets and share extension. -->
 			<key>NSPrivacyAccessedAPIType</key>
 			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>CA92.1</string>
+				<string>1C8F.1</string>
 			</array>
 		</dict>
 	</array>

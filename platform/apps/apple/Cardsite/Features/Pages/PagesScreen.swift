@@ -19,8 +19,14 @@ struct PagesScreen: View {
     @State private var columns: NavigationSplitViewVisibility = .all
     @State private var isCreating = false
     @State private var pendingDelete: BioPage? = nil
-    @State private var actionError: String? = nil
-    @StateObject private var toasts = StudioToastCenter()
+    @State private var actionError: ActionError? = nil
+    @Environment(\.toasts) private var toasts
+
+    struct ActionError: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+    }
 
     private var isCompact: Bool {
         #if os(iOS)
@@ -52,27 +58,20 @@ struct PagesScreen: View {
                     .navigationSplitViewColumnWidth(min: 300, ideal: 360)
                     #endif
             } else {
-                ContentUnavailableView(
-                    "Select a page",
-                    systemImage: "person.crop.square",
-                    description: Text("Its blocks appear here, ready to edit.")
-                )
-                .background(Color.studioBg)
+                SplitPlaceholder(systemImage: "person.crop.square",
+                                 title: String(localized: "Select a page"),
+                                 message: String(localized: "Its blocks appear here, ready to edit."))
             }
         } detail: {
             if let editor {
                 EditorDetailColumn(editor: editor, isCompact: isCompact)
                     .id(editor.pageID)
             } else {
-                ContentUnavailableView(
-                    "No page open",
-                    systemImage: "rectangle.and.pencil.and.ellipsis",
-                    description: Text("Choose a page, then a block, to edit it here.")
-                )
-                .background(Color.studioBg)
+                SplitPlaceholder(systemImage: "rectangle.and.pencil.and.ellipsis",
+                                 title: String(localized: "No page open"),
+                                 message: String(localized: "Choose a page, then a block, to edit it here."))
             }
         }
-        .studioToasts(toasts)
         .task { [list = model.list] in await list.loadIfNeeded() }
         .onChange(of: selection) { _, id in open(id) }
         .onChange(of: model.openRequest, initial: true) { _, id in
@@ -94,11 +93,11 @@ struct PagesScreen: View {
             titleVisibility: .visible,
             presenting: pendingDelete
         ) { page in
-            Button("Delete \(app.addresses.display(for: page.slug))", role: .destructive) {
+            Button("Delete", role: .destructive) {
                 Task { await delete(page) }
             }
         } message: { _ in
-            Text("The address stops working and every block on the page is deleted. This can't be undone.")
+            Text("Anyone who opens or scans this address will get a not-found page, and every block on the page is deleted. This can’t be undone.")
         }
         .alert(
             "This block changed",
@@ -116,10 +115,14 @@ struct PagesScreen: View {
                 Text("Someone changed this block since you opened it. Reload to see their version, then reapply your edit.")
             }
         }
-        .alert("Couldn't do that", isPresented: Binding(get: { actionError != nil }, set: { if !$0 { actionError = nil } })) {
+        .alert(
+            actionError?.title ?? "",
+            isPresented: Binding(get: { actionError != nil }, set: { if !$0 { actionError = nil } }),
+            presenting: actionError
+        ) { _ in
             Button("OK", role: .cancel) {}
-        } message: {
-            Text(actionError ?? "")
+        } message: { error in
+            Text(error.message)
         }
     }
 
@@ -136,7 +139,7 @@ struct PagesScreen: View {
         guard editor?.pageID != id else { return }
         let next = PageEditorModel(pageID: id, pages: model)
         next.onError = app.handle
-        next.announce = { [toasts] message, variant in toasts.show(message, variant: variant) }
+        next.announce = { [toasts] message, variant in toasts?.show(message, variant: variant) }
         editor = next
         if !isCompact {
             withAnimation(StudioAnimation.base) { columns = .doubleColumn }
@@ -153,7 +156,8 @@ struct PagesScreen: View {
                 try await model.setEnabled(page, isOn)
             }
         } catch {
-            actionError = error.asAPIError.localizedDescription
+            actionError = ActionError(title: String(localized: "Couldn’t change the status"),
+                                      message: error.asAPIError.localizedDescription)
         }
     }
 
@@ -161,12 +165,13 @@ struct PagesScreen: View {
         do {
             let copy = try await model.duplicate(page)
             Haptics.success()
-            toasts.show(
-                String(localized: "Copied to \(app.addresses.display(for: copy.slug)). It's off until you turn it on."),
+            toasts?.show(
+                String(localized: "Copied to \(app.addresses.display(for: copy.slug)). It’s off until you turn it on."),
                 variant: .success
             )
         } catch {
-            actionError = error.asAPIError.localizedDescription
+            actionError = ActionError(title: String(localized: "Couldn’t duplicate"),
+                                      message: error.asAPIError.localizedDescription)
         }
     }
 
@@ -175,7 +180,8 @@ struct PagesScreen: View {
             try await model.delete(page)
             if selection == page.id { selection = nil }
         } catch {
-            actionError = error.asAPIError.localizedDescription
+            actionError = ActionError(title: String(localized: "Couldn’t delete"),
+                                      message: error.asAPIError.localizedDescription)
         }
         pendingDelete = nil
     }
@@ -227,32 +233,20 @@ private struct PagesListColumn: View {
         List(selection: $selection) {
             if let error = model.list.refreshError {
                 RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
-                    .listRowSeparator(.hidden)
+                    .studioClearRow()
             }
             if model.visiblePages.isEmpty, !model.searchText.isEmpty {
                 ContentUnavailableView.search(text: model.searchText)
-                    .listRowSeparator(.hidden)
+                    .studioClearRow()
             }
             ForEach(model.visiblePages) { page in
                 NavigationLink(value: page.id) {
                     BioPageRow(page: page)
                 }
                 .accessibilityIdentifier("pages.row.\(page.id)")
-                .contextMenu { menu(for: page) }
-                .swipeActions(edge: .trailing) {
-                    Button(role: .destructive) { pendingDelete = page } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                }
-                .swipeActions(edge: .leading) {
-                    Button {
-                        Pasteboard.copy(app.addresses.url(for: page.slug)?.absoluteString ?? "")
-                        Haptics.success()
-                    } label: {
-                        Label("Copy", systemImage: "doc.on.doc")
-                    }
-                    .tint(.studioInfo)
-                }
+                .contextMenu { ResourceMenuItems(actions: actions(for: page)) }
+                .resourceSwipeActions(actions(for: page))
+                .studioRowBackground(isSelected: selection == page.id)
             }
             if model.list.hasMore, model.searchText.isEmpty {
                 HStack {
@@ -260,96 +254,42 @@ private struct PagesListColumn: View {
                     ProgressView()
                     Spacer()
                 }
+                .studioClearRow()
                 .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
             }
         }
+        .studioList()
         .refreshable { [list = model.list] in await list.refresh() }
     }
 
-    @ViewBuilder
-    private func menu(for page: BioPage) -> some View {
-        Button {
-            selection = page.id
-        } label: {
-            Label("Edit", systemImage: "square.and.pencil")
-        }
-        if let url = app.addresses.url(for: page.slug) {
-            Button {
-                Pasteboard.copy(url.absoluteString)
-            } label: {
-                Label("Copy Address", systemImage: "doc.on.doc")
-            }
-            ShareLink(item: url) {
-                Label("Share…", systemImage: "square.and.arrow.up")
-            }
-            Link(destination: url) {
-                Label("Open Page", systemImage: "safari")
-            }
-        }
-        if let card = app.addresses.cardURL(for: page.slug) {
-            Link(destination: card) {
-                Label("View Card", systemImage: "rectangle.portrait.on.rectangle.portrait")
-            }
-        }
-        Divider()
-        Button {
-            setEnabled(page, !page.isEnabled)
-        } label: {
-            if page.isEnabled {
-                Label("Turn Off", systemImage: "pause.circle")
-            } else {
-                Label("Turn On", systemImage: "play.circle")
-            }
-        }
-        Button {
-            duplicate(page)
-        } label: {
-            Label("Duplicate", systemImage: "plus.square.on.square")
-        }
-        Divider()
-        Button(role: .destructive) { pendingDelete = page } label: {
-            Label("Delete…", systemImage: "trash")
-        }
+    private func actions(for page: BioPage) -> ResourceActionSet {
+        ResourceActionSet(
+            url: app.addresses.url(for: page.slug),
+            cardURL: app.addresses.cardURL(for: page.slug),
+            isEnabled: page.isEnabled,
+            edit: { selection = page.id },
+            duplicate: { duplicate(page) },
+            setEnabled: { isOn in setEnabled(page, isOn) },
+            delete: { pendingDelete = page }
+        )
     }
 }
 
-/// Leading glyph, the page's name and address, trailing views.
+/// A bio page in the shared row anatomy: the page's name with its state,
+/// its address and clicks underneath.
 struct BioPageRow: View {
     @Environment(AppModel.self) private var app
     let page: BioPage
 
     var body: some View {
-        HStack(spacing: StudioSpace.s3) {
-            RowGlyphTile(systemImage: "person.crop.square", isActive: page.isEnabled)
-            VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                HStack(spacing: StudioSpace.s2) {
-                    Text(verbatim: page.title ?? app.addresses.display(for: page.slug))
-                        .studioText(.ui)
-                        .foregroundStyle(Color.studioText)
-                        .lineLimit(2)
-                    if !page.isEnabled {
-                        StudioStatusPill(String(localized: "Off"), tone: .neutral)
-                    } else if page.isLapsing {
-                        StudioStatusPill(String(localized: "Lapsing"), tone: .warning)
-                    }
-                }
-                HStack(spacing: StudioSpace.s2) {
-                    if page.title != nil {
-                        Text(verbatim: app.addresses.display(for: page.slug))
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
-                    Spacer(minLength: StudioSpace.s2)
-                    Label(page.clicks.grouped, systemImage: "eye")
-                        .monospacedDigit()
-                        .accessibilityLabel(Text("\(page.clicks) views"))
-                }
-                .studioText(.uiSm)
-                .foregroundStyle(Color.studioText3)
-            }
-        }
-        .padding(.vertical, StudioSpace.s1)
-        .accessibilityElement(children: .combine)
+        CardsiteResourceRow(
+            systemImage: "person.crop.square",
+            isLive: page.isEnabled,
+            title: Text(verbatim: page.title ?? app.addresses.display(for: page.slug)),
+            subtitle: page.title == nil ? nil : Text(verbatim: app.addresses.display(for: page.slug)),
+            state: ResourceState(isEnabled: page.isEnabled, isLapsing: page.isLapsing),
+            clicks: page.clicks
+        )
     }
 }
 
@@ -412,7 +352,7 @@ struct CreatePageSheet: View {
                     FormErrorText(message: formError)
                 }
                 .padding(StudioSpace.s6)
-                .readableWidth(560)
+                .readableWidth(.sheet)
             }
             .background(Color.studioBg)
             .navigationTitle("New Bio Page")
@@ -440,9 +380,7 @@ struct CreatePageSheet: View {
             .defaultFocus($focus, .name)
             .interactiveDismissDisabled(isSaving)
         }
-        #if os(macOS)
-        .frame(minWidth: 460, minHeight: 340)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     private func save() async {

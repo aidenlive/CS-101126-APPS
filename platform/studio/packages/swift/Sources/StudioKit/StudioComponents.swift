@@ -81,8 +81,14 @@ public struct StudioButton: View {
         .accessibilityAddTraits(isLoading ? .updatesFrequently : [])
     }
 
-    private var foreground: Color {
-        switch variant {
+    private var foreground: Color { variant.foreground }
+    private var background: Color { variant.background }
+    private var border: Color { variant.border }
+}
+
+extension StudioButtonVariant {
+    var foreground: Color {
+        switch self {
         case .primary: return .studioAccentInk
         // Not `.white`: white on dark-theme `studioError` is 3.29:1.
         // `studioSurface` is pure white in light (6.15:1, unchanged) and
@@ -93,18 +99,71 @@ public struct StudioButton: View {
         }
     }
 
-    private var background: Color {
-        switch variant {
+    var background: Color {
+        switch self {
         case .primary: return .studioAccent
         case .destructive: return .studioError
         case .ghost, .outline, .danger: return .clear
         }
     }
 
-    private var border: Color {
-        switch variant {
+    var border: Color {
+        switch self {
         case .outline: return .studioBorder
         case .primary, .destructive, .ghost, .danger: return .clear
+        }
+    }
+}
+
+/// `StudioButton`'s look as a `ButtonStyle`, for the controls that bring
+/// their own button: `Link`, `ShareLink`, a `Menu`, a `PhotosPicker`. Put
+/// it next to `StudioButton`s so a row of actions reads as one system.
+///
+///     ShareLink(item: url) { Label("Share", systemImage: "square.and.arrow.up") }
+///         .buttonStyle(StudioButtonStyle(.outline))
+public struct StudioButtonStyle: ButtonStyle {
+    private let variant: StudioButtonVariant
+
+    public init(_ variant: StudioButtonVariant = .ghost) {
+        self.variant = variant
+    }
+
+    public func makeBody(configuration: Configuration) -> some View {
+        StudioButtonStyleBody(configuration: configuration, variant: variant)
+    }
+}
+
+private struct StudioButtonStyleBody: View {
+    let configuration: ButtonStyleConfiguration
+    let variant: StudioButtonVariant
+
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        configuration.label
+            .labelStyle(StudioButtonLabelStyle())
+            .padding(.horizontal, StudioSpace.s4)
+            .frame(minHeight: 40)
+            .foregroundStyle(variant.foreground)
+            .background(variant.background, in: Capsule())
+            .overlay(Capsule().strokeBorder(variant.border, lineWidth: 0.5))
+            .opacity(isEnabled ? 1 : 0.45)
+            .contentShape(Capsule())
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.96 : 1)
+            .opacity(configuration.isPressed && reduceMotion ? 0.7 : 1)
+            .animation(reduceMotion ? nil : StudioAnimation.spring, value: configuration.isPressed)
+    }
+}
+
+/// Icon then title, sized as `StudioButton` sets them.
+private struct StudioButtonLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: StudioSpace.s2) {
+            configuration.icon
+                .font(.system(size: 14, weight: .semibold))
+            configuration.title
+                .studioText(.ui)
         }
     }
 }
@@ -375,7 +434,8 @@ public struct StudioBanner: View {
                 Button(action: onDismiss) {
                     Image(systemName: "xmark")
                         .font(.footnote.weight(.semibold))
-                        .frame(minWidth: StudioSpace.s8, minHeight: StudioSpace.s8)
+                        // The full 44pt target; the glyph stays small.
+                        .frame(minWidth: StudioLayout.tapTarget, minHeight: StudioLayout.tapTarget)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(StudioPressStyle())

@@ -71,7 +71,7 @@ struct OrganiseLoadMoreRow<Item: Identifiable & Sendable & Equatable>: View {
                     .accessibilityLabel(Text("Loading more"))
                 Spacer()
             }
-            .listRowSeparator(.hidden)
+            .studioClearRow()
             .task(id: list.items.count) { [list] in await list.loadMore() }
         }
     }
@@ -104,7 +104,7 @@ struct OrganiseDeleteFlow<Item: Identifiable & Sendable>: ViewModifier {
             } message: { _ in
                 Text(message)
             }
-            .alert("Couldn't delete", isPresented: Binding(get: { failure != nil }, set: { if !$0 { failure = nil } })) {
+            .alert(String(localized: "Couldn’t delete"), isPresented: Binding(get: { failure != nil }, set: { if !$0 { failure = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(failure ?? "")
@@ -131,16 +131,6 @@ extension View {
         delete: @escaping @MainActor (Item) async throws -> Void
     ) -> some View {
         modifier(OrganiseDeleteFlow(pending: pending, title: title, confirmTitle: confirmTitle, message: message, delete: delete))
-    }
-
-    /// The Studio look for an Organise editor sheet: grouped form on the
-    /// Studio background, sized for a Mac sheet.
-    func organiseSheetFrame() -> some View {
-        #if os(macOS)
-        return self.frame(minWidth: 460, idealWidth: 520, minHeight: 480)
-        #else
-        return self
-        #endif
     }
 }
 

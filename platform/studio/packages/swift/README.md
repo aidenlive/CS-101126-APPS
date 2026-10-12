@@ -231,6 +231,7 @@ are omitted.
 | API | Usage |
 |---|---|
 | `StudioButton(_:systemImage:variant:isLoading:action:)` | `StudioButton("Save", variant: .primary, isLoading: saving) { … }`; variants `.primary .ghost .outline .destructive .danger` |
+| `StudioButtonStyle(_:)` | `.buttonStyle(StudioButtonStyle(.outline))` on `Link` / `ShareLink` / `Menu`: the `StudioButton` look for system controls |
 | `StudioPressStyle(scale:)` | `.buttonStyle(StudioPressStyle())`: press shrink (dim under Reduce Motion) |
 | `StudioChip(_:count:isSelected:action:)` | Filter chip |
 | `StudioCard(flush:hover:selected:radius:content:)` | Opaque content surface; already padded |

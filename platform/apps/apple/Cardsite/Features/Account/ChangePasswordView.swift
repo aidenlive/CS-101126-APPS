@@ -30,6 +30,7 @@ struct ChangePasswordView: View {
                             .studioText(.uiSm)
                             .studioMuted()
                     }
+                    .studioRowBackground()
                 } else {
                     Section {
                         SecureField("Current Password", text: $current)
@@ -49,6 +50,7 @@ struct ChangePasswordView: View {
                             FormErrorText(message: error)
                         }
                     }
+                    .studioRowBackground()
                 }
             }
             .studioForm()
@@ -74,9 +76,7 @@ struct ChangePasswordView: View {
             .interactiveDismissDisabled(isSaving)
             .animation(StudioAnimation.base, value: error)
         }
-        #if os(macOS)
-        .frame(minWidth: 420, minHeight: 320)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     private func submit() async {

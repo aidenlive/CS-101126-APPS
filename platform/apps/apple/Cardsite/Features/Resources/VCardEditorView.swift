@@ -142,20 +142,20 @@ struct VCardEditorView: View {
         } label: {
             Label("Add to Contacts", systemImage: "person.crop.circle.badge.plus")
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(StudioButtonStyle(.outline))
         #else
         ShareLink(item: RemoteVCardFile(client: list.client, id: resource.id, name: resource.vcard.fullName),
                   preview: SharePreview(resource.vcard.fullName.isEmpty ? String(localized: "Contact") : resource.vcard.fullName)) {
             Label("Share .vcf", systemImage: "square.and.arrow.up")
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(StudioButtonStyle(.outline))
         #endif
         Button {
             isExporting = true
         } label: {
             Label("Download .vcf", systemImage: "arrow.down.doc")
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(StudioButtonStyle(.outline))
     }
 
     // MARK: Sections
@@ -182,7 +182,7 @@ struct VCardEditorView: View {
         } footer: {
             ResourceAddressFooter(list: list, isNew: model.isNew)
         }
-        .editorRowBackground()
+        .studioRowBackground()
     }
 
     private func contactSection(_ form: Binding<VCardForm>) -> some View {
@@ -206,7 +206,7 @@ struct VCardEditorView: View {
         } header: {
             EditorSectionHeader(String(localized: "Contact"))
         }
-        .editorRowBackground()
+        .studioRowBackground()
     }
 
     private func workSection(_ form: Binding<VCardForm>) -> some View {
@@ -224,7 +224,7 @@ struct VCardEditorView: View {
         } header: {
             EditorSectionHeader(String(localized: "Work"))
         }
-        .editorRowBackground()
+        .studioRowBackground()
     }
 
     private func postalSection(_ form: Binding<VCardForm>) -> some View {
@@ -252,7 +252,7 @@ struct VCardEditorView: View {
         } header: {
             EditorSectionHeader(String(localized: "Postal address"))
         }
-        .editorRowBackground()
+        .studioRowBackground()
     }
 
     private func socialsSection(_ form: Binding<VCardForm>) -> some View {
@@ -265,7 +265,7 @@ struct VCardEditorView: View {
                 .studioText(.uiSm)
                 .foregroundStyle(Color.studioText3)
         }
-        .editorRowBackground()
+        .studioRowBackground()
     }
 
     private func moreSection(_ form: Binding<VCardForm>) -> some View {
@@ -295,7 +295,7 @@ struct VCardEditorView: View {
         } header: {
             EditorSectionHeader(String(localized: "More"))
         }
-        .editorRowBackground()
+        .studioRowBackground()
     }
 
     private func birthdayIsSet(_ form: Binding<VCardForm>) -> Binding<Bool> {

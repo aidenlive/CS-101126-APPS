@@ -7,10 +7,10 @@ import CardsiteKit
  a vCard, an event, a payment link, a file link, a static page and a splash
  page look and behave the same:
 
-   · a saved resource gets the header (status, name, address, Copy / Open /
-     Card View plus the type's own actions, the on/off switch, clicks and
-     statistics), Save in the toolbar through `.unsavedChanges`, pull to
-     refresh, and the danger zone;
+   · a saved resource gets the shared `ResourceHeaderSection` (status,
+     name, address, Copy Link / Open in Browser / Show Card plus the type's
+     own actions, the Live switch, clicks and Statistics), Save in the
+     toolbar through `.unsavedChanges`, pull to refresh, and the danger zone;
    · a new one gets Cancel and Create, asks before throwing a draft away,
      and blocks swipe-to-dismiss while it has one.
 
@@ -42,7 +42,6 @@ struct ResourceEditorScaffold<Model: ResourceEditorState, Actions: View, Fields:
     @State private var isDeleting = false
     @State private var deleteError: String? = nil
     @State private var showsStatistics = false
-    @State private var copied = false
     @State private var toggleError: String? = nil
 
     init(kind: ResourceKind, model: Model, list: ResourceListModel,
@@ -101,7 +100,7 @@ struct ResourceEditorScaffold<Model: ResourceEditorState, Actions: View, Fields:
         } message: {
             Text(kind.deleteConsequence)
         }
-        .alert("Couldn’t delete", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
+        .alert(String(localized: "Couldn’t delete"), isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(deleteError ?? "")
@@ -116,9 +115,7 @@ struct ResourceEditorScaffold<Model: ResourceEditorState, Actions: View, Fields:
                             }
                         }
                 }
-                #if os(macOS)
-                .frame(minWidth: 640, minHeight: 560)
-                #endif
+                .cardsiteSheet(.page)
             }
         }
     }
@@ -137,14 +134,14 @@ struct ResourceEditorScaffold<Model: ResourceEditorState, Actions: View, Fields:
                 Section {
                     RefreshErrorBanner(error: error) { model.dismissRefreshError() }
                 }
-                .listRowBackground(Color.clear)
+                .studioClearRow()
             }
             fields()
             if let message = model.formError {
                 Section {
                     FormErrorText(message: message)
                 }
-                .editorRowBackground()
+                .studioRowBackground()
             }
             if let item = currentItem {
                 dangerZone(item)
@@ -156,126 +153,34 @@ struct ResourceEditorScaffold<Model: ResourceEditorState, Actions: View, Fields:
     // MARK: Header
 
     private func header(_ item: ResourceItem) -> some View {
-        Section {
-            VStack(alignment: .leading, spacing: StudioSpace.s3) {
-                HStack(spacing: StudioSpace.s2) {
-                    statusPill(item)
-                    if model.didJustSave {
-                        StudioStatusPill(String(localized: "Saved"), tone: .success)
-                            .transition(.opacity)
-                    }
-                }
-                Text(verbatim: item.name)
-                    .studioText(.title)
-                    .foregroundStyle(Color.studioText)
-                    .textSelection(.enabled)
-                    .fixedSize(horizontal: false, vertical: true)
-                if let address = list.displayAddress(for: item, addresses: app.addresses) {
-                    Text(verbatim: address)
-                        .studioText(.uiSm)
-                        .foregroundStyle(Color.studioText3)
-                        .textSelection(.enabled)
-                        .lineLimit(2)
-                        .truncationMode(.middle)
-                }
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: StudioSpace.s2) { headerActions(item) }
-                    VStack(alignment: .leading, spacing: StudioSpace.s2) { headerActions(item) }
-                }
-                .padding(.top, StudioSpace.s1)
-            }
-            .padding(.vertical, StudioSpace.s2)
-
+        ResourceHeaderSection(
+            state: kind.hasAddress ? ResourceState(isEnabled: item.isEnabled, isLapsing: item.isLapsing) : nil,
+            kindLabel: kind.title,
+            didJustSave: model.didJustSave,
+            title: item.name,
+            address: list.displayAddress(for: item, addresses: app.addresses),
+            url: list.publicURL(for: item, addresses: app.addresses),
+            cardURL: item.slug.flatMap { app.addresses.cardURL(for: $0) },
+            toggle: kind.hasAddress
+                ? ResourceLiveToggle(isOn: item.isEnabled,
+                        isBusy: list.togglingIDs.contains(item.id),
+                        error: toggleError,
+                        set: { isOn in Task { await setEnabled(item, isOn) } })
+                : nil,
+            figures: kind.hasAddress && item.clicks != nil
+                ? [ResourceFigure(title: String(localized: "Clicks · all time"), value: item.clicks)]
+                : [],
+            isLapsing: item.isLapsing
+        ) {
+            actions(item)
+        } rows: {
             if kind.hasAddress {
-                Toggle(isOn: Binding(
-                    get: { item.isEnabled },
-                    set: { newValue in Task { await setEnabled(item, newValue) } }
-                )) {
-                    VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                        item.isEnabled ? Text("Active") : Text("Disabled")
-                        Text(item.isEnabled
-                             ? String(localized: "Resolving")
-                             : String(localized: "Returns 404. The address stays yours."))
-                            .studioText(.uiSm)
-                            .foregroundStyle(Color.studioText3)
-                    }
-                }
-                .toggleStyle(.switch)
-                .disabled(list.togglingIDs.contains(item.id))
-                if let toggleError {
-                    FormErrorText(message: toggleError)
-                }
-
-                if let clicks = item.clicks {
-                    LabeledContent {
-                        Text(verbatim: clicks.grouped)
-                            .studioText(.titleSm)
-                            .foregroundStyle(Color.studioText)
-                            .monospacedDigit()
-                    } label: {
-                        Text("Clicks, all time")
-                    }
-                }
                 Button {
                     showsStatistics = true
                 } label: {
-                    Label("Full statistics", systemImage: "chart.bar.xaxis")
+                    ResourceVerb.statistics.label
                 }
             }
-
-            if item.isLapsing {
-                StudioBanner(
-                    lead: String(localized: "This address is in its release window."),
-                    message: String(localized: "It may be released to others soon. How addresses are kept: cardsite.com/url-lifecycle."),
-                    tone: .warning
-                )
-            }
-        }
-        .editorRowBackground()
-    }
-
-    @ViewBuilder
-    private func statusPill(_ item: ResourceItem) -> some View {
-        if !kind.hasAddress {
-            StudioStatusPill(kind.title, tone: .neutral)
-        } else if !item.isEnabled {
-            StudioStatusPill(String(localized: "Off"), tone: .neutral)
-        } else if item.isLapsing {
-            StudioStatusPill(String(localized: "Lapsing"), tone: .warning)
-        } else {
-            StudioStatusPill(String(localized: "Live"), tone: .success)
-        }
-    }
-
-    @ViewBuilder
-    private func headerActions(_ item: ResourceItem) -> some View {
-        if let url = list.publicURL(for: item, addresses: app.addresses) {
-            StudioButton(copied ? String(localized: "Copied") : String(localized: "Copy"),
-                         systemImage: copied ? "checkmark" : "doc.on.doc",
-                         variant: .primary) {
-                copy(url)
-            }
-            Link(destination: url) {
-                Label("Open", systemImage: "safari")
-            }
-            .buttonStyle(.bordered)
-        }
-        if let slug = item.slug, let card = app.addresses.cardURL(for: slug) {
-            Link(destination: card) {
-                Label("Card View", systemImage: "rectangle.portrait.on.rectangle.portrait")
-            }
-            .buttonStyle(.bordered)
-        }
-        actions(item)
-    }
-
-    private func copy(_ url: URL) {
-        Pasteboard.copy(url.absoluteString)
-        Haptics.success()
-        copied = true
-        Task {
-            try? await Task.sleep(for: .seconds(2))
-            copied = false
         }
     }
 
@@ -296,7 +201,7 @@ struct ResourceEditorScaffold<Model: ResourceEditorState, Actions: View, Fields:
                 isConfirmingDelete = true
             } label: {
                 HStack {
-                    Label(String(localized: "Delete \(kind.title)"), systemImage: "trash")
+                    ResourceVerb.delete.label
                     Spacer()
                     if isDeleting { ProgressView() }
                 }
@@ -306,10 +211,8 @@ struct ResourceEditorScaffold<Model: ResourceEditorState, Actions: View, Fields:
             EditorSectionHeader(String(localized: "Danger zone"))
         } footer: {
             Text(kind.deleteConsequence)
-                .studioText(.uiSm)
-                .foregroundStyle(Color.studioText3)
         }
-        .editorRowBackground()
+        .studioRowBackground()
     }
 
     private func delete() async {

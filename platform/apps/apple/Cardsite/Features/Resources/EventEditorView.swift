@@ -116,7 +116,7 @@ struct EventEditorView: View {
             } footer: {
                 ResourceAddressFooter(list: list, isNew: model.isNew)
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             Section {
                 EditorTextField(String(localized: "Event Name"), text: $model.form.event.name,
@@ -145,7 +145,7 @@ struct EventEditorView: View {
             } header: {
                 EditorSectionHeader(String(localized: "Details"))
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             whenSection($model.form.event)
 
@@ -182,13 +182,13 @@ struct EventEditorView: View {
         } label: {
             Label("Add to Calendar", systemImage: "calendar.badge.plus")
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(StudioButtonStyle(.outline))
         #else
         ShareLink(item: RemoteCalendarFile(client: list.client, slug: resource.slug, name: resource.event.name),
                   preview: SharePreview(resource.event.name.isEmpty ? String(localized: "Event") : resource.event.name)) {
             Label("Share .ics", systemImage: "calendar.badge.plus")
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(StudioButtonStyle(.outline))
         .disabled(!resource.isEnabled)
         .help(resource.isEnabled
               ? String(localized: "Shares the calendar file visitors download.")
@@ -235,7 +235,7 @@ struct EventEditorView: View {
                 .foregroundStyle(Color.studioText3)
         }
         .environment(\.timeZone, zone)
-        .editorRowBackground()
+        .studioRowBackground()
     }
 
     /// A date picker binding over a wall-clock string, read and written in

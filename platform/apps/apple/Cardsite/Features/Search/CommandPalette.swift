@@ -66,7 +66,7 @@ struct CommandPalette: View {
                 Color.studioScrim
                     .ignoresSafeArea()
                     .onTapGesture(perform: close)
-                    .accessibilityLabel("Close search")
+                    .accessibilityLabel("Close Search")
                     .accessibilityAddTraits(.isButton)
 
                 VStack(spacing: 0) {
@@ -111,7 +111,7 @@ struct CommandPalette: View {
                 .imageScale(.large)
                 .foregroundStyle(Color.studioText3)
                 .accessibilityHidden(true)
-            TextField(text: text, prompt: Text("Search pages, actions…")) {
+            TextField(text: text, prompt: Text("Search pages, actions and links")) {
                 Text("Search")
             }
             .textFieldStyle(.plain)

@@ -1,25 +1,35 @@
-Cardsite is a presence platform. Create, host, and share pages, links, QR codes, sites, files, and more in seconds.
+Cardsite® is a presence platform. Create, host and share pages, links, QR codes, files and more in seconds, and see what happens after every click.
 
-The Cardsite app puts your addresses in your pocket and on your desktop.
+The Cardsite app brings your whole account to iPhone, iPad, Mac, Apple Vision Pro and Apple Watch.
 
-SHORT URLS PEOPLE REMEMBER
-Give any web address a short one on card.site — card.site/Spring-Menu, not a string of characters. Keep the random address the app suggests or choose your own.
+SHORT LINKS PEOPLE REMEMBER
+Give any web address a short one on card.site: card.site/Spring-Menu, not a string of characters. Keep the random address or choose your own. Then shape it with a schedule, display rules by country, device or language, a password, a click limit, an expiry, UTM tags, cloaking or a splash page.
 
 QR CODES THAT CAN CHANGE AFTER PRINTING
-Point a QR code at one of your short links, then change the link's destination whenever you like. Every printed copy follows it. Share or save the image straight from the app.
+Build a QR code for a web address, Wi-Fi network, contact, event, email, text message, location and more, with your own colours and a live preview. Point one at a short link and change the destination whenever you like: every printed copy follows it.
+
+BIO PAGES YOU EDIT ANYWHERE
+Add, arrange and edit the blocks on your bio page, with a live preview beside the editor. Set the theme, branding, SEO and who sees the page.
+
+EVERY KIND OF LINK
+Contact cards that save straight to Contacts, events that save to Calendar, payment links, file links, static pages and splash pages, each with its own short address.
 
 SEE WHAT HAPPENS AFTER THE CLICK
-Daily views, visitors, top referrers and countries for every link, over 7, 30 or 90 days.
+Pageviews and visitors for every link and page over 7, 30 or 90 days, with breakdowns by country, city, referrer, device, browser, operating system, UTM campaign and hour.
 
-EVERY URL HAS A CARD
-Add @ to any Cardsite address to see it as a summary card. Open any link's card from the app.
+ORGANISE AND WORK TOGETHER
+Group resources into projects, serve links from your own domain, attach pixels, and switch between workspaces. Invite members, set their roles, and follow the activity feed and your inbox.
 
-YOUR PAGES, READY TO SHARE
-Bio pages you build on cardsite.com are listed in the app, one tap from the share sheet.
+READY WHEREVER YOU ARE
+• Widgets show a link's clicks or your QR code on the Home Screen and the Mac desktop.
+• Shorten any page from the share sheet in Safari or any app.
+• Ask Siri to shorten a link, show your QR code or count your clicks.
+• Show a full-screen QR code from Apple Watch.
+• Use menus, keyboard shortcuts and a command palette on iPad and Mac, and a native window on Apple Vision Pro.
 
-BUILT FOR EACH DEVICE
-A tab bar on iPhone, a sidebar on iPad, menus and keyboard shortcuts on Mac. Light and dark appearance, Dynamic Type and VoiceOver throughout.
+SECURE BY DEFAULT
+Set up two-factor authentication, change your password, manage API tokens and review sign-in activity from the app.
 
-Sign in with your Cardsite account or create one in the app. Your account can be deleted from the app at any time.
+Light and dark appearance, Dynamic Type and VoiceOver throughout. Sign in with your Cardsite account or create one in the app. You can delete your account from the app at any time.
 
 Cardsite® is a registered trademark of Cardsite, Inc.

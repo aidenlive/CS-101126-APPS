@@ -10,27 +10,31 @@ struct QRCodeDetailView: View {
     let edit: () -> Void
     let requestDelete: () -> Void
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
         ScrollView {
             VStack(spacing: StudioSpace.s6) {
                 StudioCard(radius: StudioRadius.xl) {
                     QRImage(code: code)
                         .padding(StudioSpace.s4)
-                        .frame(maxWidth: 420)
-                        .frame(maxWidth: .infinity)
+                        .readableWidth(.narrow)
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(Text("QR code for \(code.name)"))
                         .accessibilityValue(Text(verbatim: code.target ?? ""))
                 }
 
                 VStack(spacing: StudioSpace.s3) {
-                    StudioKicker(typeLabel)
+                    // The type as written ("WiFi", "vCard"): the uppercase
+                    // kicker style would mangle it.
+                    Text(typeLabel)
+                        .studioText(.uiSm)
+                        .foregroundStyle(Color.studioText3)
                     Text(code.name)
-                        .studioText(.display)
+                        .studioText(dynamicTypeSize.isAccessibilitySize ? .title : .display)
                         .foregroundStyle(Color.studioText)
                         .multilineTextAlignment(.center)
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.6)
+                        .fixedSize(horizontal: false, vertical: true)
                     if let created = code.createdAt {
                         Text("Created \(created.formatted(date: .abbreviated, time: .omitted))")
                             .studioText(.uiSm)
@@ -46,14 +50,16 @@ struct QRCodeDetailView: View {
                                     copyText: code.target, copyTitle: code.copyTitle)
                 }
 
+                // Edit lives in the toolbar; the body keeps the one
+                // irreversible action, as the link and resource details do.
                 HStack(spacing: StudioSpace.s2) {
-                    StudioButton(String(localized: "Edit"), systemImage: "pencil", variant: .outline, action: edit)
-                    StudioButton(String(localized: "Delete"), systemImage: "trash", variant: .danger, action: requestDelete)
+                    StudioButton(ResourceVerb.delete.title, systemImage: ResourceVerb.delete.systemImage,
+                                 variant: .danger, action: requestDelete)
                     Spacer(minLength: 0)
                 }
             }
             .padding(StudioSpace.s6)
-            .readableWidth(640)
+            .readableWidth(.reading)
         }
         .background(Color.studioBg)
         .navigationTitle(code.name)
@@ -94,7 +100,7 @@ struct QRCodeDetailView: View {
                         .foregroundStyle(Color.studioText3)
                 }
                 if code.type == QRCodeCatalog.dynamicURLType {
-                    Text("A dynamic code: change the link's destination and printed copies follow it.")
+                    Text("A dynamic code: change the link’s destination and printed copies follow it.")
                         .studioText(.uiSm)
                         .foregroundStyle(Color.studioText3)
                 }

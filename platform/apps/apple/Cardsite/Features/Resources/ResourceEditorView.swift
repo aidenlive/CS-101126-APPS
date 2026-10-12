@@ -57,10 +57,10 @@ struct ResourceComposerSheet: View {
                     onCreated(item)
                 }
             } else {
-                ProgressView()
-                    .controlSize(.large)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.studioBg)
+                // The model exists one frame later (`.task`): an empty page
+                // rather than a spinner that flashes.
+                Color.studioBg
+                    .accessibilityElement()
                     .accessibilityLabel(Text("Loading"))
             }
         }
@@ -70,9 +70,7 @@ struct ResourceComposerSheet: View {
             model.onError = { [app] error in app.handle(error) }
             list = model
         }
-        #if os(macOS)
-        .frame(minWidth: 520, minHeight: 600)
-        #endif
+        .cardsiteSheet(.page)
     }
 }
 

@@ -48,14 +48,15 @@ struct StatisticsScreen: View {
             if let model {
                 StatisticsContent(model: model, subtitle: subtitle)
             } else {
-                ProgressView()
-                    .controlSize(.large)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // The model exists one frame later (`.task`); an empty page
+                // rather than a spinner that flashes.
+                Color.studioBg
+                    .accessibilityElement()
                     .accessibilityLabel(Text("Loading"))
             }
         }
         .background(Color.studioBg)
-        .navigationTitle(linkID == nil ? Text("Statistics") : Text("Link statistics"))
+        .navigationTitle(linkID == nil ? Text("Statistics") : Text("Link Statistics"))
         #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -96,7 +97,7 @@ private struct StatisticsContent: View {
                     .padding(.horizontal, viewport.contentPadding)
                     .padding(.top, StudioSpace.s6)
                     .padding(.bottom, StudioSpace.s12)
-                    .readableWidth(960)
+                    .readableWidth(.dashboard)
                 }
                 .refreshable { [model] in await model.reload() }
             }
@@ -130,17 +131,18 @@ private struct StatisticsContent: View {
             StudioPageHead(
                 kicker: String(localized: "Statistics · Last \(model.range.rawValue) days"),
                 title: String(localized: "The whole "),
-                accent: model.target == .all ? String(localized: "library") : String(localized: "story")
+                accent: model.target == .all ? String(localized: "workspace.") : String(localized: "story.")
             ) {
-                StudioSegmented(
-                    label: String(localized: "Date range"),
-                    selection: $model.range,
-                    segments: StatisticsModel.Range.allCases.map {
-                        StudioSegment(value: $0, label: $0.shortTitle)
+                Picker(String(localized: "Date range"), selection: $model.range) {
+                    ForEach(StatisticsModel.Range.allCases, id: \.self) { range in
+                        Text(range.shortTitle)
+                            .tag(range)
+                            .accessibilityLabel(Text(range.accessibilityTitle))
                     }
-                )
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
                 .fixedSize()
-                .accessibilityValue(Text(model.range.accessibilityTitle))
             }
             if let subtitle {
                 Text(verbatim: subtitle)
@@ -161,14 +163,14 @@ private struct StatisticsContent: View {
             StatisticTile(
                 title: String(localized: "Pageviews"),
                 systemImage: "cursorarrow.click",
-                value: overview?.pageviews.grouped ?? "0000",
+                value: overview?.pageviews.figure ?? "0000",
                 caption: overview.map(Self.rangeCaption) ?? " ",
                 isFeatured: true
             )
             StatisticTile(
                 title: String(localized: "Visitors"),
                 systemImage: "person.2",
-                value: overview?.visitors.grouped ?? "000",
+                value: overview?.visitors.figure ?? "000",
                 caption: overview?.visitorShare.map {
                     String(localized: "\($0.formatted(.percent.precision(.fractionLength(1)))) of pageviews")
                 } ?? String(localized: "unique visitors")
@@ -176,13 +178,13 @@ private struct StatisticsContent: View {
             StatisticTile(
                 title: String(localized: "Daily average"),
                 systemImage: "chart.line.uptrend.xyaxis",
-                value: overview.map { $0.isEmpty ? "—" : $0.dailyAverage.grouped } ?? "00",
+                value: overview.map { $0.isEmpty ? "—" : $0.dailyAverage.figure } ?? "00",
                 caption: String(localized: "pageviews per day")
             )
             StatisticTile(
                 title: String(localized: "Peak day"),
                 systemImage: "calendar",
-                value: overview?.peak.map { $0.pageviews.grouped } ?? "—",
+                value: overview?.peak.map { $0.pageviews.figure } ?? "—",
                 caption: overview?.peak.map(Self.dayCaption) ?? String(localized: "no traffic yet")
             )
         }
@@ -221,7 +223,7 @@ private struct StatisticsContent: View {
                 case .failed:
                     EmptyView()
                 case .loaded(let overview) where overview.isEmpty:
-                    Text("Not enough data for this period.")
+                    Text("No data for this period")
                         .studioText(.uiSm)
                         .foregroundStyle(Color.studioText3)
                         .multilineTextAlignment(.center)
@@ -263,7 +265,7 @@ private struct StatisticsContent: View {
                 case .failed(let error):
                     InlineErrorState(error: error) { [model] in await model.loadBreakdown() }
                 case .loaded(let rows) where rows.isEmpty:
-                    Text("No data for the selected period.")
+                    Text("No data for this period")
                         .studioText(.uiSm)
                         .foregroundStyle(Color.studioText3)
                         .multilineTextAlignment(.center)
@@ -333,16 +335,27 @@ private struct BreakdownList: View {
     let rows: [StatisticsRow]
     let dimension: StatisticsDimension
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .body) private var figureColumn: CGFloat = StudioSpace.s16
+
     var body: some View {
         let total = rows.reduce(0) { $0 + $1.pageviews }
         let top = rows.map(\.pageviews).max() ?? 0
         VStack(alignment: .leading, spacing: StudioSpace.s2) {
-            HStack {
+            // The same columns as the bars below: the figures sit under
+            // their headings. Bars stack at accessibility sizes, so the
+            // heading drops its columns there.
+            HStack(spacing: StudioSpace.s3) {
                 Text(verbatim: dimension.title)
-                Spacer()
-                Text("Views")
-                Text("Share")
+                Spacer(minLength: StudioSpace.s2)
+                if !dynamicTypeSize.isAccessibilitySize {
+                    Text("Pageviews")
+                        .frame(minWidth: figureColumn, alignment: .trailing)
+                    Text("Share")
+                        .frame(minWidth: figureColumn, alignment: .trailing)
+                }
             }
+            .padding(.horizontal, StudioSpace.s3)
             .studioText(.meta)
             .foregroundStyle(Color.studioText3)
             .accessibilityHidden(true)
@@ -353,7 +366,8 @@ private struct BreakdownList: View {
                     value: row.pageviews,
                     share: total > 0 ? Double(row.pageviews) / Double(total) : 0,
                     fraction: top > 0 ? Double(row.pageviews) / Double(top) : 0,
-                    isLeading: dimension.isRanked && index == 0
+                    isLeading: dimension.isRanked && index == 0,
+                    figureColumn: figureColumn
                 )
             }
         }
@@ -366,6 +380,8 @@ private struct BreakdownBar: View {
     let share: Double
     let fraction: Double
     let isLeading: Bool
+    /// The figure columns' width, so they line up under the heading.
+    var figureColumn: CGFloat = 0
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -381,7 +397,9 @@ private struct BreakdownBar: View {
                     labelText
                     Spacer(minLength: StudioSpace.s2)
                     valueText
+                        .frame(minWidth: figureColumn, alignment: .trailing)
                     shareText
+                        .frame(minWidth: figureColumn, alignment: .trailing)
                 }
             }
         }
@@ -396,7 +414,7 @@ private struct BreakdownBar: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: label))
-        .accessibilityValue(Text("\(value) views, \(share.formatted(.percent.precision(.fractionLength(1))))"))
+        .accessibilityValue(Text("\(value) pageviews, \(share.formatted(.percent.precision(.fractionLength(1))))"))
     }
 
     private var labelText: some View {
@@ -418,19 +436,6 @@ private struct BreakdownBar: View {
             .studioText(.uiSm)
             .foregroundStyle(Color.studioText3)
             .monospacedDigit()
-    }
-}
-
-extension View {
-    /// While `isLoading`, one "Loading" element instead of placeholder text.
-    @ViewBuilder
-    func loadingAccessibility(_ isLoading: Bool) -> some View {
-        if isLoading {
-            accessibilityElement(children: .ignore)
-                .accessibilityLabel(Text("Loading"))
-        } else {
-            self
-        }
     }
 }
 

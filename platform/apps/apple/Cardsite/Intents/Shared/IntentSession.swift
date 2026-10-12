@@ -82,7 +82,7 @@ enum CardsiteIntentError: Error, CustomLocalizedStringResourceConvertible {
         case .signedOut:
             return "Sign in to Cardsite first."
         case .notFound:
-            return "That item isn't in your Cardsite workspace any more."
+            return "That item isn’t in your Cardsite workspace any more."
         case .message(let text):
             return "\(text)"
         }

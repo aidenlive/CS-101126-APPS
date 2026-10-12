@@ -84,16 +84,14 @@ struct TimezonePickerView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
-            .alert("Couldn't save the timezone",
+            .alert("Couldn’t save the timezone",
                    isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(error ?? "")
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 420, minHeight: 520)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     private func choose(_ zone: Zone) async {

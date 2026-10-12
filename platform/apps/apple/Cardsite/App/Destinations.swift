@@ -77,7 +77,7 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
             switch self {
             case .overview: return nil
             case .content: return String(localized: "Content")
-            case .organise: return String(localized: "Organise")
+            case .organise: return String(localized: "Organize")
             case .account: return String(localized: "Account")
             }
         }
@@ -205,7 +205,7 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .splashPages: return [String(localized: "interstitial"), String(localized: "redirect page")]
         case .staticPages: return [String(localized: "HTML"), String(localized: "website"), String(localized: "hosting")]
         case .fileLinks: return [String(localized: "files"), String(localized: "downloads"), String(localized: "documents")]
-        case .projects: return [String(localized: "folders"), String(localized: "organise")]
+        case .projects: return [String(localized: "folders"), String(localized: "organize"), String(localized: "organise")]
         case .domains: return [String(localized: "custom domains"), String(localized: "DNS"), String(localized: "branded")]
         case .pixels: return [String(localized: "tracking"), String(localized: "retargeting"), String(localized: "analytics")]
         case .uploads: return [String(localized: "files"), String(localized: "images"), String(localized: "media")]

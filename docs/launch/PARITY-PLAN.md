@@ -1,13 +1,26 @@
 # Cardsite for Apple platforms — web parity and launch plan
 
-**Updated:** 2026-10-11 · **Repo:** `aidenlive/CS-101126-APPS` · **Status:** Wave 0 under way.
+**Updated:** 2026-10-12 · **Repo:** `aidenlive/CS-101126-APPS` · **Status:** Waves 0–3 code complete, **not compiled**; wave 4 waits on the owner.
 **Each check below is labelled _verified_ (it was run) or _not verified_.**
 
 ## 1. Bottom line
 
-There is one multiplatform SwiftUI app for iPhone, iPad and Mac (`platform/apps/apple`). It has about 3,900 lines of app code plus StudioKit, and it covers roughly a fifth of the signed-in web dashboard: sign-in, short links (destination and on/off only), traffic, QR codes, a read-only list of bio pages, and account. **It has never been compiled.**
+**Status on 12 Oct 2026.** Cardsite® for Apple platforms is written to web parity: waves 0–3 are code complete. It is one multiplatform SwiftUI target for iPhone, iPad, Mac and Apple Vision Pro, plus the widgets, a share extension and an Apple Watch app. In all, about 37,500 lines of Swift sit under `platform/apps/apple`, plus StudioKit. **None of it has been compiled.**
 
-This plan brings the app to parity with every web feature that belongs in an Apple app. That happens in four waves, run by a group of agents working on separate directories in parallel. Every wave ends at the same gate:
+- **Verified:**
+  - the contract harness against a locally built live API: 316/316, then 332/332 with the organise steps;
+  - tree-sitter syntax checks;
+  - the design lint;
+  - `project.yml` and the workflow parse with PyYAML.
+- **Not verified:**
+  - the compile, for every target;
+  - `swift test` (113 CardsiteKit tests and 16 StudioKit tests);
+  - the UI tests and screenshots;
+  - anything on a device.
+- **Why:** GitHub Actions refuses to start any job on this repository ("recent account payments have failed or your spending limit needs to be increased"). The gate below has therefore never run for any wave, so no wave has formally exited. Fixing billing is owner item A23 in `native-apple.md`.
+- **Design review:** source-only ([`DESIGN-REVIEW.md`](DESIGN-REVIEW.md)), with no rendered screens. Its fixes are in progress.
+
+This plan brings the app to parity with every web feature that belongs in an Apple app, in four waves, run by a group of agents working on separate directories in parallel. Every wave ends at the same gate:
 
 - the app compiles on macOS CI;
 - the CardsiteKit tests pass;
@@ -99,7 +112,12 @@ The status is In (built natively), Read (view in the app, edit on the web), Mac+
 - **The Studio system only.** All colour, type, spacing and radius come from StudioKit tokens, with no literals in the app. A lint step in CI fails the build on `Color(red:`, `.padding(<number>)` and hex values in `Cardsite/`.
 - **Liquid Glass only on chrome** (tab bar, sidebar, toolbars, the palette overlay). Content goes on opaque `StudioCard` and surface tokens. The regular glass variant is used behind text.
 - **Every screen has six states:** loading (skeleton), empty (with a primary action), content, refreshing over stale data, offline, and error with retry. Each is designed, and none is a placeholder.
-- **Balance across views.** Every screen uses the same page header (`StudioPageHead`: kicker, title, action), the same section spacing (`StudioSpace.s6` between groups) and the same list row anatomy (leading glyph, title and `.meta` line, trailing figure). The iPad and Mac detail column is capped at the content max width and centred.
+- **Balance across views.** The same section spacing (`StudioSpace.s6` between groups) and the same list row anatomy everywhere (`CardsiteResourceRow`: leading glyph tile, title and subtitle, state pill, trailing clicks figure; it stacks at accessibility sizes).
+- **Page headers: one rule** (DESIGN-REVIEW P0-1).
+  - **Full-width destinations** open with `StudioPageHead` (kicker, title, the web's description, optional actions) as their first list or form section (`ListPageHead`), and keep a `.navigationTitle` drawn inline (`inlineNavigationTitle()`) for the back button, the window title and VoiceOver. These are the resource lists, Uploads, Data Records, Projects, Domains, Pixels, Workspace, Inbox and Activity Logs. Home and Statistics are dashboards with their own `StudioPageHead`.
+  - **Split-view list columns** (Links, Pages) and **Forms** (Account, Preferences, the link detail, resource editors and every sheet) keep the native large or inline title. This is a stated exception: a 360 pt column can't hold display type, and a Form's sections already carry its structure.
+- **Measure.** Content is capped at a `CardsiteMeasure` width and centred: `dashboard` (1120: Home, Statistics, the Uploads gallery), `reading` (StudioKit's rhythm measure, 680: forms, lists and details) and `sheet` (560: sheet columns, full-area empty and error states), plus `narrow` (440) for the sign-in card and phone-sized previews. Lists and Forms apply it through scroll-content margins (`studioList()` / `studioForm()`), so the scroll indicator stays at the window edge. Sheets are sized with `cardsiteSheet(.form / .page)`.
+- **Copy.** Title case for control labels (buttons, menu items, toolbar items, navigation, sidebar and tab titles, alert buttons); sentence case for prose (headings inside content, section headers, empty states, help text, alert titles and messages). US spelling, as `en.json`. One verb list (`ResourceVerb`: Copy Link, Open in Browser, Show Card, Statistics, Duplicate, Turn On / Turn Off, Edit…, Delete…) and one state pair ("Live" / "Off"). Curly apostrophes; alert titles read "Couldn’t …"; no "Failed to" and no "Are you sure".
 - **Motion** uses Studio durations and springs; with Reduce Motion it becomes a cross-fade.
 - **Accessibility gate per screen:** Dynamic Type up to AX5 without truncating primary content; VoiceOver labels on icon-only controls; contrast passes with Increase Contrast; full keyboard reachability on Mac and iPad.
 - **Visual QA loop** (§7): CI renders every screen on iPhone 6.9", iPad 13" and Mac, in light, dark and AX XXXL. A design-review agent grades each screenshot against this section and files fixes before a wave closes.
@@ -137,13 +155,15 @@ Agents own separate directories, and the lead (this session) integrates, commits
 
 ## 9. Waves and exit criteria
 
-| Wave | Contents | Exit |
-|---|---|---|
-| **0 · Foundation** | Seed repo; CI; first compile and fix the errors it reports; split CardsiteKit into domain files; navigation registry; StudioKit port starts | CI green on iOS and macOS; existing 22 tests pass |
-| **1 · Core parity** | Home, search/palette, workspace switcher, full links and statistics, account/settings (password, 2FA, tokens) | Gate §7 + design review of every wave 1 screen |
-| **2 · Full parity** | All link types, bio page settings and editor, QR builder, organise, workspace members, inbox, uploads, data, logs, preferences | Gate + design review + contract harness green on every endpoint |
-| **3 · Ecosystem + polish** | Widgets, App Intents, share extension, universal links, visionOS, watchOS, comments/undo, SSE, Spotlight, AI (if N8), String Catalog | Gate + accessibility audit + App Store metadata and screenshots |
-| **4 · Submission** | Owner items A1–A3 and A7–A12, device checklist, TestFlight, submit | "Ready for Sale" |
+"Code complete" means the code is written, syntax-checked and design-linted. No wave has met its exit gate, because the gate needs CI (A23).
+
+| Wave | Contents | Exit | Status (12 Oct) |
+|---|---|---|---|
+| **0 · Foundation** | Seed repo; CI; first compile and fix the errors it reports; split CardsiteKit into domain files; navigation registry; StudioKit port starts | CI green on iOS and macOS; existing 22 tests pass | **Code complete, not compiled.** Repo seeded (`f3add4b`). CI written with compile, tests, UI tests and the `screens` branch. CardsiteKit split into 12 domains. Registry of 21 destinations. The first compile has not happened |
+| **1 · Core parity** | Home, search/palette, workspace switcher, full links and statistics, account/settings (password, 2FA, tokens) | Gate §7 + design review of every wave 1 screen | **Code complete, not compiled** (`956eceb`, `acedc31`). All listed items built. StudioKit 1.10 ported. The design review was source-only |
+| **2 · Full parity** | All link types, bio page settings and editor, QR builder, organise, workspace members, inbox, uploads, data, logs, preferences | Gate + design review + contract harness green on every endpoint | **Code complete, not compiled** (`956eceb`, `acedc31`, `9efc62b`). Contract harness **green, verified**: 316/316, then 332/332 with organise |
+| **3 · Ecosystem + polish** | Widgets, App Intents, share extension, universal links, visionOS, watchOS, comments/undo, SSE, Spotlight, AI (if N8), String Catalog | Gate + accessibility audit + App Store metadata and screenshots | **Ecosystem code complete, not compiled** (`9efc62b`, `0dd5145`): widgets, App Intents and App Shortcuts, share extension, visionOS destination, watchOS companion, shared session, `cardsite://` deep links. App Store metadata updated. **Not built, moved to 1.1:** universal links (A16), bio editor comments and undo/redo, SSE (the inbox polls), the Core Spotlight index, AI (N8). The String Catalog (A15) needs a build first. No screenshots yet |
+| **4 · Submission** | Owner items A1–A3 and A7–A12, device checklist, TestFlight, submit | "Ready for Sale" | **Pending the owner.** It needs A23 (Actions billing) first, then A1–A3, A7–A9, A12 and A25 (App Group and keychain provisioning) |
 
 ## 10. Owner decisions
 
@@ -161,3 +181,28 @@ The decisions carried over from `native-apple.md` are N1 (bundle ID), N2 (produc
 - **macOS CI minutes and access.** This session can list workflow runs but may not be able to read logs or artifacts through the proxy, so screenshots go to a `screens` branch, which the session can read. If the repo has no macOS minutes, nothing compiles until a Mac runs it.
 - **The first compile** of about 4,000 unbuilt lines will produce errors. Wave 0 is sized for that.
 - **Font licences in the app binary** (A9), the **legal texts** (A8) and the **production API host** (A7) are owner-blocked and outside this plan's control.
+
+## 12. Done this session (11–12 Oct 2026)
+
+Each entry is labelled _verified_ (it was run) or _not verified_.
+
+- **Wave 0.** Seeded the repo from CS-CORE: the app, CardsiteKit, StudioKit, CI and the launch docs (`f3add4b`). Split CardsiteKit by domain. Added the navigation registry. _Not verified_ (not compiled).
+- **Waves 1–2: features** (`956eceb`, `acedc31`, `9efc62b`):
+  - Home, the ⌘K palette and the workspace switcher.
+  - The full link editor, and statistics with 11 breakdowns.
+  - Every link type: vCard, event, payment, file, static and splash.
+  - The bio page block editor and page settings.
+  - The 28-type QR builder.
+  - Organise: projects, domains with DNS verify, and pixels.
+  - Workspace and members, inbox, uploads, data records, activity logs.
+  - Account: password, 2FA setup, API tokens, preferences. The Mac Settings scene.
+
+  _Not verified_ (not compiled).
+- **Waves 1–2: StudioKit and the kit.** Ported the StudioKit 1.10 components and viz tokens, keeping the 11 Oct fixes. Added the design lint (`scripts/lint-design.sh`): _verified_ clean. CardsiteKit has 113 tests, which are _not verified_ (not run).
+- **Contract.** Extended the harness to every parity endpoint. 316/316 (run A), 315/315 (run B), 104/104 (run C), and 332/332 with the organise steps (run D): _verified_ against the API built from source, with Postgres 16 and Redis. All 127 fixtures are live.
+- **Verification harness.** In-app fixture server (`-CardsiteFixtures`), 4 screenshot passes and 5 journeys in XCUITest, and a `screens` job that publishes PNGs to the `screens` branch. _Not verified_ (never run).
+- **Wave 3: ecosystem** (`9efc62b`, `0dd5145`). CardsiteWidgets (Link Traffic, My QR Code), App Intents and App Shortcuts (Create Short Link, Show QR Code, Get Link Clicks), CardsiteShare, the visionOS destination and CardsiteWatch. Also `SharedSession` (App Group and shared keychain), the WatchConnectivity relay, `cardsite://` deep links, and CI destinations for visionOS and watchOS. _Not verified_ (not compiled; it also needs signed provisioning, A25).
+- **Design review.** A source-only review of every screen ([`DESIGN-REVIEW.md`](DESIGN-REVIEW.md)): 5 P0 findings and 9 systemic fixes. _Not verified_ on rendered screens.
+- **Server issues found** (A26 in `native-apple.md`). The most serious is that `/spotlight` searches across all accounts, which is a **security** issue. Also: list handlers ignore `search=`; `/statistics` is cached per user, not per workspace; `scheduled_at: null` is ignored; a QR PUT ignores content edits; the web's Data filter values are wrong; `password_protection` isn't enforced; and an expiration URL can't be removed from file and static links. Reported, not fixed: this repository doesn't own the API.
+- **Docs and store** (12 Oct). Rewrote `native-apple.md`, adding the device checklist 1–23 and A23–A28. Updated the App Store metadata, review notes, privacy label and screenshot plan. Added UserDefaults reason 1C8F.1 (App Group) and the Photos data type to the app's privacy manifest, which is _verified_ as a valid plist. Added the root `README.md`.
+- **CI.** `project.yml` and `apple.yml` parse: _verified_ (PyYAML). Every Actions job is refused for billing: _verified_ (observed). Owner item A23.

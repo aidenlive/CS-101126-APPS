@@ -97,7 +97,7 @@ struct StaticPageEditorView: View {
             } footer: {
                 ResourceAddressFooter(list: list, isNew: model.isNew)
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             Section {
                 if isPhone {
@@ -124,7 +124,7 @@ struct StaticPageEditorView: View {
                         .foregroundStyle(Color.studioText3)
                 }
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             GatingSection(
                 password: $model.form.gate.password,

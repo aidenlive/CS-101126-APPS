@@ -29,7 +29,7 @@ struct HomeGreeting: View {
         let now = Date()
         let weekday = now.formatted(.dateTime.weekday(.wide))
         let date = now.formatted(.dateTime.month(.abbreviated).day())
-        return "Cardsite · \(weekday) · \(date)"
+        return String(localized: "Cardsite · \(weekday) · \(date)")
     }
 
     /// Four whole greetings, as the web keeps them, rather than "Good " plus
@@ -332,7 +332,7 @@ struct HomeStatsSection: View {
             value: snapshot.summary.totalClicks.figure,
             detail: String(localized: "All time · \(snapshot.clicksInWindow.figure) in the last 30 days")
         ) {
-            sparkline(\.pageviews, tint: .studioAccentLine, fill: .studioAccentSoft)
+            sparkline(\.pageviews, tint: .studioViz1)
         }
     }
 
@@ -343,7 +343,7 @@ struct HomeStatsSection: View {
             value: snapshot.averageDailyVisitors.figure,
             detail: String(localized: "Average unique visitors, last 30 days")
         ) {
-            sparkline(\.visitors, tint: .studioText3, fill: .studioSurface3)
+            sparkline(\.visitors, tint: .studioViz2)
         }
     }
 
@@ -351,15 +351,40 @@ struct HomeStatsSection: View {
         HomeTopPerformerCard(top: snapshot.top)
     }
 
+    /// The chart palette, as the Statistics chart draws the same series
+    /// (clicks `studioViz1`, visitors `studioViz2`).
     @ViewBuilder
-    private func sparkline(_ value: KeyPath<DailyTraffic, Int>, tint: Color, fill: Color) -> some View {
+    private func sparkline(_ value: KeyPath<DailyTraffic, Int>, tint: Color) -> some View {
         if snapshot.hasTraffic {
-            Sparkline(days: snapshot.traffic, value: value, tint: tint, fill: fill)
+            Sparkline(days: snapshot.traffic, value: value, tint: tint, fill: tint.opacity(0.22),
+                      trend: Self.trendSummary(snapshot.traffic, value))
         } else {
             Text("No traffic yet")
                 .studioText(.uiSm)
                 .foregroundStyle(Color.studioText4)
         }
+    }
+
+    /// "Up 12% on the previous 15 days": the sparkline's shape in words, so
+    /// the trend isn't visual-only.
+    static func trendSummary(_ days: [DailyTraffic], _ value: KeyPath<DailyTraffic, Int>) -> String {
+        let half = days.count / 2
+        guard half > 0 else { return String(localized: "Not enough days to compare") }
+        let previous = days.prefix(half).reduce(0) { $0 + $1[keyPath: value] }
+        let recent = days.suffix(half).reduce(0) { $0 + $1[keyPath: value] }
+        guard previous > 0 else {
+            return recent > 0
+                ? String(localized: "Up from none in the previous \(half) days")
+                : String(localized: "No traffic in the last \(half * 2) days")
+        }
+        let change = Double(recent - previous) / Double(previous)
+        let percent = abs(change).formatted(.percent.precision(.fractionLength(0)))
+        if change >= 0.005 {
+            return String(localized: "Up \(percent) on the previous \(half) days")
+        } else if change <= -0.005 {
+            return String(localized: "Down \(percent) on the previous \(half) days")
+        }
+        return String(localized: "Level with the previous \(half) days")
     }
 }
 
@@ -370,6 +395,9 @@ struct HomeStatCard<Accessory: View>: View {
     let label: String
     let value: String
     let detail: String
+    /// 1 for a figure; 2 for an address (the top performer), which then
+    /// wraps instead of shrinking, and loses its middle rather than its slug.
+    var valueLineLimit = 1
     @ViewBuilder var accessory: () -> Accessory
 
     var body: some View {
@@ -383,12 +411,20 @@ struct HomeStatCard<Accessory: View>: View {
                 .studioText(.label)
                 .foregroundStyle(Color.studioText3)
 
-                Text(value)
-                    .monospacedDigit()
-                    .studioText(.title)
-                    .foregroundStyle(Color.studioText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                if valueLineLimit == 1 {
+                    Text(value)
+                        .monospacedDigit()
+                        .studioText(.title)
+                        .foregroundStyle(Color.studioText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                } else {
+                    Text(verbatim: value)
+                        .studioText(.title)
+                        .foregroundStyle(Color.studioText)
+                        .lineLimit(valueLineLimit)
+                        .truncationMode(.middle)
+                }
 
                 Text(detail)
                     .studioText(.uiSm)
@@ -425,20 +461,22 @@ struct HomeTopPerformerCard: View {
             label: String(localized: "Top performer"),
             value: top.map { app.addresses.display(for: $0.slug) } ?? "—",
             detail: top.map { String(localized: "\($0.clicks.figure) clicks · \($0.kindInfo.title)") }
-                ?? String(localized: "No traffic yet")
+                ?? String(localized: "No traffic yet"),
+            valueLineLimit: 2
         ) {
             EmptyView()
         }
     }
 }
 
-/// A 30-day area sparkline. Decorative: the card it sits in states the
-/// figure, so VoiceOver skips the chart.
+/// A 30-day area sparkline. The card it sits in states the figure; the
+/// sparkline adds the trend, in words, for VoiceOver.
 struct Sparkline: View {
     let days: [DailyTraffic]
     let value: KeyPath<DailyTraffic, Int>
     let tint: Color
     let fill: Color
+    var trend: String = ""
 
     var body: some View {
         let peak = max(1, days.map { $0[keyPath: value] }.max() ?? 1)
@@ -463,7 +501,10 @@ struct Sparkline: View {
         .chartLegend(.hidden)
         .chartYScale(domain: 0...peak)
         .frame(height: StudioSpace.s12)
-        .accessibilityHidden(true)
+        .accessibilityElement()
+        .accessibilityLabel(Text("Trend"))
+        .accessibilityValue(Text(trend))
+        .accessibilityHidden(trend.isEmpty)
     }
 }
 
@@ -474,6 +515,7 @@ struct Sparkline: View {
 struct HomeRecentsSection: View {
     @Environment(AppModel.self) private var app
     let recent: [Resource]
+    @State private var statisticsFor: Resource? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioSpace.s5) {
@@ -498,7 +540,7 @@ struct HomeRecentsSection: View {
                             ResourceOpenLink(resource: resource) {
                                 HomeRecentRow(resource: resource)
                             }
-                            .contextMenu { ResourceActions(resource: resource) }
+                            .contextMenu { ResourceActions(resource: resource) { statisticsFor = resource } }
                             if index < recent.count - 1 {
                                 Divider().overlay(Color.studioBorder)
                             }
@@ -507,75 +549,55 @@ struct HomeRecentsSection: View {
                 }
             }
         }
+        .sheet(item: $statisticsFor) { resource in
+            NavigationStack {
+                StatisticsScreen(linkID: resource.id, subtitle: app.addresses.display(for: resource.slug))
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { statisticsFor = nil }
+                        }
+                    }
+            }
+            .cardsiteSheet(.page)
+        }
     }
 }
 
-/// ROW anatomy: glyph tile · address over a meta line · trailing figure.
+/// A recent resource in the shared row anatomy: address, type and when it
+/// was edited, clicks, and where tapping goes (in the app, or the browser).
 struct HomeRecentRow: View {
     @Environment(AppModel.self) private var app
-    @Environment(\.dynamicTypeSize) private var typeSize
-    @ScaledMetric(relativeTo: .body) private var glyphSize: CGFloat = 40
     let resource: Resource
 
     private var info: ResourceKindInfo { resource.kindInfo }
 
+    private var meta: Text {
+        guard let edited = resource.updatedAt ?? resource.createdAt else { return Text(info.title) }
+        return Text(info.title) + Text(verbatim: " · ") + Text(edited, format: .relative(presentation: .named))
+    }
+
     var body: some View {
-        let layout = typeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: StudioSpace.s3))
-            : AnyLayout(HStackLayout(spacing: StudioSpace.s4))
-
-        layout {
-            Image(systemName: info.systemImage)
-                .imageScale(.large)
-                .foregroundStyle(info.isComposed ? Color.studioAccentLine : Color.studioText2)
-                .frame(width: glyphSize, height: glyphSize)
-                .background(
-                    RoundedRectangle(cornerRadius: StudioRadius.sm, style: .continuous)
-                        .fill(info.isComposed ? Color.studioAccentSoft : Color.studioSurface3)
-                )
-
-            VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                Text(verbatim: app.addresses.display(for: resource.slug))
-                    .studioText(.ui)
-                    .foregroundStyle(Color.studioText)
-                    .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
-                    .truncationMode(.middle)
-                HStack(spacing: StudioSpace.s2) {
-                    Text(info.title)
-                    if let edited = resource.updatedAt ?? resource.createdAt {
-                        Text(verbatim: "·").accessibilityHidden(true)
-                        Text(edited, format: .relative(presentation: .named))
-                    }
-                }
-                .studioText(.meta)
-                .foregroundStyle(Color.studioText3)
-            }
-
-            if !typeSize.isAccessibilitySize {
-                Spacer(minLength: StudioSpace.s2)
-            }
-
-            HStack(alignment: .firstTextBaseline, spacing: StudioSpace.s3) {
-                VStack(alignment: typeSize.isAccessibilitySize ? .leading : .trailing, spacing: StudioSpace.s1) {
-                    Text(resource.clicks.figure)
-                        .monospacedDigit()
-                        .studioText(.titleSm)
-                        .foregroundStyle(Color.studioText)
-                    Text("clicks")
-                        .studioText(.meta)
-                        .foregroundStyle(Color.studioText3)
-                }
-                Image(systemName: resource.type == LinkKind.shortLink || resource.type == LinkKind.bioPage ? "chevron.right" : "arrow.up.forward")
-                    .imageScale(.small)
-                    .foregroundStyle(Color.studioText4)
-                    .accessibilityHidden(true)
-            }
+        CardsiteResourceRow(
+            systemImage: info.systemImage,
+            isLive: resource.isEnabled,
+            title: Text(verbatim: app.addresses.display(for: resource.slug)),
+            subtitle: meta,
+            state: ResourceState(isEnabled: resource.isEnabled, isLapsing: resource.isLapsing),
+            clicks: resource.clicks
+        ) {
+            Image(systemName: opensInApp ? "chevron.right" : "arrow.up.forward")
+                .imageScale(.small)
+                .foregroundStyle(Color.studioText4)
+                .accessibilityHidden(true)
         }
         .padding(.horizontal, StudioSpace.s5)
-        .padding(.vertical, StudioSpace.s4)
+        .padding(.vertical, StudioSpace.s3)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
+    }
+
+    private var opensInApp: Bool {
+        resource.type == LinkKind.shortLink || resource.type == LinkKind.bioPage
     }
 }
 
@@ -619,25 +641,18 @@ struct ResourceOpenLink<Label: View>: View {
     }
 }
 
-/// Copy, share and open, for a resource's context menu.
+/// A recent resource's context menu: the shared vocabulary (copy, open,
+/// share, card, statistics).
 struct ResourceActions: View {
     @Environment(AppModel.self) private var app
     let resource: Resource
+    var statistics: (() -> Void)? = nil
 
     var body: some View {
-        if let url = app.addresses.url(for: resource.slug) {
-            Button {
-                Pasteboard.copy(url.absoluteString)
-                Haptics.success()
-            } label: {
-                Label("Copy Address", systemImage: "doc.on.doc")
-            }
-            ShareLink(item: url) {
-                Label("Share…", systemImage: "square.and.arrow.up")
-            }
-            Link(destination: url) {
-                Label("Open in Browser", systemImage: "safari")
-            }
-        }
+        ResourceMenuItems(actions: ResourceActionSet(
+            url: app.addresses.url(for: resource.slug),
+            cardURL: app.addresses.cardURL(for: resource.slug),
+            statistics: statistics
+        ))
     }
 }

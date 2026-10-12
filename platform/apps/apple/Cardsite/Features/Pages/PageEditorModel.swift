@@ -236,7 +236,7 @@ final class PageEditorModel {
         } catch {
             replace(block)
             onError(error)
-            announce(String(localized: "Couldn't update this block. \(error.asAPIError.localizedDescription)"), .error)
+            announce(String(localized: "Couldn’t update this block. \(error.asAPIError.localizedDescription)"), .error)
         }
     }
 
@@ -301,7 +301,7 @@ final class PageEditorModel {
             pageWasWritten()
         } catch {
             onError(error)
-            announce(String(localized: "Couldn't delete this block. \(error.asAPIError.localizedDescription)"), .error)
+            announce(String(localized: "Couldn’t delete this block. \(error.asAPIError.localizedDescription)"), .error)
         }
     }
 
@@ -338,7 +338,7 @@ final class PageEditorModel {
         } catch {
             onError(error)
             if let previous { mutate { $0.blocks = previous } }
-            announce(String(localized: "Couldn't reorder the blocks. The previous order is back."), .error)
+            announce(String(localized: "Couldn’t reorder the blocks. The previous order is back."), .error)
         }
     }
 

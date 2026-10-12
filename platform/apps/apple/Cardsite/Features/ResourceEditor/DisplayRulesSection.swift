@@ -66,7 +66,7 @@ struct DisplayRulesSection: View {
                 .studioText(.uiSm)
                 .foregroundStyle(Color.studioText3)
         }
-        .editorRowBackground()
+        .studioRowBackground()
     }
 }
 
@@ -176,7 +176,7 @@ struct MultiSelectSheet: View {
                     } header: {
                         EditorSectionHeader(String(localized: "Selected"))
                     }
-                    .editorRowBackground()
+                    .studioRowBackground()
                 }
                 Section {
                     ForEach(filtered) { option in
@@ -191,7 +191,7 @@ struct MultiSelectSheet: View {
                         EditorSectionHeader(String(localized: "All"))
                     }
                 }
-                .editorRowBackground()
+                .studioRowBackground()
             }
             .scrollContentBackground(.hidden)
             .background(Color.studioBg)
@@ -211,9 +211,7 @@ struct MultiSelectSheet: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 420, minHeight: 480)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     private var filtered: [TargetingOption] {

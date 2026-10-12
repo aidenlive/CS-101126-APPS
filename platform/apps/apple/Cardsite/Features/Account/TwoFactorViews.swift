@@ -33,7 +33,7 @@ struct TwoFactorSetupView: View {
                             lead: String(localized: "Two-factor authentication is on.")
                         )
                         .padding(StudioSpace.s6)
-                        .readableWidth(560)
+                        .readableWidth(.sheet)
                     }
                 } else {
                     switch setup {
@@ -65,9 +65,7 @@ struct TwoFactorSetupView: View {
             .interactiveDismissDisabled(recoveryCodes != nil || isVerifying)
             .task { if case .idle = setup { await start() } }
         }
-        #if os(macOS)
-        .frame(minWidth: 480, minHeight: 620)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     private func enrol(_ setup: TwoFactorSetup) -> some View {
@@ -135,7 +133,7 @@ struct TwoFactorSetupView: View {
                 }
             }
             .padding(StudioSpace.s6)
-            .readableWidth(560)
+            .readableWidth(.sheet)
             .animation(StudioAnimation.base, value: error)
         }
     }
@@ -194,7 +192,7 @@ struct TwoFactorPasswordView: View {
                         RecoveryCodesPanel(codes: recoveryCodes,
                                            lead: String(localized: "Your old recovery codes no longer work."))
                             .padding(StudioSpace.s6)
-                            .readableWidth(560)
+                            .readableWidth(.sheet)
                     }
                     .background(Color.studioBg)
                 } else {
@@ -210,6 +208,7 @@ struct TwoFactorPasswordView: View {
                         } footer: {
                             FormErrorText(message: error)
                         }
+                        .studioRowBackground()
                         Section {
                             Button(role: purpose == .disable ? .destructive : nil) {
                                 Task { await submit() }
@@ -222,6 +221,7 @@ struct TwoFactorPasswordView: View {
                             }
                             .disabled(password.isEmpty || isWorking)
                         }
+                        .studioRowBackground()
                     }
                     .studioForm()
                 }
@@ -239,9 +239,7 @@ struct TwoFactorPasswordView: View {
             }
             .interactiveDismissDisabled(recoveryCodes != nil || isWorking)
         }
-        #if os(macOS)
-        .frame(minWidth: 440, minHeight: recoveryCodes == nil ? 260 : 560)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     private func submit() async {
@@ -282,7 +280,7 @@ struct RecoveryCodesPanel: View {
         VStack(alignment: .leading, spacing: StudioSpace.s5) {
             StudioBanner(
                 lead: lead,
-                message: String(localized: "Save these recovery codes somewhere safe. Each one signs you in once if you lose your authenticator. They won't be shown again."),
+                message: String(localized: "Save these recovery codes somewhere safe. Each one signs you in once if you lose your authenticator. They won’t be shown again."),
                 tone: .success
             )
 
@@ -360,7 +358,7 @@ struct ProvisioningQRCode: View {
                 .accessibilityLabel(Text("QR code for your authenticator app"))
                 .accessibilityAddTraits(.isImage)
         } else {
-            Text("The QR code couldn't be drawn. Enter the key by hand instead.")
+            Text("The QR code couldn’t be drawn. Enter the key by hand instead.")
                 .studioText(.uiSm)
                 .studioMuted()
         }

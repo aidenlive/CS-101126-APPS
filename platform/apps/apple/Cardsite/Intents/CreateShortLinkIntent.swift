@@ -49,7 +49,7 @@ struct CreateShortLinkIntent: AppIntent {
             try await Self.create(with: client, slug: custom, destination: target)
         }
         guard let shortURL = session.addresses.url(for: link.slug) else {
-            throw CardsiteIntentError.message(String(localized: "The link was created, but its address couldn't be read. Open Cardsite to copy it."))
+            throw CardsiteIntentError.message(String(localized: "The link was created, but its address couldn’t be read. Open Cardsite to copy it."))
         }
 
         Pasteboard.copy(shortURL.absoluteString)

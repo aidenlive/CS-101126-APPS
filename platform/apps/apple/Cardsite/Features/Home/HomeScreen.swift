@@ -51,7 +51,7 @@ struct HomeScreen: View {
                     .padding(.horizontal, viewport.contentPadding)
                     .padding(.top, StudioSpace.s6)
                     .padding(.bottom, StudioSpace.s12)
-                    .readableWidth(HomeLayout.maxWidth)
+                    .readableWidth(.dashboard)
             }
             .background(Color.studioBg)
             .refreshable { [model] in await model.refresh() }
@@ -100,9 +100,6 @@ struct HomeScreen: View {
 }
 
 enum HomeLayout {
-    /// The page's measure on wide windows: three columns of cards, no wider.
-    static let maxWidth: CGFloat = 1120
-
     /// Columns for a content width, from the same breakpoints the Studio
     /// viewport uses, and never more than one at accessibility text sizes.
     static func columns(for width: CGFloat, typeSize: DynamicTypeSize) -> Int {
@@ -138,13 +135,12 @@ struct HomeDashboard: View {
             case .idle, .loading:
                 // The skeleton: the real layout, redacted, so nothing jumps
                 // when the data lands.
-                dataSections(.sample)
-                    .redacted(reason: .placeholder)
-                    .disabled(true)
-                    .accessibilityHidden(true)
-                ProgressView()
-                    .accessibilityLabel("Loading your dashboard")
-                    .frame(maxWidth: .infinity)
+                VStack(alignment: .leading, spacing: viewport.sectionGap) {
+                    dataSections(.sample)
+                }
+                .redacted(reason: .placeholder)
+                .disabled(true)
+                .loadingAccessibility(true)
             case .failed(let error):
                 StudioCard {
                     InlineErrorState(error: error) { [model] in await model.refresh() }

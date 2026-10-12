@@ -74,22 +74,22 @@ enum ResourceKind: String, CaseIterable, Hashable, Identifiable, Sendable {
     var createTitle: String {
         switch self {
         case .vcard: return String(localized: "Create vCard")
-        case .event: return String(localized: "Create event")
-        case .paymentLink: return String(localized: "Create payment link")
-        case .file: return String(localized: "Create file link")
-        case .staticPage: return String(localized: "Create static page")
-        case .splash: return String(localized: "Create splash page")
+        case .event: return String(localized: "Create Event")
+        case .paymentLink: return String(localized: "Create Payment Link")
+        case .file: return String(localized: "Create File Link")
+        case .staticPage: return String(localized: "Create Static Page")
+        case .splash: return String(localized: "Create Splash Page")
         }
     }
 
     var editTitle: String {
         switch self {
         case .vcard: return String(localized: "Edit vCard")
-        case .event: return String(localized: "Edit event")
-        case .paymentLink: return String(localized: "Edit payment link")
-        case .file: return String(localized: "Edit file link")
-        case .staticPage: return String(localized: "Edit static page")
-        case .splash: return String(localized: "Edit splash page")
+        case .event: return String(localized: "Edit Event")
+        case .paymentLink: return String(localized: "Edit Payment Link")
+        case .file: return String(localized: "Edit File Link")
+        case .staticPage: return String(localized: "Edit Static Page")
+        case .splash: return String(localized: "Edit Splash Page")
         }
     }
 
@@ -163,11 +163,29 @@ enum ResourceKind: String, CaseIterable, Hashable, Identifiable, Sendable {
     var deleteConsequence: String {
         switch self {
         case .file, .staticPage:
-            return String(localized: "Its address stops resolving immediately and the uploaded file is removed. This can't be undone.")
+            return String(localized: "Anyone who opens or scans this address will get a not-found page, and the uploaded file is removed. This can’t be undone.")
         case .splash:
-            return String(localized: "Links that show it go straight to their destination. This can't be undone.")
+            return String(localized: "Links that show it go straight to their destination. This can’t be undone.")
         default:
-            return String(localized: "Its address stops resolving immediately. This can't be undone.")
+            return String(localized: "Anyone who opens or scans this address will get a not-found page. This can’t be undone.")
+        }
+    }
+
+    /// The short link's delete dialog, worded as the kinds' above (the
+    /// Links list and the link detail both use it).
+    static var shortLinkDeleteConfirmation: String { String(localized: "Delete this link?") }
+    static var shortLinkDeleteConsequence: String {
+        String(localized: "Anyone who opens or scans this address will get a not-found page. This can’t be undone.")
+    }
+
+    /// The type's page head on its list: the web's kicker for the group.
+    var kicker: String {
+        switch self {
+        case .vcard: return String(localized: "Resources · Cards")
+        case .event: return String(localized: "Resources · Events")
+        case .paymentLink: return String(localized: "Resources · Payments")
+        case .file, .staticPage: return String(localized: "Resources · Files")
+        case .splash: return String(localized: "Resources · Splash pages")
         }
     }
 

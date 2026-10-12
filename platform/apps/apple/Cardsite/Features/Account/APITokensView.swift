@@ -16,17 +16,18 @@ struct APITokensView: View {
             state: model.tokenListState,
             empty: .init(
                 systemImage: "key.horizontal",
-                title: String(localized: "No API tokens yet."),
+                title: String(localized: "No API tokens yet"),
                 message: String(localized: "Scoped, revocable credentials for scripts and agents. Each token gets only the scopes you grant."),
                 actionTitle: String(localized: "Create Token"),
                 action: { isCreating = true }
             ),
+            skeleton: .textRows,
             retry: { [model] in await model.loadTokens(force: true) }
         ) { tokens in
             List {
                 if let error = model.tokensRefreshError {
                     RefreshErrorBanner(error: error) { model.dismissTokensRefreshError() }
-                        .listRowSeparator(.hidden)
+                        .studioClearRow()
                 }
                 Section {
                     ForEach(tokens) { token in
@@ -49,9 +50,12 @@ struct APITokensView: View {
                 } footer: {
                     Text("Scopes are deny-by-default; a write scope implies its read scope. Revoked tokens stay listed as a record.")
                 }
+                .studioRowBackground()
             }
+            .studioList()
             .refreshable { [model] in await model.loadTokens(force: true) }
         }
+        .background(Color.studioBg)
         .navigationTitle("API Tokens")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -79,7 +83,7 @@ struct APITokensView: View {
         } message: { _ in
             Text("Requests using this token will be rejected immediately.")
         }
-        .alert("Couldn't revoke", isPresented: Binding(get: { revokeError != nil }, set: { if !$0 { revokeError = nil } })) {
+        .alert("Couldn’t revoke", isPresented: Binding(get: { revokeError != nil }, set: { if !$0 { revokeError = nil } })) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(revokeError ?? "")
@@ -208,7 +212,7 @@ struct CreateAPITokenView: View {
                     ScrollView {
                         CreatedTokenPanel(created: created)
                             .padding(StudioSpace.s6)
-                            .readableWidth(560)
+                            .readableWidth(.sheet)
                     }
                     .background(Color.studioBg)
                 } else {
@@ -236,9 +240,7 @@ struct CreateAPITokenView: View {
             }
             .interactiveDismissDisabled(created != nil || isSaving)
         }
-        #if os(macOS)
-        .frame(minWidth: 480, minHeight: 600)
-        #endif
+        .cardsiteSheet(.form)
     }
 
     private var form: some View {
@@ -249,6 +251,7 @@ struct CreateAPITokenView: View {
             } footer: {
                 Text("A scoped credential for programmatic access. The secret is shown once, right after creation.")
             }
+            .studioRowBackground()
 
             Section {
                 ForEach(resources) { resource in
@@ -263,6 +266,7 @@ struct CreateAPITokenView: View {
             } footer: {
                 Text("Scopes are deny-by-default; a write scope implies its read scope.")
             }
+            .studioRowBackground()
 
             Section {
                 Toggle("Expires", isOn: $expires.animation(StudioAnimation.base))
@@ -272,6 +276,7 @@ struct CreateAPITokenView: View {
             } footer: {
                 FormErrorText(message: error)
             }
+            .studioRowBackground()
         }
         .studioForm()
     }

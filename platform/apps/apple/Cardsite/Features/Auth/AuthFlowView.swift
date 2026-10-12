@@ -19,7 +19,7 @@ struct AuthFlowView: View {
             VStack(spacing: StudioSpace.s8) {
                 VStack(spacing: StudioSpace.s4) {
                     BrandMark(size: 56)
-                    StudioTwoToneTitle(String(localized: "Every resource"), accent: String(localized: "is a link."), style: .display)
+                    StudioTwoToneTitle(String(localized: "Every resource is a "), accent: String(localized: "link."), style: .display)
                         .multilineTextAlignment(.center)
                     Text("Create, host, and share pages, links, QR codes, sites, files, and more in seconds.")
                         .studioText(.lead)
@@ -48,11 +48,13 @@ struct AuthFlowView: View {
             }
             .padding(.horizontal, StudioSpace.s5)
             .padding(.vertical, StudioSpace.s10)
-            .readableWidth(440)
+            .readableWidth(.narrow)
         }
         .scrollDismissesKeyboard(.interactively)
         .background(Color.studioBg.ignoresSafeArea())
-        .animation(.default, value: mode)
+        // A short ease (a cross-fade in effect) as the forms swap, so the
+        // card's height change never springs, with or without Reduce Motion.
+        .animation(StudioAnimation.base, value: mode)
     }
 }
 
@@ -86,9 +88,9 @@ private struct SignInForm: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack {
-                Button("Forgot password?") { mode = .forgotPassword }
+                Button("Forgot Password?") { mode = .forgotPassword }
                 Spacer()
-                Button("Create an account") { mode = .register }
+                Button("Create an Account") { mode = .register }
                     .accessibilityIdentifier("auth.toSignUp")
             }
             .buttonStyle(.borderless)
@@ -172,7 +174,7 @@ private struct TwoFactorForm: View {
                 recoveryCode: useRecoveryCode ? trimmed : nil
             )
             if outcome == .twoFactorRequired {
-                error = String(localized: "That code didn't work. Check it and try again.")
+                error = String(localized: "That code didn’t work. Check it and try again.")
             }
         } catch {
             self.error = error.asAPIError.localizedDescription
@@ -276,7 +278,7 @@ private struct ForgotPasswordForm: View {
                              message: String(localized: "If an account exists for \(email), a reset link is on its way. Open it on any device, then sign in here."),
                              tone: .success)
             } else {
-                Text("We'll email you a link to choose a new password.")
+                Text("We’ll email you a link to choose a new password.")
                     .studioText(.uiSm).studioMuted()
                 StudioTextField(String(localized: "Email"), text: $email, placeholder: "you@example.com")
                     .plainEntry()
@@ -291,7 +293,7 @@ private struct ForgotPasswordForm: View {
                 }
                 .disabled(email.isEmpty)
             }
-            Button("Back to sign in") { mode = .signIn }
+            Button("Back to Sign In") { mode = .signIn }
                 .buttonStyle(.borderless)
                 .studioText(.uiSm)
         }
@@ -349,7 +351,7 @@ struct PasswordField: View {
                         .foregroundStyle(Color.studioText3)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(isRevealed ? Text("Hide password") : Text("Show password"))
+                .accessibilityLabel(isRevealed ? Text("Hide Password") : Text("Show Password"))
             }
             .padding(.horizontal, StudioSpace.s3)
             .frame(minHeight: 42)

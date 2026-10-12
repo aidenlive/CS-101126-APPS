@@ -86,7 +86,7 @@ struct SplashPageEditorView: View {
             } header: {
                 EditorSectionHeader(String(localized: "Basic"))
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             Section {
                 Stepper(value: $model.form.linkUnlockSeconds, in: SplashPageDraft.unlockSecondsRange) {
@@ -112,7 +112,7 @@ struct SplashPageEditorView: View {
             } header: {
                 EditorSectionHeader(String(localized: "Countdown"))
             }
-            .editorRowBackground()
+            .studioRowBackground()
 
             Section {
                 EditorTextField(String(localized: "Secondary button text"), text: $model.form.secondaryButtonName,
@@ -128,7 +128,7 @@ struct SplashPageEditorView: View {
                         .foregroundStyle(Color.studioText3)
                 }
             }
-            .editorRowBackground()
+            .studioRowBackground()
         }
         .onChange(of: model.form) { model.formChanged() }
     }

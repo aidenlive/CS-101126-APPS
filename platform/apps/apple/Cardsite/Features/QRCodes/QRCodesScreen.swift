@@ -12,6 +12,15 @@ struct QRCodesScreen: View {
     @State private var editing: QRCode? = nil
     @State private var pendingDelete: QRCode? = nil
     @State private var deleteError: String? = nil
+    @State private var hoveredID: QRCode.ID? = nil
+    @Environment(\.studioViewport) private var viewport
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
+    /// The narrowest card, scaled with the text so titles keep their room.
+    @ScaledMetric(relativeTo: .body) private var cardMin: CGFloat = StudioSpace.s16 * 2 + StudioSpace.s6
+    @ScaledMetric(relativeTo: .body) private var cardMax: CGFloat = StudioSpace.s16 * 4
 
     var body: some View {
         @Bindable var bindable = model
@@ -53,13 +62,13 @@ struct QRCodesScreen: View {
             titleVisibility: .visible,
             presenting: pendingDelete
         ) { code in
-            Button("Delete \u{201C}\(code.name)\u{201D}", role: .destructive) {
+            Button("Delete", role: .destructive) {
                 Task { await delete(code) }
             }
         } message: { _ in
             Text("This removes it from your workspace. Printed copies keep encoding the same content.")
         }
-        .alert("Couldn't delete", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
+        .alert(String(localized: "Couldn’t delete"), isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(deleteError ?? "")
@@ -78,7 +87,8 @@ struct QRCodesScreen: View {
                         QRCodeCard(code: code, typeLabel: QRCodeCatalog.fallbackLabel(code.type))
                     }
                 }
-                .padding(StudioSpace.s5)
+                .padding(.horizontal, viewport.contentPadding)
+                .padding(.vertical, StudioSpace.s5)
             }
             .redacted(reason: .placeholder)
             .allowsHitTesting(false)
@@ -91,15 +101,14 @@ struct QRCodesScreen: View {
                 StudioEmptyState(
                     systemImage: "qrcode",
                     title: String(localized: "No QR codes yet"),
-                    message: String(localized: "Make a code for a web address, a WiFi network, a contact card, an event or a payment. Point one at a short link and you can change where it goes after it's printed.")
+                    message: String(localized: "Make a code for a web address, a WiFi network, a contact card, an event or a payment. Point one at a short link and you can change where it goes after it’s printed.")
                 ) {
                     StudioButton(String(localized: "New QR Code"), systemImage: "plus", variant: .primary) {
                         isComposing = true
                     }
                 }
                 .padding(StudioSpace.s6)
-                .frame(maxWidth: 520)
-                .frame(maxWidth: .infinity)
+                .readableWidth(.sheet)
             }
             .refreshable { [list = model.list] in await list.refresh() }
         case .loaded:
@@ -130,14 +139,18 @@ struct QRCodesScreen: View {
                         .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
                 }
             }
-            .padding(StudioSpace.s5)
+            .padding(.horizontal, viewport.contentPadding)
+            .padding(.vertical, StudioSpace.s5)
         }
         .refreshable { [list = model.list] in await list.refresh() }
     }
 
     private func grid<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: 156, maximum: 260), spacing: StudioSpace.s4, alignment: .top)],
+            // At accessibility sizes the cards take the full width they're given.
+            columns: [dynamicTypeSize.isAccessibilitySize
+                      ? GridItem(.adaptive(minimum: cardMin), spacing: StudioSpace.s4, alignment: .top)
+                      : GridItem(.adaptive(minimum: cardMin, maximum: cardMax), spacing: StudioSpace.s4, alignment: .top)],
             alignment: .leading,
             spacing: StudioSpace.s4,
             content: content
@@ -151,24 +164,44 @@ struct QRCodesScreen: View {
         .buttonStyle(StudioPressStyle(scale: 0.98))
         .accessibilityIdentifier("qr.row.\(code.id)")
         .overlay(alignment: .topTrailing) {
-            Menu {
-                menuItems(for: code)
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(Color.studioText2)
-                    .frame(minWidth: StudioSpace.s10, minHeight: StudioSpace.s10)
-                    .background(Color.studioSurface, in: Circle())
-                    .overlay(Circle().strokeBorder(Color.studioBorder, lineWidth: 0.5))
-                    .contentShape(Circle())
+            if showsMenuButton(for: code) {
+                Menu {
+                    menuItems(for: code)
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Color.studioText2)
+                        .frame(width: StudioSpace.s8, height: StudioSpace.s8)
+                        .background(Color.studioSurface, in: Circle())
+                        .overlay(Circle().strokeBorder(Color.studioBorder, lineWidth: 0.5))
+                        // The full 44pt target around the small disc.
+                        .frame(minWidth: StudioLayout.tapTarget, minHeight: StudioLayout.tapTarget)
+                        .contentShape(Rectangle())
+                }
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+                .menuIndicator(.hidden)
+                .accessibilityLabel(Text("Actions for \(code.name)"))
+                .transition(.opacity)
             }
-            .menuStyle(.button)
-            .buttonStyle(.plain)
-            .menuIndicator(.hidden)
-            .padding(StudioSpace.s2)
-            .accessibilityLabel(Text("Actions for \(code.name)"))
+        }
+        .onHover { isHovering in
+            withAnimation(StudioAnimation.base) { hoveredID = isHovering ? code.id : (hoveredID == code.id ? nil : hoveredID) }
         }
         .contextMenu { menuItems(for: code) }
+    }
+
+    /// The card's own menu button: on hover on the Mac, always on a regular
+    /// iPad. On iPhone the context menu (long press) carries the same items,
+    /// and the button would sit over the artwork.
+    private func showsMenuButton(for code: QRCode) -> Bool {
+        #if os(macOS)
+        return hoveredID == code.id
+        #elseif os(iOS)
+        return sizeClass == .regular
+        #else
+        return true
+        #endif
     }
 
     @ViewBuilder
@@ -234,7 +267,9 @@ struct QRCodeCard: View {
                             .font(.caption)
                             .foregroundStyle(Color.studioText3)
                             .accessibilityHidden(true)
-                        StudioStatusPill(typeLabel)
+                        Text(typeLabel)
+                            .studioText(.uiSm)
+                            .foregroundStyle(Color.studioText3)
                     }
                     if let created = code.createdAt {
                         Text("Created \(created.formatted(date: .abbreviated, time: .omitted))")
@@ -242,7 +277,7 @@ struct QRCodeCard: View {
                             .foregroundStyle(Color.studioText3)
                     }
                 }
-                .padding(StudioSpace.s4)
+                .padding(StudioSpace.s5)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }

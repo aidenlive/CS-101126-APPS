@@ -14,7 +14,7 @@ import CardsiteKit
                    errors: .init(password: errors[.password], …))
 
  The stored password is a digest, so it is never prefilled (ADR-0083):
- - an empty field means "keep what's there" (`PasswordChange.keep`);
+ - an empty field means "keep what’s there" (`PasswordChange.keep`);
  - typing sets or replaces it (`.set`);
  - "Remove password protection" is its own switch (`.remove`), shown only
    when one is set.
@@ -72,7 +72,7 @@ struct GatingSection: View {
         } header: {
             EditorSectionHeader(title)
         }
-        .editorRowBackground()
+        .studioRowBackground()
     }
 
     @ViewBuilder

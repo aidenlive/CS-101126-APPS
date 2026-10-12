@@ -35,12 +35,9 @@ struct ResourceListScreen: View {
             if let model {
                 ResourceListView(model: model)
             } else {
-                ProgressView()
-                    .controlSize(.large)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.studioBg)
-                    .accessibilityLabel(Text("Loading"))
+                ListSkeletonView()
                     .navigationTitle(kind.pluralTitle)
+                    .inlineNavigationTitle()
             }
         }
         .task {
@@ -88,6 +85,7 @@ private struct ResourceListView: View {
         }
         .background(Color.studioBg)
         .navigationTitle(kind.pluralTitle)
+        .inlineNavigationTitle()
         .searchable(text: $model.searchText, prompt: Text(kind.searchPrompt))
         .task(id: model.searchText) { [model] in
             // Debounced: the server is asked once typing pauses.
@@ -123,9 +121,7 @@ private struct ResourceListView: View {
                     opened = created
                 }
             }
-            #if os(macOS)
-            .frame(minWidth: 520, minHeight: 600)
-            #endif
+            .cardsiteSheet(.page)
         }
         .sheet(item: $statisticsFor) { item in
             NavigationStack {
@@ -136,9 +132,7 @@ private struct ResourceListView: View {
                         }
                     }
             }
-            #if os(macOS)
-            .frame(minWidth: 640, minHeight: 560)
-            #endif
+            .cardsiteSheet(.page)
         }
         .confirmationDialog(
             kind.deleteConfirmation,
@@ -146,7 +140,7 @@ private struct ResourceListView: View {
             titleVisibility: .visible,
             presenting: pendingDelete
         ) { item in
-            Button(String(localized: "Delete \(item.name)"), role: .destructive) {
+            Button("Delete", role: .destructive) {
                 Task { await delete(item) }
             }
         } message: { _ in
@@ -165,58 +159,33 @@ private struct ResourceListView: View {
 
     private var rows: some View {
         List {
+            ListPageHead(kicker: kind.kicker, title: kind.pluralTitle, description: kind.blurb)
             if let error = model.list.refreshError {
                 RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
+                    .studioClearRow()
             }
             if model.visibleItems.isEmpty, !model.searchText.isEmpty {
                 ContentUnavailableView.search(text: model.searchText)
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
+                    .studioClearRow()
             }
-            ForEach(Array(model.visibleItems.enumerated()), id: \.element.id) { index, item in
-                NavigationLink {
-                    ResourceEditorView(kind: kind, item: item, list: model)
-                } label: {
-                    ResourceRow(
-                        kind: kind,
-                        item: item,
-                        address: model.displayAddress(for: item, addresses: app.addresses),
-                        isToggling: model.togglingIDs.contains(item.id),
-                        setEnabled: { isEnabled in Task { await setEnabled(item, isEnabled) } }
-                    )
+            Section {
+                ForEach(Array(model.visibleItems.enumerated()), id: \.element.id) { index, item in
+                    NavigationLink {
+                        ResourceEditorView(kind: kind, item: item, list: model)
+                    } label: {
+                        ResourceRow(
+                            kind: kind,
+                            item: item,
+                            address: model.displayAddress(for: item, addresses: app.addresses),
+                            isToggling: model.togglingIDs.contains(item.id),
+                            setEnabled: { isEnabled in Task { await setEnabled(item, isEnabled) } }
+                        )
+                    }
+                    .accessibilityIdentifier("res.\(kind.identifier).row.\(index)")
+                    .contextMenu { ResourceMenuItems(actions: actions(for: item)) }
+                    .resourceSwipeActions(actions(for: item))
                 }
-                .accessibilityIdentifier("res.\(kind.identifier).row.\(index)")
-                .listRowBackground(Color.studioSurface)
-                .contextMenu { menu(for: item) }
-                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    Button(role: .destructive) { pendingDelete = item } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                    if kind.supportsDuplicate {
-                        Button { Task { await duplicate(item) } } label: {
-                            Label("Duplicate", systemImage: "plus.square.on.square")
-                        }
-                        .tint(.studioInfo)
-                    }
-                    if kind.hasAddress {
-                        Button { statisticsFor = item } label: {
-                            Label("Statistics", systemImage: "chart.bar.xaxis")
-                        }
-                        .tint(.studioAccentLine)
-                    }
-                }
-                .swipeActions(edge: .leading) {
-                    if let url = model.publicURL(for: item, addresses: app.addresses) {
-                        Button {
-                            copy(url)
-                        } label: {
-                            Label("Copy", systemImage: "doc.on.doc")
-                        }
-                        .tint(.studioInfo)
-                    }
-                }
+                .studioRowBackground()
             }
             if model.list.hasMore {
                 HStack {
@@ -224,68 +193,24 @@ private struct ResourceListView: View {
                     ProgressView()
                     Spacer()
                 }
-                .listRowBackground(Color.clear)
+                .studioClearRow()
                 .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(Color.studioBg)
+        .studioList()
         .refreshable { [list = model.list] in await list.refresh() }
     }
 
-    @ViewBuilder
-    private func menu(for item: ResourceItem) -> some View {
-        if let url = model.publicURL(for: item, addresses: app.addresses) {
-            Button {
-                copy(url)
-            } label: {
-                Label("Copy public URL", systemImage: "doc.on.doc")
-            }
-            Link(destination: url) {
-                Label("Open public link", systemImage: "safari")
-            }
-            ShareLink(item: url) {
-                Label("Share…", systemImage: "square.and.arrow.up")
-            }
-        }
-        if let slug = item.slug, let card = app.addresses.cardURL(for: slug) {
-            Link(destination: card) {
-                Label("Card View", systemImage: "rectangle.portrait.on.rectangle.portrait")
-            }
-        }
-        if kind.hasAddress {
-            Divider()
-            Button {
-                statisticsFor = item
-            } label: {
-                Label("View statistics", systemImage: "chart.bar.xaxis")
-            }
-        }
-        if kind.supportsDuplicate {
-            Button {
-                Task { await duplicate(item) }
-            } label: {
-                Label("Duplicate", systemImage: "plus.square.on.square")
-            }
-        }
-        if kind.hasAddress {
-            Button {
-                Task { await setEnabled(item, !item.isEnabled) }
-            } label: {
-                item.isEnabled
-                    ? Label("Disable", systemImage: "pause.circle")
-                    : Label("Enable", systemImage: "play.circle")
-            }
-        }
-        Divider()
-        Button(role: .destructive) { pendingDelete = item } label: {
-            Label("Delete…", systemImage: "trash")
-        }
-    }
-
-    private func copy(_ url: URL) {
-        Pasteboard.copy(url.absoluteString)
-        Haptics.success()
+    private func actions(for item: ResourceItem) -> ResourceActionSet {
+        ResourceActionSet(
+            url: model.publicURL(for: item, addresses: app.addresses),
+            cardURL: item.slug.flatMap { app.addresses.cardURL(for: $0) },
+            isEnabled: kind.hasAddress ? item.isEnabled : nil,
+            statistics: kind.hasAddress ? { statisticsFor = item } : nil,
+            duplicate: kind.supportsDuplicate ? { Task { await duplicate(item) } } : nil,
+            setEnabled: kind.hasAddress ? { isEnabled in Task { await setEnabled(item, isEnabled) } } : nil,
+            delete: { pendingDelete = item }
+        )
     }
 
     private func setEnabled(_ item: ResourceItem, _ isEnabled: Bool) async {
@@ -319,9 +244,9 @@ private struct ResourceListView: View {
     }
 }
 
-/// Row anatomy, as the links list: leading glyph, the name with its
-/// status, the address and the type's detail underneath, clicks and the
-/// on/off switch trailing.
+/// A resource in the shared row anatomy: the name with its state, the
+/// address and the type's detail underneath, clicks and the Live switch
+/// trailing.
 struct ResourceRow: View {
     let kind: ResourceKind
     let item: ResourceItem
@@ -330,63 +255,21 @@ struct ResourceRow: View {
     var setEnabled: (@MainActor (Bool) -> Void)?
 
     var body: some View {
-        HStack(spacing: StudioSpace.s3) {
-            Image(systemName: kind.systemImage)
-                .imageScale(.medium)
-                .foregroundStyle(item.isEnabled ? Color.studioAccentLine : Color.studioText3)
-                .frame(width: StudioSpace.s8, height: StudioSpace.s8)
-                .background(Color.studioSurface2, in: RoundedRectangle(cornerRadius: StudioRadius.sm, style: .continuous))
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                HStack(spacing: StudioSpace.s2) {
-                    Text(verbatim: item.name)
-                        .studioText(.ui)
-                        .foregroundStyle(Color.studioText)
-                        .lineLimit(2)
-                    if kind.hasAddress, !item.isEnabled {
-                        StudioStatusPill(String(localized: "Off"), tone: .neutral)
-                    } else if item.isLapsing {
-                        StudioStatusPill(String(localized: "Lapsing"), tone: .warning)
-                    }
-                }
-                if let address {
-                    Text(verbatim: address)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-                HStack(spacing: StudioSpace.s2) {
-                    if !item.detail.isEmpty {
-                        Text(verbatim: item.detail)
-                            .lineLimit(2)
-                    }
-                    Spacer(minLength: StudioSpace.s2)
-                    if let clicks = item.clicks {
-                        Label(clicks.grouped, systemImage: "cursorarrow.click")
-                            .labelStyle(.titleAndIcon)
-                            .monospacedDigit()
-                            .accessibilityLabel(Text("\(clicks) clicks"))
-                    }
-                }
-            }
-            .studioText(.uiSm)
-            .foregroundStyle(Color.studioText3)
-            .accessibilityElement(children: .combine)
-
+        CardsiteResourceRow(
+            systemImage: kind.systemImage,
+            isLive: item.isEnabled,
+            title: Text(verbatim: item.name),
+            subtitle: address.map { Text(verbatim: $0) },
+            detail: item.detail.isEmpty ? nil : Text(verbatim: item.detail),
+            state: kind.hasAddress
+                ? ResourceState(isEnabled: item.isEnabled, isLapsing: item.isLapsing)
+                : (item.isLapsing ? .lapsing : nil),
+            clicks: item.clicks
+        ) {
             if kind.hasAddress, let setEnabled {
-                Toggle(isOn: Binding(get: { [isOn = item.isEnabled] in isOn }, set: { [setEnabled] in setEnabled($0) })) {
-                    Text("Active")
-                }
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .tint(Color.studioAccent)
-                .disabled(isToggling)
-                .accessibilityLabel(Text("Active"))
-                .accessibilityValue(item.isEnabled ? Text("On") : Text("Off"))
+                LiveSwitch(isOn: item.isEnabled, isBusy: isToggling, set: setEnabled)
             }
         }
-        .padding(.vertical, StudioSpace.s1)
     }
 }
 
