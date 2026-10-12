@@ -1,39 +1,85 @@
 import SwiftUI
-import Charts
 import StudioKit
 import CardsiteKit
 
+/// A short link: its status and traffic at the top, then every setting the
+/// web's link page has, in the same sections (LinkDetailPage.tsx): address
+/// and destination, schedule and targeting, gating, cloaking and UTM,
+/// advanced, and the danger zone.
+///
+/// Edits are held until Save (toolbar, ⌘S). Leaving with changes asks first.
+/// The enabled switch, delete and the header actions act at once.
 struct LinkDetailView: View {
-    @Environment(AppModel.self) private var app
-    @Environment(LinksModel.self) private var model
-    let link: Resource
+    @Environment(LinksModel.self) private var links
+    @State private var loadedModel: LinkDetailModel?
 
-    @State private var traffic: LinkTrafficModel?
-    @State private var isEditingDestination = false
-    @State private var isTogglingEnabled = false
-    @State private var actionError: String?
+    let link: Resource
+    var onDeleted: () -> Void
+    private var suppliedModel: LinkDetailModel?
+
+    init(link: Resource, onDeleted: @escaping () -> Void = {}) {
+        self.link = link
+        self.onDeleted = onDeleted
+    }
+
+    /// Preview seam: a model already holding a link.
+    init(model: LinkDetailModel) {
+        self.link = model.seed
+        self.onDeleted = {}
+        self.suppliedModel = model
+    }
+
+    private var model: LinkDetailModel? { suppliedModel ?? loadedModel }
+
+    var body: some View {
+        Group {
+            if let model {
+                LinkDetailForm(model: model, options: links.options, onDeleted: onDeleted)
+            } else {
+                ProgressView()
+                    .controlSize(.large)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.studioBg)
+                    .accessibilityLabel(Text("Loading"))
+            }
+        }
+        .task {
+            if model == nil {
+                loadedModel = LinkDetailModel(seed: link, links: links)
+            }
+        }
+    }
+}
+
+// MARK: - Form
+
+private struct LinkDetailForm: View {
+    @Environment(AppModel.self) private var app
+    @Environment(\.dismiss) private var dismiss
+    @Bindable var model: LinkDetailModel
+    let options: ResourceOptionsModel
+    let onDeleted: () -> Void
+
+    @State private var isConfirmingDelete = false
+    @State private var isDeleting = false
+    @State private var deleteError: String?
     @State private var copied = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: StudioSpace.s6) {
-                addressCard
-                destinationCard
-                if let traffic {
-                    TrafficSection(model: traffic)
-                }
-                FormErrorText(message: actionError)
+        Group {
+            if let error = model.loadError, model.detail == nil {
+                ErrorStateView(error: error) { [model] in await model.load() }
+                    .background(Color.studioBg)
+            } else {
+                form
             }
-            .padding(StudioSpace.s6)
-            .readableWidth(760)
         }
-        .background(Color.studioBg)
-        .navigationTitle(link.slug)
+        .navigationTitle(Text(verbatim: "/" + model.slug))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {
-            if let url = app.addresses.url(for: link.slug) {
+            if let url = publicURL {
                 ToolbarItem(placement: .primaryAction) {
                     ShareLink(item: url) {
                         Label("Share", systemImage: "square.and.arrow.up")
@@ -41,85 +87,215 @@ struct LinkDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $isEditingDestination) {
-            DestinationEditor(link: link)
+        .unsavedChanges(
+            isDirty: model.isDirty,
+            isSaving: model.isSaving,
+            save: { [model] in await model.save() },
+            discard: { [model] in model.discard() }
+        )
+        .navigationDestination(for: StatisticsRoute.self) { route in
+            StatisticsScreen(route: route)
         }
-        .task {
-            if traffic == nil {
-                let traffic = LinkTrafficModel(client: model.client, linkID: link.id)
-                traffic.onError = app.handle
-                self.traffic = traffic
-            }
+        .task { [model] in await model.load() }
+        .task { [options] in await options.loadIfNeeded() }
+        .onChange(of: model.form) { old, new in model.formChanged(from: old, to: new) }
+        .confirmationDialog(
+            String(localized: "Delete /\(model.slug)?"),
+            isPresented: $isConfirmingDelete,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) { Task { await delete() } }
+        } message: {
+            Text("Its address stops resolving immediately. This cannot be undone.")
+        }
+        .alert("Couldn’t delete", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(deleteError ?? "")
         }
     }
 
-    // MARK: Address
+    private var form: some View {
+        Form {
+            header
+            if let error = model.refreshError {
+                Section {
+                    RefreshErrorBanner(error: error) { model.dismissRefreshError() }
+                }
+                .listRowBackground(Color.clear)
+            }
+            if let current = model.form {
+                editor(binding(fallback: current))
+            } else {
+                Section {
+                    HStack(spacing: StudioSpace.s3) {
+                        ProgressView()
+                        Text("Loading settings…")
+                            .studioText(.uiSm)
+                            .foregroundStyle(Color.studioText3)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .editorRowBackground()
+            }
+            dangerZone
+        }
+        .resourceEditorForm()
+        .refreshable { [model, options] in
+            async let link: Void = model.load()
+            async let pickers: Void = options.load()
+            _ = await (link, pickers)
+        }
+        .animation(StudioAnimation.base, value: model.form == nil)
+    }
 
-    private var addressCard: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioSpace.s4) {
-                HStack {
-                    StudioKicker(String(localized: "Address"))
-                    Spacer()
-                    if !link.isEnabled {
-                        StudioStatusPill(String(localized: "Off"), tone: .neutral)
-                    } else if link.isLapsing {
-                        StudioStatusPill(String(localized: "Lapsing"), tone: .warning)
-                    } else {
-                        StudioStatusPill(String(localized: "Live"), tone: .success)
+    /// A binding to the form that never reads nil while this view exists.
+    private func binding(fallback: LinkForm) -> Binding<LinkForm> {
+        Binding(
+            get: { model.form ?? fallback },
+            set: { model.form = $0 }
+        )
+    }
+
+    private var publicURL: URL? {
+        guard let detail = model.detail else { return app.addresses.url(for: model.slug) }
+        return AddressField.liveURL(slug: detail.slug, domainID: detail.domainID,
+                                    domains: options.domains, defaultHost: app.addresses.publicHost)
+    }
+
+    private var displayAddress: String {
+        if let url = publicURL, let host = url.host() {
+            return "\(host)\(url.path())"
+        }
+        return app.addresses.display(for: model.slug)
+    }
+
+    // MARK: Header
+
+    private var header: some View {
+        Section {
+            VStack(alignment: .leading, spacing: StudioSpace.s3) {
+                HStack(spacing: StudioSpace.s2) {
+                    statusPill
+                    if model.didJustSave {
+                        StudioStatusPill(String(localized: "Saved"), tone: .success)
+                            .transition(.opacity)
                     }
                 }
-                Text(verbatim: app.addresses.display(for: link.slug))
+                Text(verbatim: displayAddress)
                     .studioText(.title)
                     .foregroundStyle(Color.studioText)
                     .textSelection(.enabled)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.6)
-
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: StudioSpace.s2) { addressActions }
-                    VStack(alignment: .leading, spacing: StudioSpace.s2) { addressActions }
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.7)
+                if let destination = model.destination, !destination.isEmpty {
+                    Text(verbatim: destination)
+                        .studioText(.uiSm)
+                        .foregroundStyle(Color.studioText3)
+                        .lineLimit(2)
+                        .truncationMode(.middle)
                 }
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: StudioSpace.s2) { headerActions }
+                    VStack(alignment: .leading, spacing: StudioSpace.s2) { headerActions }
+                }
+                .padding(.top, StudioSpace.s1)
+            }
+            .padding(.vertical, StudioSpace.s2)
 
-                if link.isLapsing {
-                    StudioBanner(
-                        lead: String(localized: "This address is in its release window."),
-                        message: String(localized: "It may be released to others soon. How addresses are kept: cardsite.com/url-lifecycle."),
-                        tone: .warning
-                    )
+            Toggle(isOn: Binding(
+                get: { model.isEnabled },
+                set: { newValue in Task { await model.setEnabled(newValue) } }
+            )) {
+                VStack(alignment: .leading, spacing: StudioSpace.s1) {
+                    model.isEnabled ? Text("Active") : Text("Disabled")
+                    Text(model.isEnabled
+                         ? String(localized: "Resolving")
+                         : String(localized: "Returns 404. The address stays yours."))
+                        .studioText(.uiSm)
+                        .foregroundStyle(Color.studioText3)
                 }
             }
+            .toggleStyle(.switch)
+            .disabled(model.isTogglingEnabled || model.detail == nil)
+            if let error = model.toggleError {
+                FormErrorText(message: error)
+            }
+
+            figures
+
+            NavigationLink(value: StatisticsRoute(linkID: model.linkID, subtitle: displayAddress)) {
+                Label("Full statistics", systemImage: "chart.bar.xaxis")
+            }
+            if let url = publicURL {
+                Button {
+                    app.composeQRCode(for: url)
+                } label: {
+                    Label("Create QR code", systemImage: "qrcode")
+                }
+            }
+
+            if model.isLapsing {
+                StudioBanner(
+                    lead: String(localized: "This address is in its release window."),
+                    message: String(localized: "It may be released to others soon. How addresses are kept: cardsite.com/url-lifecycle."),
+                    tone: .warning
+                )
+            }
+        }
+        .editorRowBackground()
+    }
+
+    @ViewBuilder
+    private var statusPill: some View {
+        if !model.isEnabled {
+            StudioStatusPill(String(localized: "Off"), tone: .neutral)
+        } else if model.isLapsing {
+            StudioStatusPill(String(localized: "Lapsing"), tone: .warning)
+        } else {
+            StudioStatusPill(String(localized: "Live"), tone: .success)
         }
     }
 
     @ViewBuilder
-    private var addressActions: some View {
+    private var headerActions: some View {
         StudioButton(copied ? String(localized: "Copied") : String(localized: "Copy"),
                      systemImage: copied ? "checkmark" : "doc.on.doc",
                      variant: .primary) {
             copy()
         }
-        if let url = app.addresses.url(for: link.slug) {
-            ShareLink(item: url) {
-                Label("Share", systemImage: "square.and.arrow.up")
-            }
-            .buttonStyle(.bordered)
+        if let url = publicURL {
             Link(destination: url) {
                 Label("Open", systemImage: "safari")
             }
             .buttonStyle(.bordered)
         }
-        if let card = app.addresses.cardURL(for: link.slug) {
+        if let card = app.addresses.cardURL(for: model.slug) {
             Link(destination: card) {
-                Label("View Card", systemImage: "rectangle.portrait.on.rectangle.portrait")
+                Label("Card View", systemImage: "rectangle.portrait.on.rectangle.portrait")
             }
             .buttonStyle(.bordered)
-            .accessibilityHint("Opens the summary card at \(app.addresses.display(for: "@" + link.slug))")
+            .accessibilityHint(Text("Opens the summary card at \(app.addresses.display(for: "@" + model.slug))"))
         }
     }
 
+    private var figures: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: StudioSpace.s4) { figureItems }
+            VStack(alignment: .leading, spacing: StudioSpace.s3) { figureItems }
+        }
+        .padding(.vertical, StudioSpace.s1)
+    }
+
+    @ViewBuilder
+    private var figureItems: some View {
+        HeaderFigure(title: String(localized: "Clicks (30 d)"), value: model.recent?.pageviews)
+        HeaderFigure(title: String(localized: "Visitors (30 d)"), value: model.recent?.visitors)
+        HeaderFigure(title: String(localized: "All time"), value: model.clicks)
+    }
+
     private func copy() {
-        guard let url = app.addresses.url(for: link.slug) else { return }
+        guard let url = publicURL else { return }
         Pasteboard.copy(url.absoluteString)
         Haptics.success()
         copied = true
@@ -129,266 +305,290 @@ struct LinkDetailView: View {
         }
     }
 
-    // MARK: Destination
-
-    private var destinationCard: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioSpace.s4) {
-                StudioKicker(String(localized: "Destination"))
-                if let destination = link.destination, let url = URL(string: destination) {
-                    Link(destination: url) {
-                        Text(verbatim: destination)
-                            .studioText(.body)
-                            .multilineTextAlignment(.leading)
-                            .lineLimit(3)
-                    }
-                    .textSelection(.enabled)
-                } else {
-                    Text("No destination").studioText(.body).studioMuted()
-                }
-                HStack(spacing: StudioSpace.s2) {
-                    StudioButton(String(localized: "Change Destination"), systemImage: "pencil", variant: .outline) {
-                        isEditingDestination = true
-                    }
-                    Spacer()
-                }
-                Divider()
-                Toggle(isOn: Binding(
-                    get: { link.isEnabled },
-                    set: { newValue in Task { await setEnabled(newValue) } }
-                )) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Address is live").studioText(.ui)
-                        Text("When off, visitors see a not-found page. The address stays yours.")
-                            .studioText(.uiSm)
-                            .studioMuted()
-                    }
-                }
-                .toggleStyle(.switch)
-                .disabled(isTogglingEnabled)
-            }
-        }
-    }
-
-    private func setEnabled(_ enabled: Bool) async {
-        isTogglingEnabled = true
-        defer { isTogglingEnabled = false }
-        actionError = nil
-        do {
-            _ = try await model.update(link, isEnabled: enabled)
-        } catch {
-            actionError = error.asAPIError.localizedDescription
-        }
-    }
-}
-
-// MARK: - Traffic
-
-private struct TrafficSection: View {
-    @Bindable var model: LinkTrafficModel
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: StudioSpace.s4) {
-            HStack(alignment: .firstTextBaseline) {
-                StudioSectionHeader(String(localized: "Traffic"))
-                Spacer()
-                Picker("Period", selection: $model.window) {
-                    ForEach(LinkTrafficModel.Window.allCases) { window in
-                        Text(window.title).tag(window)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .fixedSize()
-            }
-            // Reloads on appear and whenever the period changes; SwiftUI
-            // cancels the previous load, so a fast switch can't land late.
-            .task(id: model.window) { await model.load() }
-
-            switch model.state {
-            case .idle, .loading:
-                StudioCard {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, minHeight: 180)
-                }
-            case .failed(let error):
-                StudioCard {
-                    VStack(spacing: StudioSpace.s3) {
-                        Text(error.localizedDescription).studioText(.uiSm).studioMuted()
-                            .multilineTextAlignment(.center)
-                        StudioButton(String(localized: "Try Again"), systemImage: "arrow.clockwise", variant: .outline) {
-                            Task { await model.load() }
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            case .loaded(let snapshot):
-                content(snapshot)
-            }
-        }
-    }
+    // MARK: Editor sections
 
     @ViewBuilder
-    private func content(_ snapshot: LinkTrafficModel.Snapshot) -> some View {
-        HStack(spacing: StudioSpace.s3) {
-            StatTile(title: String(localized: "Views"), value: snapshot.totalViews)
-            StatTile(title: String(localized: "Visitors a day"), value: snapshot.averageDailyVisitors)
-        }
-        StudioCard {
-            if snapshot.days.isEmpty {
-                Text("No visits in this period yet. Share the address and they'll show up here.")
-                    .studioText(.uiSm)
-                    .studioMuted()
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity, minHeight: 160)
-            } else {
-                Chart(snapshot.days) { day in
-                    if let date = day.day {
-                        BarMark(
-                            x: .value("Day", date, unit: .day),
-                            y: .value("Views", day.pageviews)
-                        )
-                        .foregroundStyle(Color.studioAccentLine)
-                        .cornerRadius(3)
+    private func editor(_ form: Binding<LinkForm>) -> some View {
+        let saved = model.savedForm ?? form.wrappedValue
+
+        Section {
+            AddressField(
+                slug: form.slug,
+                domainID: form.domainID,
+                domains: options.usableDomains(keeping: form.wrappedValue.domainID),
+                defaultHost: app.addresses.publicHost,
+                error: model.errors[.slug],
+                isSaved: form.wrappedValue.slug == saved.slug && form.wrappedValue.domainID == saved.domainID
+            )
+            EditorTextField(
+                String(localized: "Destination URL"),
+                text: form.destination,
+                prompt: "https://example.com",
+                kind: .url,
+                help: String(localized: "The address and any printed QR codes keep working and send people here instead."),
+                error: model.errors[.destination]
+            )
+            if let archive = model.detail?.archiveURL {
+                VStack(alignment: .leading, spacing: StudioSpace.s1) {
+                    Text("Archive address")
+                        .studioText(.uiSm)
+                        .foregroundStyle(Color.studioText2)
+                    Link(destination: archive) {
+                        Text(verbatim: archive.absoluteString)
+                            .studioText(.ui)
+                            .multilineTextAlignment(.leading)
                     }
+                    Text("This name was released, so it is free for anyone to claim. Nothing was deleted — what was here stays readable at this address.")
+                        .studioText(.uiSm)
+                        .foregroundStyle(Color.studioText3)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .chartYAxis { AxisMarks(position: .leading) }
-                .frame(height: 200)
+                .padding(.vertical, StudioSpace.s1)
+            }
+        } header: {
+            EditorSectionHeader(String(localized: "Address & destination"))
+        } footer: {
+            if options.pickersFailed {
+                Text("Domains, projects and splash pages couldn’t be loaded. Pull to refresh to try again.")
+                    .studioText(.uiSm)
+                    .foregroundStyle(Color.studioText3)
+            } else if options.usableDomains().isEmpty {
+                Text("Verified custom domains appear here as address options.")
+                    .studioText(.uiSm)
+                    .foregroundStyle(Color.studioText3)
             }
         }
-        if !snapshot.referrers.isEmpty || !snapshot.countries.isEmpty {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: StudioSpace.s3) {
-                    BreakdownList(title: String(localized: "Top referrers"), rows: snapshot.referrers)
-                    BreakdownList(title: String(localized: "Top countries"), rows: snapshot.countries, isCountry: true)
+        .editorRowBackground()
+
+        ScheduleSection(
+            isScheduled: form.isScheduled,
+            start: form.start,
+            end: form.end,
+            timezone: form.timezone,
+            canRemove: !form.wrappedValue.hasSavedSchedule,
+            error: model.errors[.schedule],
+            title: String(localized: "Schedule & targeting")
+        )
+
+        DisplayRulesSection(
+            rules: form.displayRules,
+            options: options.targeting.value,
+            loadFailed: options.targeting.error != nil,
+            isLocked: !options.allowsTargeting,
+            error: model.errors[.targeting]
+        )
+
+        GatingSection(
+            password: form.password,
+            hasPassword: saved.settings.hasPassword,
+            clicksLimit: form.clicksLimitText,
+            expirationURL: form.settings.expirationURL,
+            sensitiveContent: form.settings.sensitiveContent,
+            passwordLocked: !options.allowsPasswordProtection,
+            errors: .init(password: model.errors[.password],
+                          clicksLimit: model.errors[.clicksLimit],
+                          expirationURL: model.errors[.expirationURL])
+        )
+
+        Section {
+            Toggle(isOn: form.settings.cloakingEnabled) {
+                Text("Enable link cloaking")
+            }
+            .toggleStyle(.switch)
+            if form.wrappedValue.settings.cloakingEnabled {
+                EditorTextField(String(localized: "Cloaking title"), text: form.settings.cloakingTitle,
+                                prompt: String(localized: "Page title shown in browser tab"))
+                EditorTextField(String(localized: "Meta description"), text: form.settings.cloakingMetaDescription,
+                                prompt: String(localized: "Page meta description"))
+            }
+            EditorTextField(String(localized: "UTM source"), text: form.settings.utmSource, prompt: "google", kind: .plain)
+            EditorTextField(String(localized: "UTM medium"), text: form.settings.utmMedium, prompt: "cpc", kind: .plain)
+            EditorTextField(String(localized: "UTM campaign"), text: form.settings.utmCampaign, prompt: "spring_sale", kind: .plain)
+        } header: {
+            EditorSectionHeader(String(localized: "Cloaking & UTM"))
+        } footer: {
+            Text("Cloaking shows the destination inside a page at your address. UTM parameters are added to the destination so its analytics see where visits came from.")
+                .studioText(.uiSm)
+                .foregroundStyle(Color.studioText3)
+        }
+        .editorRowBackground()
+
+        Section {
+            Picker(selection: form.settings.redirectStatus) {
+                ForEach(RedirectStatus.allCases) { status in
+                    Text(status.title).tag(status)
                 }
-                VStack(spacing: StudioSpace.s3) {
-                    BreakdownList(title: String(localized: "Top referrers"), rows: snapshot.referrers)
-                    BreakdownList(title: String(localized: "Top countries"), rows: snapshot.countries, isCountry: true)
+            } label: {
+                Text("HTTP redirect status")
+            }
+            Toggle(isOn: form.settings.forwardQueryParameters) {
+                Text("Forward query parameters to destination")
+            }
+            .toggleStyle(.switch)
+            Picker(selection: form.splashPageID) {
+                Text("None").tag(Int?.none)
+                ForEach(splashPages(keeping: form.wrappedValue.splashPageID)) { page in
+                    Text(verbatim: page.displayName).tag(Int?.some(page.id))
+                }
+            } label: {
+                Text("Splash page")
+            }
+            Picker(selection: form.projectID) {
+                Text("None").tag(Int?.none)
+                ForEach(projects(keeping: form.wrappedValue.projectID)) { project in
+                    Text(verbatim: project.name).tag(Int?.some(project.id))
+                }
+            } label: {
+                Text("Project")
+            }
+        } header: {
+            EditorSectionHeader(String(localized: "Advanced"))
+        }
+        .editorRowBackground()
+
+        if let message = model.formError {
+            Section {
+                FormErrorText(message: message)
+            }
+            .editorRowBackground()
+        }
+    }
+
+    /// The picker's list, plus the stored reference if the list doesn't have
+    /// it (not loaded yet, or deleted), so a Picker never has a dangling tag.
+    private func splashPages(keeping id: Int?) -> [SplashPageOption] {
+        var pages = options.splashPages
+        if let id, !pages.contains(where: { $0.id == id }) {
+            pages.append(SplashPageOption(id: id, name: String(localized: "Splash page #\(id)")))
+        }
+        return pages
+    }
+
+    private func projects(keeping id: Int?) -> [ProjectOption] {
+        var projects = options.projects
+        if let id, !projects.contains(where: { $0.id == id }) {
+            projects.append(ProjectOption(id: id, name: String(localized: "Project #\(id)")))
+        }
+        return projects
+    }
+
+    // MARK: Danger zone
+
+    private var dangerZone: some View {
+        Section {
+            Button(role: .destructive) {
+                isConfirmingDelete = true
+            } label: {
+                HStack {
+                    Label("Delete link", systemImage: "trash")
+                    Spacer()
+                    if isDeleting { ProgressView() }
                 }
             }
+            .disabled(isDeleting)
+        } header: {
+            EditorSectionHeader(String(localized: "Danger zone"))
+        } footer: {
+            Text("The address stops resolving immediately. This cannot be undone.")
+                .studioText(.uiSm)
+                .foregroundStyle(Color.studioText3)
+        }
+        .editorRowBackground()
+    }
+
+    private func delete() async {
+        isDeleting = true
+        defer { isDeleting = false }
+        do {
+            try await model.delete()
+            model.discard()
+            onDeleted()
+            dismiss()
+        } catch {
+            deleteError = error.asAPIError.localizedDescription
         }
     }
 }
 
-struct StatTile: View {
+/// A figure in the header: label over number, "—" while unknown.
+private struct HeaderFigure: View {
     let title: String
-    let value: Int
+    let value: Int?
 
     var body: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                Text(title).studioText(.label).studioMuted()
-                Text(value.grouped)
-                    .studioText(.title)
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: StudioSpace.s1) {
+            Text(title)
+                .studioText(.label)
+                .foregroundStyle(Color.studioText3)
+            Text(verbatim: value?.grouped ?? "—")
+                .studioText(.titleSm)
+                .foregroundStyle(Color.studioText)
+                .monospacedDigit()
+                .contentTransition(.numericText())
         }
         .accessibilityElement(children: .combine)
     }
 }
 
-private struct BreakdownList: View {
-    let title: String
-    let rows: [TrafficBreakdown]
-    var isCountry = false
-
-    var body: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioSpace.s2) {
-                Text(title).studioText(.label).studioMuted()
-                if rows.isEmpty {
-                    Text("Nothing yet").studioText(.uiSm).studioMuted()
-                }
-                ForEach(rows.prefix(5)) { row in
-                    HStack {
-                        Text(verbatim: displayName(row.label))
-                            .studioText(.uiSm)
-                            .lineLimit(1)
-                        Spacer()
-                        Text(row.pageviews.grouped)
-                            .studioText(.uiSm)
-                            .monospacedDigit()
-                            .foregroundStyle(Color.studioText2)
-                    }
-                    .accessibilityElement(children: .combine)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+extension RedirectStatus {
+    /// The web's option labels.
+    var title: String {
+        switch self {
+        case .permanent: return String(localized: "301 — Permanent redirect")
+        case .temporary: return String(localized: "302 — Temporary redirect")
+        case .temporaryPreservingMethod: return String(localized: "307 — Temporary redirect (preserve method)")
         }
-    }
-
-    private func displayName(_ label: String) -> String {
-        if label.isEmpty { return String(localized: "Direct") }
-        if isCountry, label.count == 2 {
-            return Locale.current.localizedString(forRegionCode: label) ?? label
-        }
-        return label
     }
 }
 
-// MARK: - Destination editor
+// MARK: - Previews
 
-private struct DestinationEditor: View {
-    @Environment(LinksModel.self) private var model
-    @Environment(\.dismiss) private var dismiss
-    let link: Resource
+extension LinkDetail {
+    /// Fixture 22b, the fully configured link.
+    static let preview = LinkDetail(
+        id: 22, workspaceID: 234, slug: "spring-menu", destination: "https://example.com/full",
+        projectID: 3, domainID: nil, splashPageID: 3,
+        settings: LinkSettings(clicksLimit: 100, expirationURL: "https://example.com/expired", sensitiveContent: true,
+                               cloakingEnabled: true, cloakingTitle: "Cloaked", redirectStatus: .permanent,
+                               forwardQueryParameters: true, utmSource: "newsletter", utmMedium: "email",
+                               utmCampaign: "launch", hasPassword: true),
+        displayRules: DisplayRules([.countries: ["GB", "US"], .deviceTypes: ["mobile"], .languages: ["en"]]),
+        timezone: "Europe/London",
+        scheduledAt: Date.now.addingTimeInterval(86_400),
+        scheduledEnd: Date.now.addingTimeInterval(31 * 86_400),
+        clicks: 1_284
+    )
+}
 
-    @State private var destination: String
-    @State private var error: String?
-    @State private var isSaving = false
-
-    init(link: Resource) {
-        self.link = link
-        _destination = State(initialValue: link.destination ?? "")
+#Preview("Link detail") {
+    let app = AppModel(configuration: .preview)
+    let options = ResourceOptionsModel(
+        client: app.client, targeting: .preview,
+        domains: [DomainOption(id: 3, host: "go.example.com")],
+        projects: [ProjectOption(id: 3, name: "Launch week")],
+        splashPages: [SplashPageOption(id: 3, name: "Wait")]
+    )
+    let links = LinksModel(client: app.client, options: options)
+    let model = LinkDetailModel(detail: .preview, links: links,
+                                recent: .init(pageviews: 412, visitors: 288))
+    NavigationStack {
+        LinkDetailView(model: model)
     }
+    .environment(app)
+    .environment(links)
+}
 
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: StudioSpace.s4) {
-                StudioTextField(String(localized: "New destination"), text: $destination,
-                                placeholder: "example.com/menu",
-                                help: String(localized: "The address and any printed QR codes keep working and send people here instead."),
-                                errorMessage: error)
-                    .plainEntry()
-                    #if os(iOS)
-                    .textContentType(.URL)
-                    #endif
-                    .onSubmit { Task { await save() } }
-                Spacer()
-            }
-            .padding(StudioSpace.s6)
-            .background(Color.studioBg)
-            .navigationTitle("Change Destination")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    if isSaving { ProgressView() } else { Button("Save") { Task { await save() } } }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-        #if os(macOS)
-        .frame(minWidth: 440, minHeight: 240)
-        #endif
+#Preview("Plan without targeting") {
+    let app = AppModel(configuration: .preview)
+    let options = ResourceOptionsModel(
+        client: app.client, targeting: .preview,
+        capabilities: PlanCapabilities(settings: [:])
+    )
+    let links = LinksModel(client: app.client, options: options)
+    let model = LinkDetailModel(detail: .preview, links: links)
+    NavigationStack {
+        LinkDetailView(model: model)
     }
-
-    private func save() async {
-        guard let url = Destination.normalized(destination) else {
-            error = String(localized: "Enter a web address starting with https:// or a domain like example.com.")
-            return
-        }
-        isSaving = true
-        defer { isSaving = false }
-        do {
-            _ = try await model.update(link, destination: url)
-            dismiss()
-        } catch {
-            self.error = error.asAPIError.localizedDescription
-        }
-    }
+    .environment(app)
+    .environment(links)
 }

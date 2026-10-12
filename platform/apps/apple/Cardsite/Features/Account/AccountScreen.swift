@@ -2,88 +2,204 @@ import SwiftUI
 import StudioKit
 import CardsiteKit
 
-/// Profile, plan (read-only), legal, sign out and account deletion.
+/// Profile, plan (read-only), security, preferences, legal, sign out and
+/// account deletion.
 ///
 /// The plan is shown but not sold or linked to: App Review 3.1.1 forbids
 /// steering to outside purchases in most storefronts, and the app has no
 /// in-app purchase (docs/launch/native-apple.md → Purchasing).
 struct AccountScreen: View {
     @Environment(AppModel.self) private var app
-    @State private var plan: Loadable<(AccountPlan, Plan?)> = .idle
-    @State private var isEditingName = false
-    @State private var isDeleting = false
-    @State private var confirmSignOut = false
 
     var body: some View {
         NavigationStack {
-            Form {
-                if let user = app.user {
-                    Section {
-                        HStack(spacing: StudioSpace.s3) {
-                            Text(user.initial)
-                                .studioText(.titleSm)
-                                .foregroundStyle(Color.studioAccentInk)
-                                .frame(width: 48, height: 48)
-                                .background(Circle().fill(Color.studioAccent))
-                                .accessibilityHidden(true)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(user.name.isEmpty ? String(localized: "Your account") : user.name)
-                                    .studioText(.ui)
-                                Text(verbatim: user.email)
-                                    .studioText(.uiSm)
-                                    .studioMuted()
-                            }
-                        }
-                        .accessibilityElement(children: .combine)
-                        Button("Edit Name") { isEditingName = true }
-                    }
+            AccountView(client: app.client, onError: { [app] in app.handle($0) })
+        }
+    }
+}
 
-                    Section("Plan") {
-                        planRow
-                    }
+struct AccountView: View {
+    @Environment(AppModel.self) private var app
+    @State private var settings: AccountSettingsModel
+    @State private var plan: Loadable<(AccountPlan, Plan?)> = .idle
+    @State private var sheet: Sheet?
+    @State private var confirmSignOut = false
 
-                    Section("Security") {
-                        LabeledContent("Two-factor authentication",
-                                       value: user.twoFactorEnabled == true ? String(localized: "On") : String(localized: "Off"))
-                        Text("Manage passwords and two-factor authentication on cardsite.com.")
-                            .studioText(.uiSm)
-                            .studioMuted()
-                    }
+    enum Sheet: String, Identifiable {
+        case editName, timezone, password, enableTwoFactor, disableTwoFactor, recoveryCodes, deleteAccount
+        var id: String { rawValue }
+    }
+
+    init(client: APIClient, onError: @escaping @MainActor (any Error) -> Void) {
+        _settings = State(initialValue: AccountSettingsModel(client: client, onError: onError))
+    }
+
+    var body: some View {
+        Form {
+            if let user = app.user {
+                profileSection(user)
+
+                Section("Plan") {
+                    planRow
                 }
 
-                Section("About") {
-                    Link("Privacy Policy", destination: app.configuration.privacyURL)
-                    Link("Terms of Service", destination: app.configuration.termsURL)
-                    Link("Contact Support", destination: app.configuration.supportURL)
-                    LabeledContent("Version", value: Bundle.main.versionDescription)
-                }
+                securitySection
 
                 Section {
-                    Button("Sign Out") { confirmSignOut = true }
-                    Button("Delete Account…", role: .destructive) { isDeleting = true }
-                } footer: {
-                    Text("Deleting your account removes your links, QR codes, pages and files, and frees their addresses. It can't be undone.")
+                    NavigationLink {
+                        PreferencesView(client: app.client, onError: { [app] in app.handle($0) })
+                    } label: {
+                        Label("Preferences", systemImage: "slider.horizontal.3")
+                    }
+                    NavigationLink {
+                        ActivityLogsView(client: app.client, onError: { [app] in app.handle($0) })
+                    } label: {
+                        Label("Activity Logs", systemImage: "list.bullet.rectangle")
+                    }
                 }
             }
-            .formStyle(.grouped)
-            .navigationTitle("Account")
-            .task {
-                if app.needsProfile { await app.refreshUser() }
-                await loadPlan()
+
+            Section("About") {
+                Link("Privacy Policy", destination: app.configuration.privacyURL)
+                Link("Terms of Service", destination: app.configuration.termsURL)
+                Link("Contact Support", destination: app.configuration.supportURL)
+                LabeledContent("Version", value: Bundle.main.versionDescription)
             }
-            .refreshable {
-                // Not refreshUser(): the server caches GET /user for ~10 min
-                // and would bring back a name the user just changed.
-                if app.needsProfile { await app.refreshUser() }
-                await loadPlan(force: true)
+
+            Section {
+                Button("Sign Out") { confirmSignOut = true }
+                Button("Delete Account…", role: .destructive) { sheet = .deleteAccount }
+            } footer: {
+                Text("Deleting your account removes your links, QR codes, pages and files, and frees their addresses. It can't be undone.")
             }
-            .sheet(isPresented: $isEditingName) { NameEditor() }
-            .sheet(isPresented: $isDeleting) { DeleteAccountView() }
-            .confirmationDialog("Sign out of Cardsite?", isPresented: $confirmSignOut, titleVisibility: .visible) {
-                Button("Sign Out", role: .destructive) { Task { await app.signOut() } }
+        }
+        .formStyle(.grouped)
+        .navigationTitle("Account")
+        .task {
+            if app.needsProfile { await app.refreshUser() }
+            await loadPlan()
+        }
+        .task { [settings] in await settings.loadTwoFactor() }
+        .refreshable {
+            // Not refreshUser(): the server caches GET /user for ~10 min
+            // and would bring back a name the user just changed.
+            if app.needsProfile { await app.refreshUser() }
+            await loadPlan(force: true)
+            await settings.loadTwoFactor(force: true)
+        }
+        .sheet(item: $sheet) { sheet in
+            switch sheet {
+            case .editName: AccountNameEditor()
+            case .timezone: TimezonePickerView(model: settings, current: currentTimezone)
+            case .password: ChangePasswordView(model: settings)
+            case .enableTwoFactor: TwoFactorSetupView(model: settings)
+            case .disableTwoFactor: TwoFactorPasswordView(model: settings, purpose: .disable)
+            case .recoveryCodes: TwoFactorPasswordView(model: settings, purpose: .regenerate)
+            case .deleteAccount: DeleteAccountView()
+            }
+        }
+        .confirmationDialog("Sign out of Cardsite?", isPresented: $confirmSignOut, titleVisibility: .visible) {
+            Button("Sign Out", role: .destructive) { Task { await app.signOut() } }
+        }
+    }
+
+    private var currentTimezone: String {
+        settings.savedTimezone ?? app.user?.timezone ?? TimeZone.current.identifier
+    }
+
+    // MARK: Profile
+
+    private func profileSection(_ user: User) -> some View {
+        Section {
+            HStack(spacing: StudioSpace.s3) {
+                Text(user.initial)
+                    .studioText(.titleSm)
+                    .foregroundStyle(Color.studioAccentInk)
+                    .frame(width: StudioSpace.s12, height: StudioSpace.s12)
+                    .background(Circle().fill(Color.studioAccent))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: StudioSpace.s1) {
+                    Text(user.name.isEmpty ? String(localized: "Your account") : user.name)
+                        .studioText(.ui)
+                    Text(verbatim: user.email)
+                        .studioText(.uiSm)
+                        .studioMuted()
+                }
+            }
+            .accessibilityElement(children: .combine)
+            Button("Edit Name") { sheet = .editName }
+            Button {
+                sheet = .timezone
+            } label: {
+                LabeledContent("Timezone") {
+                    Text(verbatim: currentTimezone.replacingOccurrences(of: "_", with: " "))
+                }
+            }
+            .disabled(app.needsProfile)
+        }
+    }
+
+    // MARK: Security
+
+    @ViewBuilder
+    private var securitySection: some View {
+        Section {
+            Button("Change Password…") { sheet = .password }
+            twoFactorRows
+            NavigationLink {
+                APITokensView(model: settings)
+            } label: {
+                Text("API Tokens")
+            }
+        } header: {
+            Text("Security")
+        } footer: {
+            Text("Two-factor authentication adds a time-based one-time password (TOTP) from an authenticator app to every sign-in.")
+        }
+    }
+
+    @ViewBuilder
+    private var twoFactorRows: some View {
+        switch settings.twoFactor {
+        case .idle, .loading:
+            HStack {
+                Text("Two-factor authentication")
+                Spacer()
+                ProgressView()
+            }
+        case .failed(let error):
+            Button {
+                Task { await settings.loadTwoFactor(force: true) }
+            } label: {
+                VStack(alignment: .leading, spacing: StudioSpace.s1) {
+                    Text("Two-factor authentication")
+                    Text(error == .offline
+                         ? String(localized: "You're offline. Tap to try again.")
+                         : String(localized: "Couldn't load its status. Tap to try again."))
+                        .studioText(.uiSm)
+                        .foregroundStyle(Color.studioError)
+                }
+            }
+        case .loaded(let status):
+            LabeledContent("Two-factor authentication") {
+                StudioStatusPill(status.isEnabled ? String(localized: "On") : String(localized: "Off"),
+                                 tone: status.isEnabled ? .success : .neutral)
+            }
+            if status.isEnabled {
+                LabeledContent("Recovery codes left") {
+                    Text(status.remainingRecoveryCodes.grouped)
+                        .monospacedDigit()
+                        .foregroundStyle(status.remainingRecoveryCodes <= 2 ? Color.studioWarning : Color.studioText2)
+                }
+                Button("Generate New Recovery Codes…") { sheet = .recoveryCodes }
+                Button("Disable 2FA…", role: .destructive) { sheet = .disableTwoFactor }
+            } else {
+                Button("Enable 2FA…") { sheet = .enableTwoFactor }
             }
         }
     }
+
+    // MARK: Plan
 
     @ViewBuilder
     private var planRow: some View {
@@ -112,6 +228,8 @@ struct AccountScreen: View {
             async let plans = client.plans()
             let (a, all) = try await (account, plans)
             plan = .loaded((a, all.first { $0.id == a.planID }))
+        } catch is CancellationError {
+            if case .loading = plan { plan = .idle }
         } catch {
             app.handle(error)
             if plan.value == nil { plan = .failed(error.asAPIError) }
@@ -119,7 +237,7 @@ struct AccountScreen: View {
     }
 }
 
-private struct NameEditor: View {
+struct AccountNameEditor: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
@@ -179,3 +297,10 @@ extension Bundle {
         return "\(version) (\(build))"
     }
 }
+
+#if DEBUG
+#Preview("Account") {
+    AccountScreen()
+        .environment(AppModel.preview())
+}
+#endif

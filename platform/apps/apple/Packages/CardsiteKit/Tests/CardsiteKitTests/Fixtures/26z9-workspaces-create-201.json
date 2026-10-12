@@ -1,0 +1,18 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/workspaces",
+    "status": 201
+  },
+  "response": {
+    "data": {
+      "workspace_id": 339,
+      "owner_user_id": 4,
+      "name": "Studio",
+      "is_personal": false,
+      "created_at": "2026-10-12T02:03:16.384679Z",
+      "role": "owner",
+      "storage_bytes": 0
+    }
+  }
+}

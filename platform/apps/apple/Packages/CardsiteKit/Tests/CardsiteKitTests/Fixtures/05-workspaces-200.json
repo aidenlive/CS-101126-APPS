@@ -7,11 +7,11 @@
   "response": {
     "data": [
       {
-        "workspace_id": 131,
-        "owner_user_id": 7,
+        "workspace_id": 234,
+        "owner_user_id": 4,
         "name": "Personal",
         "is_personal": true,
-        "created_at": "2026-10-11T20:03:55.106896Z",
+        "created_at": "2026-10-12T02:03:11.036939Z",
         "role": "owner",
         "storage_bytes": 0
       }

@@ -1,0 +1,151 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/qr-codes/types",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "value": "url",
+        "label": "URL",
+        "group": "web"
+      },
+      {
+        "value": "url_dynamic",
+        "label": "Dynamic URL",
+        "group": "web"
+      },
+      {
+        "value": "text",
+        "label": "Text",
+        "group": "basic"
+      },
+      {
+        "value": "email",
+        "label": "Email",
+        "group": "contact"
+      },
+      {
+        "value": "phone",
+        "label": "Phone",
+        "group": "contact"
+      },
+      {
+        "value": "sms",
+        "label": "SMS",
+        "group": "contact"
+      },
+      {
+        "value": "whatsapp",
+        "label": "WhatsApp",
+        "group": "messaging"
+      },
+      {
+        "value": "viber",
+        "label": "Viber",
+        "group": "messaging"
+      },
+      {
+        "value": "signal",
+        "label": "Signal",
+        "group": "messaging"
+      },
+      {
+        "value": "skype",
+        "label": "Skype",
+        "group": "messaging"
+      },
+      {
+        "value": "facetime",
+        "label": "FaceTime",
+        "group": "messaging"
+      },
+      {
+        "value": "zoom",
+        "label": "Zoom",
+        "group": "messaging"
+      },
+      {
+        "value": "vcard",
+        "label": "vCard",
+        "group": "contact"
+      },
+      {
+        "value": "mecard",
+        "label": "MeCard",
+        "group": "contact"
+      },
+      {
+        "value": "wifi",
+        "label": "WiFi",
+        "group": "network"
+      },
+      {
+        "value": "location",
+        "label": "Location",
+        "group": "location"
+      },
+      {
+        "value": "event",
+        "label": "Event",
+        "group": "calendar"
+      },
+      {
+        "value": "crypto",
+        "label": "Crypto",
+        "group": "payment"
+      },
+      {
+        "value": "bitcoin",
+        "label": "Bitcoin",
+        "group": "payment"
+      },
+      {
+        "value": "ethereum",
+        "label": "Ethereum",
+        "group": "payment"
+      },
+      {
+        "value": "litecoin",
+        "label": "Litecoin",
+        "group": "payment"
+      },
+      {
+        "value": "paypal",
+        "label": "PayPal",
+        "group": "payment"
+      },
+      {
+        "value": "upi",
+        "label": "UPI",
+        "group": "payment"
+      },
+      {
+        "value": "epc",
+        "label": "EPC / SEPA",
+        "group": "payment"
+      },
+      {
+        "value": "pix",
+        "label": "PIX",
+        "group": "payment"
+      },
+      {
+        "value": "app_store",
+        "label": "App Store",
+        "group": "app"
+      },
+      {
+        "value": "play_store",
+        "label": "Play Store",
+        "group": "app"
+      },
+      {
+        "value": "information",
+        "label": "Information",
+        "group": "basic"
+      }
+    ]
+  }
+}

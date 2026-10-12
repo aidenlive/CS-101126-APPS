@@ -1,0 +1,18 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/projects",
+    "status": 201
+  },
+  "response": {
+    "data": {
+      "id": 3,
+      "user_id": 4,
+      "workspace_id": 234,
+      "name": "Launch",
+      "color": "#3366ff",
+      "created_at": "2026-10-12T02:03:11.988714Z",
+      "updated_at": null
+    }
+  }
+}

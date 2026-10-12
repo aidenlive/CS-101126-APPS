@@ -7,6 +7,11 @@ import CardsiteKit
 /// The address starts as a random 7-character slug the user can keep or
 /// replace. The server never generates one, and it checks availability only
 /// on create, so "taken" is reported against the address field.
+///
+/// `prefill` starts the destination field with a URL (Home's paste-a-URL,
+/// the share extension); focus then goes to the address. Scheduling,
+/// gating, cloaking, UTM and the rest are set on the link's page afterwards,
+/// as on the web.
 struct LinkEditorView: View {
     @Environment(AppModel.self) private var app
     @Environment(LinksModel.self) private var model
@@ -14,7 +19,7 @@ struct LinkEditorView: View {
 
     var onCreated: (Resource) -> Void = { _ in }
 
-    @State private var destination = ""
+    @State private var destination: String
     @State private var slug = Slug.random()
     @State private var destinationError: String?
     @State private var slugError: String?
@@ -24,8 +29,12 @@ struct LinkEditorView: View {
 
     enum Field { case destination, slug }
 
-    init(onCreated: @escaping (Resource) -> Void = { _ in }) {
+    private let prefill: URL?
+
+    init(prefill: URL? = nil, onCreated: @escaping (Resource) -> Void = { _ in }) {
+        self.prefill = prefill
         self.onCreated = onCreated
+        _destination = State(initialValue: prefill?.absoluteString ?? "")
     }
 
     var body: some View {
@@ -104,7 +113,7 @@ struct LinkEditorView: View {
             }
             .onChange(of: destination) { destinationError = nil; formError = nil }
             .onChange(of: slug) { slugError = nil; formError = nil }
-            .defaultFocus($focus, .destination)
+            .defaultFocus($focus, prefill == nil ? .destination : .slug)
             .interactiveDismissDisabled(isSaving)
         }
         #if os(macOS)
@@ -148,4 +157,11 @@ struct LinkEditorView: View {
             formError = error.localizedDescription
         }
     }
+}
+
+#Preview("New short link") {
+    let app = AppModel(configuration: .preview)
+    LinkEditorView(prefill: URL(string: "https://example.com/spring-menu"))
+        .environment(app)
+        .environment(LinksModel(client: app.client))
 }

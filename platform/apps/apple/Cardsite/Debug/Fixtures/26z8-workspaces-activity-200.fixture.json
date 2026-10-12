@@ -1,0 +1,143 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/workspaces/activity?limit=20",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "action": "resource.created",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "subject_type": "static",
+        "subject_id": 29,
+        "link_id": 29,
+        "at": "2026-10-12T02:03:14.447349Z"
+      },
+      {
+        "action": "resource.created",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "subject_type": "file",
+        "subject_id": 28,
+        "link_id": 28,
+        "at": "2026-10-12T02:03:14.312892Z"
+      },
+      {
+        "action": "resource.created",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "subject_type": "payment_link",
+        "subject_id": 27,
+        "link_id": 27,
+        "at": "2026-10-12T02:03:14.173506Z"
+      },
+      {
+        "action": "resource.created",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "subject_type": "event",
+        "subject_id": 26,
+        "link_id": 26,
+        "at": "2026-10-12T02:03:14.036479Z"
+      },
+      {
+        "action": "resource.created",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "subject_type": "vcard",
+        "subject_id": 25,
+        "link_id": 25,
+        "at": "2026-10-12T02:03:13.861554Z"
+      },
+      {
+        "action": "block.edited",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "subject_type": "email_collector",
+        "subject_id": 9,
+        "link_id": 24,
+        "at": "2026-10-12T02:03:13.660892Z"
+      },
+      {
+        "action": "block.edited",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "subject_type": "link",
+        "subject_id": 7,
+        "link_id": 24,
+        "at": "2026-10-12T02:03:13.660386Z"
+      },
+      {
+        "action": "block.edited",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "subject_type": "heading",
+        "subject_id": 8,
+        "link_id": 24,
+        "at": "2026-10-12T02:03:13.659674Z"
+      },
+      {
+        "action": "block.created",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "subject_type": "email_collector",
+        "subject_id": 9,
+        "link_id": 24,
+        "at": "2026-10-12T02:03:13.553728Z"
+      },
+      {
+        "action": "block.created",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "subject_type": "heading",
+        "subject_id": 8,
+        "link_id": 24,
+        "at": "2026-10-12T02:03:13.521162Z"
+      },
+      {
+        "action": "block.created",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "subject_type": "link",
+        "subject_id": 7,
+        "link_id": 24,
+        "at": "2026-10-12T02:03:13.475386Z"
+      },
+      {
+        "action": "resource.created",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "subject_type": "biolink",
+        "subject_id": 24,
+        "link_id": 24,
+        "at": "2026-10-12T02:03:13.335528Z"
+      },
+      {
+        "action": "resource.created",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "subject_type": "link",
+        "subject_id": 22,
+        "link_id": 22,
+        "at": "2026-10-12T02:03:12.520395Z"
+      },
+      {
+        "action": "resource.created",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "subject_type": "link",
+        "subject_id": 21,
+        "link_id": 21,
+        "at": "2026-10-12T02:03:11.17088Z"
+      },
+      {
+        "action": "member.joined",
+        "actor_user_id": 4,
+        "actor_name": "Native Contract",
+        "at": "2026-10-12T02:03:11.039035Z"
+      }
+    ]
+  }
+}

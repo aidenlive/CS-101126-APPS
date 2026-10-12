@@ -1,0 +1,27 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/splash-pages?page=1&results_per_page=25",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "id": 3,
+        "user_id": 4,
+        "workspace_id": 234,
+        "name": "Wait",
+        "title": "One moment",
+        "description": "Taking you there",
+        "link_unlock_seconds": 5,
+        "auto_redirect": true,
+        "created_at": "2026-10-12T02:03:12.297509Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "per_page": 25,
+      "total": 1
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/data?page=1&results_per_page=25",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "id": 3,
+        "biolink_block_id": 9,
+        "link_id": 24,
+        "user_id": 4,
+        "workspace_id": 234,
+        "type": "email_collector",
+        "data": {
+          "email": "grace@example.test",
+          "name": "Grace"
+        },
+        "datetime": "2026-10-12T02:03:13.832993Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "per_page": 25,
+      "total": 1
+    }
+  }
+}

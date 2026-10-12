@@ -8,8 +8,8 @@
     "data": {
       "token": "<redacted-jwt>",
       "user": {
-        "user_id": 7,
-        "email": "native-contract-179174903420425@example.test",
+        "user_id": 4,
+        "email": "native-contract-179177059010024@example.test",
         "name": "Native Contract",
         "twofa_enabled": false,
         "type": 0,
@@ -20,9 +20,9 @@
         "language": "english",
         "timezone": "UTC",
         "is_newsletter_subscribed": false,
-        "last_activity": "2026-10-11T20:03:54.794461Z",
+        "last_activity": "2026-10-12T02:03:10.682669Z",
         "total_logins": 0,
-        "created_at": "2026-10-11T20:03:54.794461Z",
+        "created_at": "2026-10-12T02:03:10.682669Z",
         "updated_at": null
       }
     }

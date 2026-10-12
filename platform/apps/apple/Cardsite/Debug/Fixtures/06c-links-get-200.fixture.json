@@ -1,0 +1,27 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/links/{id}",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "id": 21,
+      "user_id": 4,
+      "workspace_id": 234,
+      "type": "link",
+      "url": "nc-179177059010024",
+      "location_url": "https://example.com",
+      "settings": null,
+      "clicks": 0,
+      "is_verified": false,
+      "is_enabled": true,
+      "directory_is_enabled": true,
+      "created_at": "2026-10-12T02:03:11.17088Z",
+      "updated_at": null,
+      "last_used_at": "2026-10-12T02:03:11.17088Z",
+      "lifecycle_state": "active",
+      "lifecycle_state_at": "2026-10-12T02:03:11.17088Z"
+    }
+  }
+}

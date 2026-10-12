@@ -1,0 +1,23 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/uploads (multipart)",
+    "status": 201
+  },
+  "response": {
+    "data": {
+      "upload_id": 3,
+      "user_id": 4,
+      "workspace_id": 234,
+      "name": "cef5ec7ceae2d55e4acb75f806573354.png",
+      "original_name": "tiny.png",
+      "extension": "png",
+      "mime_type": "image/png",
+      "size": 427,
+      "storage_path": "2026/10/12/cef5ec7ceae2d55e4acb75f806573354.png",
+      "type": "image",
+      "url": "http://localhost:58080/uploads/2026/10/12/cef5ec7ceae2d55e4acb75f806573354.png",
+      "created_at": "2026-10-12T02:03:16.03636Z"
+    }
+  }
+}

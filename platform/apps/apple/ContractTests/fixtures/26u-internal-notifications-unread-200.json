@@ -1,0 +1,26 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/internal-notifications/unread",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "notifications": [
+        {
+          "id": 4,
+          "user_id": 4,
+          "for_who": "user",
+          "from_who": "system",
+          "icon": "fas fa-bell",
+          "title": "Welcome to Cardsite",
+          "description": "Your workspace is ready.",
+          "url": "/dashboard",
+          "is_read": false,
+          "datetime": "2026-10-12T02:03:15.810121Z"
+        }
+      ],
+      "unread_count": 1
+    }
+  }
+}

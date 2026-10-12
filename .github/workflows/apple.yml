@@ -1,13 +1,20 @@
 name: apple
 
 # platform/apps/apple (Cardsite for iPhone, iPad and Mac) and the StudioKit
-# package it depends on. macOS runners only: nothing here builds on Linux
-# except the fixture check.
+# package it depends on. macOS runners only, except the fixture check, the
+# design lint and the screens publish.
 #
 # What a green run proves: CardsiteKit's unit tests pass against fixtures
-# captured from a live API, and the app compiles for the iOS Simulator and
-# for macOS with signing off. It does not prove the app runs correctly; see
+# captured from a live API; the app compiles for the iOS Simulator and for
+# macOS with signing off; and the UI tests (screenshots + journeys) pass
+# against the in-app fixture server on iPhone, iPad and Mac. It does not
+# prove the app works against the real API on a device; see
 # docs/launch/native-apple.md → Verification for the device checks.
+#
+# Compiler errors are turned into check-run annotations
+# (CardsiteUITests/ci/annotate-errors.py), so a failure is readable without
+# the raw log. Screenshots land on the orphan `screens` branch under
+# runs/<sha>/ (see CardsiteUITests/README.md).
 
 on:
   push:
@@ -34,6 +41,9 @@ defaults:
   run:
     working-directory: platform/apps/apple
 
+env:
+  ANNOTATE: CardsiteUITests/ci/annotate-errors.py
+
 jobs:
   fixtures:
     name: contract fixtures in sync
@@ -42,6 +52,22 @@ jobs:
       - uses: actions/checkout@v4
       - run: ./scripts/sync-fixtures.sh --check
 
+  lint:
+    name: design lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: scripts/lint-design.sh
+        run: |
+          for script in scripts/lint-design.sh ../../../scripts/lint-design.sh; do
+            if [ -f "$script" ]; then
+              echo "running $script"
+              bash "$script"
+              exit $?
+            fi
+          done
+          echo "::notice title=design lint::scripts/lint-design.sh does not exist yet; nothing to lint"
+
   kit:
     name: CardsiteKit + StudioKit (swift test)
     runs-on: macos-26
@@ -49,8 +75,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: xcodebuild -version && swift --version
-      - run: swift test --package-path Packages/CardsiteKit
-      - run: swift build --package-path ../../studio/packages/swift
+      - name: swift test (CardsiteKit)
+        run: |
+          set -o pipefail
+          swift test --package-path Packages/CardsiteKit 2>&1 | tee kit.log \
+            || { python3 "$ANNOTATE" kit.log; exit 1; }
+      - name: swift build (StudioKit)
+        run: |
+          set -o pipefail
+          swift build --package-path ../../studio/packages/swift 2>&1 | tee studio.log \
+            || { python3 "$ANNOTATE" studio.log; exit 1; }
 
   app:
     name: app builds (${{ matrix.destination.name }})
@@ -75,11 +109,153 @@ jobs:
             -configuration Debug \
             -destination "${{ matrix.destination.value }}" \
             CODE_SIGNING_ALLOWED=NO \
-            | tee build.log
+            2>&1 | tee build.log \
+            || { python3 "$ANNOTATE" build.log; exit 1; }
           echo "warnings: $(grep -c ' warning: ' build.log || true)"
 
+  # Screenshot matrix + journeys: CardsiteUITests on the in-app fixture
+  # server (-CardsiteFixtures), light / dark / AX XXXL on each device.
+  screens:
+    name: screens (${{ matrix.device.name }})
+    runs-on: macos-26
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        device:
+          - { name: iPhone, slug: iphone, platform: iOS, prefer: "iPhone 17 Pro Max", match: "^iPhone .*Pro Max$" }
+          - { name: iPad, slug: ipad, platform: iOS, prefer: "iPad Pro 13-inch (M5)", match: "^iPad Pro .*13" }
+          - { name: Mac, slug: mac, platform: macOS, prefer: "", match: "" }
+    steps:
+      - uses: actions/checkout@v4
+      - run: xcodebuild -version
+      - run: brew install xcodegen
+      - run: xcodegen generate
+
+      - name: pick and boot the simulator
+        if: matrix.device.platform == 'iOS'
+        run: |
+          python3 CardsiteUITests/ci/pick-simulator.py "${{ matrix.device.prefer }}" "${{ matrix.device.match }}" > sim.env \
+            || { xcrun simctl list devices available; exit 1; }
+          cat sim.env
+          udid=$(sed -n 's/^udid=//p' sim.env)
+          xcrun simctl boot "$udid" || true
+          xcrun simctl bootstatus "$udid" -b
+          # App Store-style status bar.
+          xcrun simctl status_bar "$udid" override --time 9:41 --dataNetwork wifi --wifiMode active --wifiBars 3 \
+            --cellularMode active --cellularBars 4 --batteryState charged --batteryLevel 100 || true
+          echo "DESTINATION=platform=iOS Simulator,id=$udid" >> "$GITHUB_ENV"
+          echo "SIGNING=CODE_SIGNING_ALLOWED=NO" >> "$GITHUB_ENV"
+
+      - name: macOS destination and ad hoc signing
+        if: matrix.device.platform == 'macOS'
+        run: |
+          echo "DESTINATION=platform=macOS,arch=arm64" >> "$GITHUB_ENV"
+          # Ad hoc, no team; CI-macOS.entitlements drops keychain-access-groups,
+          # which macOS won't launch without a provisioning profile.
+          echo "SIGNING=CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= CODE_SIGN_ENTITLEMENTS=CardsiteUITests/Support/CI-macOS.entitlements ENABLE_HARDENED_RUNTIME=NO" >> "$GITHUB_ENV"
+
+      - name: build for testing
+        run: |
+          set -o pipefail
+          # $SIGNING is deliberately unquoted: it holds several settings.
+          xcodebuild build-for-testing \
+            -project Cardsite.xcodeproj \
+            -scheme Cardsite \
+            -configuration Debug \
+            -destination "$DESTINATION" \
+            -derivedDataPath DerivedData \
+            $SIGNING \
+            2>&1 | tee build.log \
+            || { python3 "$ANNOTATE" build.log; exit 1; }
+
+      - name: UI tests (screenshots + journeys)
+        id: tests
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          rm -rf screens.xcresult
+          xcodebuild test-without-building \
+            -project Cardsite.xcodeproj \
+            -scheme Cardsite \
+            -configuration Debug \
+            -destination "$DESTINATION" \
+            -derivedDataPath DerivedData \
+            -only-testing:CardsiteUITests \
+            -parallel-testing-enabled NO \
+            -resultBundlePath screens.xcresult \
+            $SIGNING \
+            2>&1 | tee test.log
+
+      - name: export screenshots
+        if: always()
+        run: python3 CardsiteUITests/ci/export-screens.py screens.xcresult "screens/${{ matrix.device.slug }}"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screens-${{ matrix.device.slug }}
+          path: platform/apps/apple/screens/${{ matrix.device.slug }}
+          if-no-files-found: warn
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: logs-${{ matrix.device.slug }}
+          path: |
+            platform/apps/apple/build.log
+            platform/apps/apple/test.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: fail on test failures
+        if: steps.tests.outcome == 'failure'
+        run: |
+          python3 "$ANNOTATE" test.log
+          grep -E "Test Case .* (failed|passed)" test.log | tail -n 60 || true
+          exit 1
+
+  # Commits every device's PNGs to the orphan `screens` branch, under
+  # runs/<sha>/, with an index.md. The session reads that branch with git;
+  # it can't download artifacts through its proxy.
+  screens-publish:
+    name: publish screens
+    needs: [screens]
+    if: >-
+      always() && needs.screens.result != 'skipped' && needs.screens.result != 'cancelled' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: apple-screens-publish
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: platform/apps/apple/CardsiteUITests/ci
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: screens-*
+          path: screens
+      - name: rename artifact folders to device slugs
+        run: |
+          shopt -s nullglob
+          for dir in screens/screens-*; do mv "$dir" "screens/${dir#screens/screens-}"; done
+          ls -R screens | head -n 200
+      - name: commit to the screens branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KEEP_RUNS: "10"
+        run: python3 platform/apps/apple/CardsiteUITests/ci/publish-screens.py screens
+
   apple-summary:
-    needs: [fixtures, kit, app]
+    needs: [fixtures, lint, kit, app, screens, screens-publish]
     if: always()
     runs-on: ubuntu-latest
     defaults:
@@ -87,7 +263,10 @@ jobs:
         working-directory: .
     steps:
       - run: |
-          echo "fixtures: ${{ needs.fixtures.result }}  kit: ${{ needs.kit.result }}  app: ${{ needs.app.result }}"
-          for r in "${{ needs.fixtures.result }}" "${{ needs.kit.result }}" "${{ needs.app.result }}"; do
+          echo "fixtures: ${{ needs.fixtures.result }}  lint: ${{ needs.lint.result }}  kit: ${{ needs.kit.result }}  app: ${{ needs.app.result }}"
+          echo "screens: ${{ needs.screens.result }}  publish: ${{ needs.screens-publish.result }}"
+          for r in "${{ needs.fixtures.result }}" "${{ needs.lint.result }}" "${{ needs.kit.result }}" "${{ needs.app.result }}" "${{ needs.screens.result }}"; do
             [ "$r" = "success" ] || exit 1
           done
+          # Publishing is skipped on fork PRs (read-only token); that is not a failure.
+          case "${{ needs.screens-publish.result }}" in success|skipped) ;; *) exit 1 ;; esac

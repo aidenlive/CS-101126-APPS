@@ -1,0 +1,13 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/qr-codes/generate",
+    "status": 400
+  },
+  "response": {
+    "error": {
+      "title": "Failed to generate QR code: no data to encode",
+      "code": 400
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/account/tokens",
+    "status": 400
+  },
+  "response": {
+    "error": {
+      "title": "Unknown scope: nope:read",
+      "code": 400
+    }
+  }
+}

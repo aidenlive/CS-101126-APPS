@@ -1,0 +1,36 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/biolinks?page=1&results_per_page=25",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "id": 24,
+        "user_id": 4,
+        "workspace_id": 234,
+        "type": "biolink",
+        "url": "ncb-179177059010024",
+        "settings": {
+          "description": "Updated",
+          "title": "Contract page"
+        },
+        "clicks": 0,
+        "is_verified": false,
+        "is_enabled": true,
+        "directory_is_enabled": false,
+        "created_at": "2026-10-12T02:03:13.335528Z",
+        "updated_at": "2026-10-12T02:03:13.765396Z",
+        "last_used_at": "2026-10-12T02:03:13.765396Z",
+        "lifecycle_state": "active",
+        "lifecycle_state_at": "2026-10-12T02:03:13.335528Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "per_page": 25,
+      "total": 1
+    }
+  }
+}

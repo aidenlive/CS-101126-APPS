@@ -1,0 +1,12 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/internal-notifications/{id}/read",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "message": "Notification marked as read"
+    }
+  }
+}

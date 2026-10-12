@@ -2,53 +2,49 @@ import SwiftUI
 import StudioKit
 import CardsiteKit
 
+/// QR codes as an adaptive grid of cards: two columns on iPhone, as many as
+/// fit on iPad and Mac. A card opens the code; its menu edits, shares or
+/// deletes it.
 struct QRCodesScreen: View {
     @Environment(QRCodesModel.self) private var model
-    @State private var selection: QRCode.ID?
+    @State private var path: [QRCode.ID] = []
     @State private var isComposing = false
+    @State private var editing: QRCode?
     @State private var pendingDelete: QRCode?
     @State private var deleteError: String?
 
     var body: some View {
         @Bindable var bindable = model
-        NavigationSplitView {
-            ListStateView(
-                state: model.list.state,
-                empty: .init(
-                    systemImage: "qrcode",
-                    title: String(localized: "No QR codes yet"),
-                    message: String(localized: "Make a QR code for a web address or for one of your short links. Point it at a short link and you can change where it goes after it's printed."),
-                    actionTitle: String(localized: "New QR Code"),
-                    action: { isComposing = true }
-                ),
-                retry: { [list = model.list] in await list.refresh() }
-            ) { _ in
-                codeList
-            }
-            .navigationTitle("QR Codes")
-            .searchable(text: $bindable.searchText, prompt: Text("Search QR codes"))
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button { isComposing = true } label: {
-                        Label("New QR Code", systemImage: "plus")
+        NavigationStack(path: $path) {
+            content
+                .background(Color.studioBg)
+                .navigationTitle("QR Codes")
+                .searchable(text: $bindable.searchText, prompt: Text("Search QR codes"))
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button { isComposing = true } label: {
+                            Label("New QR Code", systemImage: "plus")
+                        }
                     }
                 }
-            }
-            #if os(macOS)
-            .navigationSplitViewColumnWidth(min: 300, ideal: 340)
-            #endif
-        } detail: {
-            if let id = selection, let code = model.list.items.first(where: { $0.id == id }) {
-                QRCodeDetailView(code: code) { pendingDelete = code }
-                    .id(code.id)
-            } else {
-                ContentUnavailableView("Select a QR code", systemImage: "qrcode",
-                                       description: Text("Preview it, then share or save the image."))
-            }
+                .navigationDestination(for: QRCode.ID.self) { id in
+                    if let code = model.list.items.first(where: { $0.id == id }) {
+                        QRCodeDetailView(code: code,
+                                         typeLabel: model.typeLabel(for: code.type),
+                                         edit: { editing = code },
+                                         requestDelete: { pendingDelete = code })
+                    } else {
+                        ContentUnavailableView("This QR code was deleted", systemImage: "qrcode")
+                    }
+                }
         }
         .task { [list = model.list] in await list.loadIfNeeded() }
+        .task { [model] in await model.loadTypesIfNeeded() }
         .sheet(isPresented: $isComposing) {
-            QRCodeEditorView { code in selection = code.id }
+            QRCodeEditorView { code in path = [code.id] }
+        }
+        .sheet(item: $editing) { code in
+            QRCodeEditorView(editing: code)
         }
         .confirmationDialog(
             "Delete this QR code?",
@@ -60,7 +56,7 @@ struct QRCodesScreen: View {
                 Task { await delete(code) }
             }
         } message: { _ in
-            Text("This removes it from your workspace. Printed copies keep encoding the same address.")
+            Text("This removes it from your workspace. Printed copies keep encoding the same content.")
         }
         .alert("Couldn't delete", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
             Button("OK", role: .cancel) {}
@@ -69,50 +65,139 @@ struct QRCodesScreen: View {
         }
     }
 
-    private var codeList: some View {
-        List(selection: $selection) {
-            if let error = model.list.refreshError {
-                RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
-                    .listRowSeparator(.hidden)
-            }
-            if model.visibleCodes.isEmpty, !model.searchText.isEmpty {
-                ContentUnavailableView.search(text: model.searchText)
-                    .listRowSeparator(.hidden)
-            }
-            ForEach(model.visibleCodes) { code in
-                NavigationLink(value: code.id) {
-                    QRCodeRow(code: code)
-                }
-                .contextMenu {
-                    if let png = code.pngData {
-                        ShareLink(item: PNGFile(data: png, name: code.fileName),
-                                  preview: SharePreview(code.name, image: Image(systemName: "qrcode"))) {
-                            Label("Share Image…", systemImage: "square.and.arrow.up")
-                        }
-                    }
-                    Divider()
-                    Button(role: .destructive) { pendingDelete = code } label: {
-                        Label("Delete…", systemImage: "trash")
+    // MARK: States
+
+    @ViewBuilder
+    private var content: some View {
+        switch model.list.state {
+        case .idle, .loading:
+            ScrollView {
+                grid {
+                    ForEach(QRCode.skeletons) { code in
+                        QRCodeCard(code: code, typeLabel: QRCodeCatalog.fallbackLabel(code.type))
                     }
                 }
-                .swipeActions(edge: .trailing) {
-                    Button(role: .destructive) { pendingDelete = code } label: {
-                        Label("Delete", systemImage: "trash")
+                .padding(StudioSpace.s5)
+            }
+            .redacted(reason: .placeholder)
+            .allowsHitTesting(false)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text("Loading QR codes"))
+        case .failed(let error):
+            ErrorStateView(error: error) { [list = model.list] in await list.refresh() }
+        case .loaded(let items) where items.isEmpty:
+            ScrollView {
+                StudioEmptyState(
+                    systemImage: "qrcode",
+                    title: String(localized: "No QR codes yet"),
+                    message: String(localized: "Make a code for a web address, a WiFi network, a contact card, an event or a payment. Point one at a short link and you can change where it goes after it's printed.")
+                ) {
+                    StudioButton(String(localized: "New QR Code"), systemImage: "plus", variant: .primary) {
+                        isComposing = true
                     }
                 }
+                .padding(StudioSpace.s6)
+                .frame(maxWidth: 520)
+                .frame(maxWidth: .infinity)
             }
-            if model.list.hasMore, model.searchText.isEmpty {
-                HStack { Spacer(); ProgressView(); Spacer() }
-                    .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
+            .refreshable { await model.list.refresh() }
+        case .loaded:
+            codeGrid
+        }
+    }
+
+    private var codeGrid: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: StudioSpace.s4) {
+                if let error = model.list.refreshError {
+                    RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
+                }
+                if model.visibleCodes.isEmpty, !model.searchText.isEmpty {
+                    ContentUnavailableView.search(text: model.searchText)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, StudioSpace.s10)
+                }
+                grid {
+                    ForEach(model.visibleCodes) { code in
+                        card(for: code)
+                    }
+                }
+                if model.list.hasMore, model.searchText.isEmpty {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(StudioSpace.s4)
+                        .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
+                }
             }
+            .padding(StudioSpace.s5)
         }
         .refreshable { await model.list.refresh() }
+    }
+
+    private func grid<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: 156, maximum: 260), spacing: StudioSpace.s4, alignment: .top)],
+            alignment: .leading,
+            spacing: StudioSpace.s4,
+            content: content
+        )
+    }
+
+    private func card(for code: QRCode) -> some View {
+        NavigationLink(value: code.id) {
+            QRCodeCard(code: code, typeLabel: model.typeLabel(for: code.type))
+        }
+        .buttonStyle(StudioPressStyle(scale: 0.98))
+        .overlay(alignment: .topTrailing) {
+            Menu {
+                menuItems(for: code)
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Color.studioText2)
+                    .frame(minWidth: StudioSpace.s10, minHeight: StudioSpace.s10)
+                    .background(Color.studioSurface, in: Circle())
+                    .overlay(Circle().strokeBorder(Color.studioBorder, lineWidth: 0.5))
+                    .contentShape(Circle())
+            }
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .menuIndicator(.hidden)
+            .padding(StudioSpace.s2)
+            .accessibilityLabel(Text("Actions for \(code.name)"))
+        }
+        .contextMenu { menuItems(for: code) }
+    }
+
+    @ViewBuilder
+    private func menuItems(for code: QRCode) -> some View {
+        Button { editing = code } label: {
+            Label("Edit…", systemImage: "pencil")
+        }
+        if let png = code.pngData {
+            ShareLink(item: PNGFile(data: png, name: code.fileName),
+                      preview: SharePreview(code.name, image: Image(pngData: png) ?? Image(systemName: "qrcode"))) {
+                Label("Share Image…", systemImage: "square.and.arrow.up")
+            }
+        }
+        if let target = code.target, !target.isEmpty {
+            Button {
+                Pasteboard.copy(target)
+                Haptics.success()
+            } label: {
+                Label(code.copyTitle, systemImage: "doc.on.doc")
+            }
+        }
+        Divider()
+        Button(role: .destructive) { pendingDelete = code } label: {
+            Label("Delete…", systemImage: "trash")
+        }
     }
 
     private func delete(_ code: QRCode) async {
         do {
             try await model.delete(code)
-            if selection == code.id { selection = nil }
+            path.removeAll { $0 == code.id }
         } catch {
             deleteError = error.asAPIError.localizedDescription
         }
@@ -120,59 +205,71 @@ struct QRCodesScreen: View {
     }
 }
 
-struct QRCodeRow: View {
+/// One code in the grid: the image on a quiet surface, then name, type and
+/// date. The menu button sits over the top-right corner, outside this view.
+struct QRCodeCard: View {
     let code: QRCode
+    let typeLabel: String
 
     var body: some View {
-        HStack(spacing: StudioSpace.s3) {
-            QRImage(code: code)
-                .frame(width: 44, height: 44)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(code.name)
-                    .studioText(.ui)
-                    .foregroundStyle(Color.studioText)
-                    .lineLimit(1)
-                Text(verbatim: code.target ?? "")
-                    .studioText(.uiSm)
-                    .foregroundStyle(Color.studioText3)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+        StudioCard(flush: true, hover: true) {
+            VStack(alignment: .leading, spacing: 0) {
+                QRImage(code: code)
+                    .padding(StudioSpace.s5)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.studioSurface2)
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: StudioSpace.s2) {
+                    Text(code.name)
+                        .studioText(.ui)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.studioText)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    HStack(spacing: StudioSpace.s2) {
+                        Image(systemName: QRCodeCatalog.symbol(for: code.type))
+                            .font(.caption)
+                            .foregroundStyle(Color.studioText3)
+                            .accessibilityHidden(true)
+                        StudioStatusPill(typeLabel)
+                    }
+                    if let created = code.createdAt {
+                        Text("Created \(created.formatted(date: .abbreviated, time: .omitted))")
+                            .studioText(.uiSm)
+                            .foregroundStyle(Color.studioText3)
+                    }
+                }
+                .padding(StudioSpace.s4)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("\(code.name), \(typeLabel)"))
     }
 }
 
-/// The server's PNG, scaled without smoothing so modules stay sharp,
-/// on a white quiet zone in both appearances (scanners need the contrast).
-struct QRImage: View {
-    let code: QRCode
-
-    var body: some View {
-        Group {
-            if let data = code.pngData, let image = Image(pngData: data) {
-                image
-                    .interpolation(.none)
-                    .resizable()
-                    .scaledToFit()
-            } else {
-                Image(systemName: "qrcode")
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundStyle(Color.studioText3)
-                    .padding(6)
-            }
-        }
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+private extension QRCode {
+    /// Stand-ins drawn redacted while the first page loads.
+    static let skeletons: [QRCode] = (1...6).map {
+        QRCode(id: -$0, name: "QR code name", type: "url", imageDataURL: nil, embeddedData: nil, createdAt: Date.now)
     }
 }
 
-extension QRCode {
-    var fileName: String {
-        let base = Slug.suggestion(from: name)
-        return (base.isEmpty ? "cardsite-qr-\(id)" : base) + ".png"
-    }
+#Preview("QR codes") {
+    QRCodesScreen()
+        .environment(QRCodesPreviewData.app)
+        .environment(QRCodesPreviewData.model())
+}
+
+#Preview("Empty") {
+    QRCodesScreen()
+        .environment(QRCodesPreviewData.app)
+        .environment(QRCodesPreviewData.model(codes: []))
+}
+
+#Preview("Offline") {
+    QRCodesScreen()
+        .environment(QRCodesPreviewData.app)
+        .environment(QRCodesPreviewData.model(failing: .offline))
 }

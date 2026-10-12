@@ -1,0 +1,17 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/spotlight?q=…",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "type": "link",
+        "id": 22,
+        "label": "ncf-179177059010024",
+        "url": "ncf-179177059010024"
+      }
+    ]
+  }
+}

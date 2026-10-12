@@ -1,0 +1,56 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/logs?page=1&per_page=25",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "id": 14,
+        "user_id": 4,
+        "type": "twofa.disabled",
+        "ip": "127.0.0.1",
+        "device_type": "desktop",
+        "os_name": "Other",
+        "browser_name": "Other",
+        "datetime": "2026-10-12T02:03:15.718637Z"
+      },
+      {
+        "id": 13,
+        "user_id": 4,
+        "type": "login.recovery_code",
+        "ip": "127.0.0.1",
+        "device_type": "desktop",
+        "os_name": "Other",
+        "browser_name": "Other",
+        "datetime": "2026-10-12T02:03:15.502737Z"
+      },
+      {
+        "id": 12,
+        "user_id": 4,
+        "type": "twofa.enabled",
+        "ip": "127.0.0.1",
+        "device_type": "desktop",
+        "os_name": "Other",
+        "browser_name": "Other",
+        "datetime": "2026-10-12T02:03:15.249834Z"
+      },
+      {
+        "id": 11,
+        "user_id": 4,
+        "type": "login",
+        "ip": "127.0.0.1",
+        "device_type": "desktop",
+        "os_name": "Other",
+        "browser_name": "Other",
+        "datetime": "2026-10-12T02:03:10.878429Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "per_page": 25,
+      "total": 4
+    }
+  }
+}

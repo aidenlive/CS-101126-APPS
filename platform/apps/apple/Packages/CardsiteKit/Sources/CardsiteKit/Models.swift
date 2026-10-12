@@ -249,7 +249,12 @@ public struct Resource: Decodable, Sendable, Equatable, Identifiable, Hashable {
 
     public var isBioPage: Bool { type == LinkKind.bioPage }
     /// Anything other than "active" means the address is in its release window.
-    public var isLapsing: Bool { (lifecycleState ?? "active") != "active" }
+    /// A missing or empty state is unknown, not lapsing: `/resources/recent`
+    /// sends `""` because it does not select the lifecycle columns.
+    public var isLapsing: Bool {
+        guard let lifecycleState, !lifecycleState.isEmpty else { return false }
+        return lifecycleState != "active"
+    }
 }
 
 public enum LinkKind {

@@ -38,5 +38,12 @@ let package = Package(
                 .process("Resources/Fonts"),
             ]
         ),
+        // UI-free, deterministic checks that run under `swift test` on a
+        // Mac: token presence, font registration, viewport bands, toasts,
+        // the accent ramps and the Reduce Motion gate.
+        .testTarget(
+            name: "StudioKitTests",
+            dependencies: ["StudioKit"]
+        ),
     ]
 )

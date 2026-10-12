@@ -206,10 +206,21 @@ public actor APIClient {
     }
 
     // MARK: Transport
+    //
+    // Domain files (`APIClient+<Domain>.swift`) build on these internal
+    // helpers. Every request made through them carries `Accept`, `User-Agent`
+    // and, on every write, `X-Requested-With`. Authenticated requests also
+    // carry the bearer token and the current `X-Workspace-ID`. Both are read
+    // when the request is built, so `setToken` and `setWorkspace` apply from
+    // the next request on.
 
-    public enum Method: String, Sendable { case get = "GET", post = "POST", put = "PUT", delete = "DELETE" }
+    public enum Method: String, Sendable {
+        case get = "GET", post = "POST", put = "PUT", patch = "PATCH", delete = "DELETE"
+    }
 
-    func makeRequest(_ method: Method, _ path: String, query: [String: String] = [:], body: Data?, authenticated: Bool) throws -> URLRequest {
+    func makeRequest(_ method: Method, _ path: String, query: [String: String] = [:], body: Data?,
+                     contentType: String = "application/json", accept: String = "application/json",
+                     authenticated: Bool) throws -> URLRequest {
         guard var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
             throw APIError.transport("Bad URL for \(path)")
         }
@@ -220,14 +231,14 @@ public actor APIClient {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         request.timeoutInterval = 30
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(accept, forHTTPHeaderField: "Accept")
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         if method != .get {
             request.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         }
         if let body {
             request.httpBody = body
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue(contentType, forHTTPHeaderField: "Content-Type")
         }
         if authenticated {
             guard let token else { throw APIError.sessionExpired }
@@ -239,9 +250,9 @@ public actor APIClient {
         return request
     }
 
-    private func perform(_ method: Method, _ path: String, query: [String: String] = [:], body: (any Encodable)?, authenticated: Bool, credentialCheck: Bool) async throws -> Data {
-        let encoded = try body.map { try encoder.encode($0) }
-        let request = try makeRequest(method, path, query: query, body: encoded, authenticated: authenticated)
+    /// Sends a built request and returns the body of a 2xx response.
+    /// Anything else becomes an ``APIError``.
+    func execute(_ request: URLRequest, credentialCheck: Bool = false) async throws -> Data {
         let data: Data
         let response: HTTPURLResponse
         do {
@@ -259,7 +270,16 @@ public actor APIClient {
         return data
     }
 
-    private func decodeEnvelope<T: Decodable>(_ type: T.Type, from data: Data) throws -> DataEnvelope<T> {
+    /// Encodes `body` as JSON, sends the request and returns the raw body.
+    func perform(_ method: Method, _ path: String, query: [String: String] = [:], body: (any Encodable)?, authenticated: Bool, credentialCheck: Bool) async throws -> Data {
+        let encoded = try body.map { try encoder.encode($0) }
+        let request = try makeRequest(method, path, query: query, body: encoded, authenticated: authenticated)
+        return try await execute(request, credentialCheck: credentialCheck)
+    }
+
+    /// Decodes `{data, meta}`. `data` is nil when the server sent `null`
+    /// (an empty list) or left it out.
+    func decodeEnvelope<T: Decodable>(_ type: T.Type, from data: Data) throws -> DataEnvelope<T> {
         do {
             return try decoder.decode(DataEnvelope<T>.self, from: data)
         } catch {
@@ -267,6 +287,7 @@ public actor APIClient {
         }
     }
 
+    /// JSON in, `data` out. Throws ``APIError/decoding(_:)`` when `data` is null.
     func send<T: Decodable>(_ method: Method, _ path: String, query: [String: String] = [:], body: (any Encodable)? = nil, authenticated: Bool = true, credentialCheck: Bool = false) async throws -> T {
         let data = try await perform(method, path, query: query, body: body, authenticated: authenticated, credentialCheck: credentialCheck)
         guard let value = try decodeEnvelope(T.self, from: data).data else {
@@ -275,43 +296,115 @@ public actor APIClient {
         return value
     }
 
-    func sendOptional<T: Decodable>(_ method: Method, _ path: String, query: [String: String] = [:]) async throws -> T? {
-        let data = try await perform(method, path, query: query, body: nil, authenticated: true, credentialCheck: false)
+    /// Like ``send(_:_:query:body:authenticated:credentialCheck:)`` but a null
+    /// `data` is nil. Use it for unpaginated lists (`[T]?`, nil means empty).
+    func sendOptional<T: Decodable>(_ method: Method, _ path: String, query: [String: String] = [:], body: (any Encodable)? = nil) async throws -> T? {
+        let data = try await perform(method, path, query: query, body: body, authenticated: true, credentialCheck: false)
         return try decodeEnvelope(T.self, from: data).data
     }
 
-    func sendPage<T: Decodable & Sendable>(_ path: String, page: Int) async throws -> Page<T> {
-        let query = ["page": String(page), "results_per_page": String(Self.pageSize)]
-        let data = try await perform(.get, path, query: query, body: nil, authenticated: true, credentialCheck: false)
+    /// One page of a paginated list.
+    ///
+    /// The server reads the page size under two names: most lists use
+    /// `results_per_page`, while `/logs`, `/internal-notifications`, `/pwas`
+    /// and `/payments` use `per_page`. Both are sent with the same value, so
+    /// every list honours ``pageSize``. Pass either key in `query` to change
+    /// the size; extra keys (`search`, `type`, `link_id`, …) pass through.
+    /// The response meta is always `{page, per_page, total}`.
+    func sendPage<T: Decodable & Sendable>(_ path: String, page: Int, query: [String: String] = [:]) async throws -> Page<T> {
+        let size = query["results_per_page"] ?? query["per_page"] ?? String(Self.pageSize)
+        var merged = query
+        merged["page"] = String(page)
+        merged["results_per_page"] = size
+        merged["per_page"] = size
+        let data = try await perform(.get, path, query: merged, body: nil, authenticated: true, credentialCheck: false)
         let envelope = try decodeEnvelope([T].self, from: data)
         let items = envelope.data ?? []
-        let meta = envelope.meta ?? PageMeta(page: page, perPage: Self.pageSize, total: items.count)
+        let meta = envelope.meta ?? PageMeta(page: page, perPage: Int(size) ?? Self.pageSize, total: items.count)
         return Page(items: items, meta: meta)
     }
 
-    func sendIgnoringBody(_ method: Method, _ path: String, body: (any Encodable)? = nil, authenticated: Bool = true, credentialCheck: Bool = false) async throws {
-        _ = try await perform(method, path, body: body, authenticated: authenticated, credentialCheck: credentialCheck)
+    func sendIgnoringBody(_ method: Method, _ path: String, query: [String: String] = [:], body: (any Encodable)? = nil, authenticated: Bool = true, credentialCheck: Bool = false) async throws {
+        _ = try await perform(method, path, query: query, body: body, authenticated: authenticated, credentialCheck: credentialCheck)
     }
-}
 
-/// A small JSON value for request bodies with mixed types.
-public enum JSONValue: Encodable, Sendable, Equatable {
-    case string(String)
-    case bool(Bool)
-    case int(Int)
-    case object([String: JSONValue])
-
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        switch self {
-        case .string(let value): try container.encode(value)
-        case .bool(let value): try container.encode(value)
-        case .int(let value): try container.encode(value)
-        case .object(let value): try container.encode(value)
+    /// `multipart/form-data` upload (file links, static sites, uploads). The
+    /// response is the usual JSON envelope. Fields are sent in key order,
+    /// then the files in the order given.
+    ///
+    /// The method has no default value here: the `sendMultipart(path, …)`
+    /// overload below is the POST shorthand, and a leading unlabeled default
+    /// would make the two overloads compete.
+    func sendMultipart<T: Decodable>(_ method: Method, _ path: String, fields: [String: String], files: [MultipartFile]) async throws -> T {
+        let boundary = "CardsiteBoundary-\(UUID().uuidString)"
+        let body = MultipartFile.formBody(boundary: boundary, fields: fields, files: files)
+        let request = try makeRequest(method, path, body: body, contentType: "multipart/form-data; boundary=\(boundary)", authenticated: true)
+        let data = try await execute(request)
+        guard let value = try decodeEnvelope(T.self, from: data).data else {
+            throw APIError.decoding("Empty data for \(path)")
         }
+        return value
+    }
+
+    /// `sendMultipart(.post, path, …)`.
+    func sendMultipart<T: Decodable>(_ path: String, fields: [String: String], files: [MultipartFile]) async throws -> T {
+        try await sendMultipart(.post, path, fields: fields, files: files)
+    }
+
+    /// The raw body of a 2xx response, for PNG, SVG, VCF, ICS and other
+    /// non-JSON payloads. Errors are still read from the JSON error envelope.
+    func sendRaw(_ method: Method, _ path: String, query: [String: String] = [:], body: (any Encodable)? = nil,
+                 accept: String = "*/*", authenticated: Bool = true) async throws -> Data {
+        let encoded = try body.map { try encoder.encode($0) }
+        let request = try makeRequest(method, path, query: query, body: encoded, accept: accept, authenticated: authenticated)
+        return try await execute(request)
     }
 }
 
-extension JSONValue: ExpressibleByStringLiteral {
-    public init(stringLiteral value: String) { self = .string(value) }
+/// One file in a `multipart/form-data` request.
+public struct MultipartFile: Sendable, Hashable {
+    /// The form field the server reads, e.g. `file`.
+    public let fieldName: String
+    public let filename: String
+    /// e.g. `image/png`, `application/pdf`, `application/zip`.
+    public let mimeType: String
+    public let data: Data
+
+    public init(fieldName: String = "file", filename: String, mimeType: String, data: Data) {
+        self.fieldName = fieldName
+        self.filename = filename
+        self.mimeType = mimeType
+        self.data = data
+    }
+
+    /// The RFC 7578 body: one part per field (sorted by name), then one per
+    /// file, each closed by CRLF, then the closing delimiter.
+    static func formBody(boundary: String, fields: [String: String], files: [MultipartFile]) -> Data {
+        var body = Data()
+        func append(_ text: String) { body.append(Data(text.utf8)) }
+        for (name, value) in fields.sorted(by: { $0.key < $1.key }) {
+            append("--\(boundary)\r\n")
+            append("Content-Disposition: form-data; name=\"\(quoted(name))\"\r\n\r\n")
+            append(value)
+            append("\r\n")
+        }
+        for file in files {
+            append("--\(boundary)\r\n")
+            append("Content-Disposition: form-data; name=\"\(quoted(file.fieldName))\"; filename=\"\(quoted(file.filename))\"\r\n")
+            append("Content-Type: \(file.mimeType)\r\n\r\n")
+            body.append(file.data)
+            append("\r\n")
+        }
+        append("--\(boundary)--\r\n")
+        return body
+    }
+
+    /// Makes a value safe inside a quoted header parameter: line breaks are
+    /// dropped and `"` is percent-encoded, as browsers do.
+    static func quoted(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\r", with: "")
+            .replacingOccurrences(of: "\n", with: "")
+            .replacingOccurrences(of: "\"", with: "%22")
+    }
 }

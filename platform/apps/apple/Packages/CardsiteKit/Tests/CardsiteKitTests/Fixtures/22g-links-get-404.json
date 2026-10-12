@@ -1,0 +1,13 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/links/{id}",
+    "status": 404
+  },
+  "response": {
+    "error": {
+      "title": "Link not found",
+      "code": 404
+    }
+  }
+}

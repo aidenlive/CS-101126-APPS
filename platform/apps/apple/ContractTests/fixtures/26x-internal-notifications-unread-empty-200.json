@@ -1,0 +1,13 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/internal-notifications/unread",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "notifications": null,
+      "unread_count": 0
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/biolink-blocks/order",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "message": "Blocks reordered"
+    }
+  }
+}

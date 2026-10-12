@@ -1,0 +1,36 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/payment-links?page=1&results_per_page=25",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "id": 27,
+        "user_id": 4,
+        "workspace_id": 234,
+        "type": "payment_link",
+        "url": "ncp-179177059010024",
+        "location_url": "https://buy.example.com/checkout/123",
+        "settings": {
+          "title": "Tip jar"
+        },
+        "clicks": 0,
+        "is_verified": false,
+        "is_enabled": false,
+        "directory_is_enabled": false,
+        "created_at": "2026-10-12T02:03:14.173506Z",
+        "updated_at": "2026-10-12T02:03:14.245166Z",
+        "last_used_at": "2026-10-12T02:03:14.245166Z",
+        "lifecycle_state": "active",
+        "lifecycle_state_at": "2026-10-12T02:03:14.173506Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "per_page": 25,
+      "total": 1
+    }
+  }
+}

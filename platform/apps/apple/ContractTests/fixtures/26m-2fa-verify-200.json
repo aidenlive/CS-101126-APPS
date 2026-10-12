@@ -1,0 +1,24 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/auth/2fa/verify",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "message": "2FA enabled successfully",
+      "recovery_codes": [
+        "<redacted-recovery-code>",
+        "<redacted-recovery-code>",
+        "<redacted-recovery-code>",
+        "<redacted-recovery-code>",
+        "<redacted-recovery-code>",
+        "<redacted-recovery-code>",
+        "<redacted-recovery-code>",
+        "<redacted-recovery-code>",
+        "<redacted-recovery-code>",
+        "<redacted-recovery-code>"
+      ]
+    }
+  }
+}

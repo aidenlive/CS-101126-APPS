@@ -74,6 +74,32 @@ struct ErrorStateView: View {
     }
 }
 
+/// A load failure inside a page that keeps the rest of its content, such
+/// as a dashboard section. `ErrorStateView` is the full-area version.
+struct InlineErrorState: View {
+    let error: APIError
+    let retry: @MainActor @Sendable () async -> Void
+    @State private var isRetrying = false
+
+    var body: some View {
+        StudioEmptyState(
+            systemImage: error == .offline ? "wifi.slash" : "exclamationmark.triangle",
+            title: error == .offline ? String(localized: "You're offline") : String(localized: "Couldn't load this"),
+            message: error.localizedDescription
+        ) {
+            if error.isRetryable || error == .offline {
+                StudioButton(String(localized: "Try Again"), systemImage: "arrow.clockwise", variant: .outline, isLoading: isRetrying) {
+                    Task {
+                        isRetrying = true
+                        await retry()
+                        isRetrying = false
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// A one-line banner above a list whose refresh failed while it still has
 /// data to show.
 struct RefreshErrorBanner: View {

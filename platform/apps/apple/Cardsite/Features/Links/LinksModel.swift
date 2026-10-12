@@ -1,23 +1,47 @@
 import Foundation
 import Observation
+import Synchronization
 import CardsiteKit
 
-/// Short links for the current workspace. Bio pages share the links table
-/// on the server; they are listed on the Pages tab, so they're filtered out here.
+/// Short links for the current workspace, plus the reference data their
+/// editor's pickers need.
+///
+/// Search: the text is sent as `search=` on every page request (see
+/// `APIClient.links(page:search:)`), and the loaded rows are also filtered
+/// locally by address and destination, because the API currently ignores
+/// the parameter. Either way the list shows only matches.
 @MainActor
 @Observable
 final class LinksModel {
     let list: PagedListModel<Resource>
     let client: APIClient
-    var searchText = ""
+    /// Targeting vocabulary, domains, projects, splash pages, plan capabilities.
+    let options: ResourceOptionsModel
 
-    @ObservationIgnored var onError: @MainActor (any Error) -> Void = { _ in } {
-        didSet { list.onError = onError }
+    var searchText = "" {
+        didSet { query.set(searchText) }
     }
 
-    init(client: APIClient) {
+    /// Links whose enabled switch is mid-request.
+    private(set) var togglingIDs: Set<Int> = []
+
+    @ObservationIgnored var onError: @MainActor (any Error) -> Void = { _ in } {
+        didSet {
+            list.onError = onError
+            options.onError = onError
+        }
+    }
+
+    @ObservationIgnored private let query: SearchQuery
+
+    init(client: APIClient, options: ResourceOptionsModel? = nil) {
+        let query = SearchQuery()
         self.client = client
-        self.list = PagedListModel { page in try await client.links(page: page) }
+        self.query = query
+        self.options = options ?? ResourceOptionsModel(client: client)
+        self.list = PagedListModel { page in
+            try await client.links(page: page, search: query.value)
+        }
     }
 
     /// Short links only, filtered by the search field (address or destination).
@@ -53,6 +77,26 @@ final class LinksModel {
         }
     }
 
+    /// The list row's switch. Throws so the caller can say what went wrong.
+    func setEnabled(_ link: Resource, _ isEnabled: Bool) async throws {
+        guard !togglingIDs.contains(link.id) else { return }
+        togglingIDs.insert(link.id)
+        defer { togglingIDs.remove(link.id) }
+        _ = try await update(link, isEnabled: isEnabled)
+    }
+
+    /// Copies a link; the copy starts switched off at `<slug>-copy`.
+    func duplicate(_ link: Resource) async throws -> Resource {
+        do {
+            let copy = try await client.duplicateLink(id: link.id)
+            list.insert(copy)
+            return copy
+        } catch {
+            onError(error)
+            throw error
+        }
+    }
+
     func delete(_ link: Resource) async throws {
         do {
             try await client.deleteLink(id: link.id)
@@ -62,63 +106,20 @@ final class LinksModel {
             throw error
         }
     }
+
+    /// Keeps the list row in step with a link saved in the editor.
+    func didSave(_ detail: LinkDetail) {
+        list.replace(detail.resource)
+    }
 }
 
-/// Traffic for one link over a window, for the detail screen.
-@MainActor
-@Observable
-final class LinkTrafficModel {
-    enum Window: Int, CaseIterable, Identifiable {
-        case week = 7, month = 30, quarter = 90
-        var id: Int { rawValue }
-        var title: String {
-            switch self {
-            case .week: return String(localized: "7 days")
-            case .month: return String(localized: "30 days")
-            case .quarter: return String(localized: "90 days")
-            }
-        }
-    }
+/// The search text, readable from the list's `@Sendable` page fetch.
+private final class SearchQuery: Sendable {
+    private let storage = Mutex("")
 
-    struct Snapshot: Equatable {
-        var days: [DailyTraffic]
-        var referrers: [TrafficBreakdown]
-        var countries: [TrafficBreakdown]
+    var value: String { storage.withLock { $0 } }
 
-        var totalViews: Int { days.reduce(0) { $0 + $1.pageviews } }
-        /// Daily unique visitors can't be summed across days (the same
-        /// person counts once per day), so the period shows the daily average.
-        var averageDailyVisitors: Int {
-            guard !days.isEmpty else { return 0 }
-            return Int((Double(days.reduce(0) { $0 + $1.visitors }) / Double(days.count)).rounded())
-        }
-    }
-
-    private(set) var state: Loadable<Snapshot> = .idle
-    var window: Window = .month
-    @ObservationIgnored var onError: @MainActor (any Error) -> Void = { _ in }
-
-    private let client: APIClient
-    private let linkID: Int
-
-    init(client: APIClient, linkID: Int) {
-        self.client = client
-        self.linkID = linkID
-    }
-
-    func load() async {
-        if state.value == nil { state = .loading }
-        let end = Date()
-        let start = Calendar.current.date(byAdding: .day, value: -(window.rawValue - 1), to: end) ?? end
-        do {
-            async let days = client.dailyTraffic(linkID: linkID, from: start, to: end)
-            async let referrers = client.breakdown(linkID: linkID, by: .referrer, from: start, to: end)
-            async let countries = client.breakdown(linkID: linkID, by: .country, from: start, to: end)
-            state = .loaded(Snapshot(days: try await days, referrers: try await referrers, countries: try await countries))
-        } catch is CancellationError {
-        } catch {
-            onError(error)
-            state = .failed(error.asAPIError)
-        }
+    func set(_ text: String) {
+        storage.withLock { $0 = text }
     }
 }

@@ -1,0 +1,179 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/pixels/types",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "key": "facebook",
+        "name": "Facebook Pixel",
+        "description": "Meta Ads conversion tracking",
+        "field_label": "Pixel ID",
+        "emits_beacon": true
+      },
+      {
+        "key": "google_analytics",
+        "name": "Google Analytics",
+        "description": "Google Analytics (UA / GA4)",
+        "field_label": "Tracking ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "google_tag_manager",
+        "name": "Google Tag Manager",
+        "description": "GTM container tag",
+        "field_label": "Container ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "linkedin",
+        "name": "LinkedIn Insight Tag",
+        "description": "LinkedIn conversion tracking",
+        "field_label": "Partner ID",
+        "emits_beacon": true
+      },
+      {
+        "key": "pinterest",
+        "name": "Pinterest Tag",
+        "description": "Pinterest conversion tracking",
+        "field_label": "Tag ID",
+        "emits_beacon": true
+      },
+      {
+        "key": "twitter",
+        "name": "X / Twitter Pixel",
+        "description": "Twitter / X ad conversion tracking",
+        "field_label": "Pixel ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "quora",
+        "name": "Quora Pixel",
+        "description": "Quora ad conversion tracking",
+        "field_label": "Pixel ID",
+        "emits_beacon": true
+      },
+      {
+        "key": "tiktok",
+        "name": "TikTok Pixel",
+        "description": "TikTok ad conversion tracking",
+        "field_label": "Pixel ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "snapchat",
+        "name": "Snapchat Pixel",
+        "description": "Snapchat ad conversion tracking",
+        "field_label": "Pixel ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "reddit",
+        "name": "Reddit Pixel",
+        "description": "Reddit ad conversion tracking",
+        "field_label": "Advertiser ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "bing",
+        "name": "Microsoft / Bing UET",
+        "description": "Bing Universal Event Tracking",
+        "field_label": "Tag ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "hotjar",
+        "name": "Hotjar",
+        "description": "Heatmaps and session recordings",
+        "field_label": "Site ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "mixpanel",
+        "name": "Mixpanel",
+        "description": "Product analytics event tracking",
+        "field_label": "Project Token",
+        "emits_beacon": false
+      },
+      {
+        "key": "segment",
+        "name": "Segment",
+        "description": "Customer data platform",
+        "field_label": "Write Key",
+        "emits_beacon": false
+      },
+      {
+        "key": "intercom",
+        "name": "Intercom",
+        "description": "Customer messaging platform",
+        "field_label": "App ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "crisp",
+        "name": "Crisp Chat",
+        "description": "Live chat widget",
+        "field_label": "Website ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "freshchat",
+        "name": "Freshchat",
+        "description": "Customer support chat",
+        "field_label": "Token",
+        "emits_beacon": false
+      },
+      {
+        "key": "drift",
+        "name": "Drift",
+        "description": "Conversational marketing platform",
+        "field_label": "Embed ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "amplitude",
+        "name": "Amplitude",
+        "description": "Behavioral analytics",
+        "field_label": "API Key",
+        "emits_beacon": false
+      },
+      {
+        "key": "heap",
+        "name": "Heap Analytics",
+        "description": "Auto-capture product analytics",
+        "field_label": "App ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "fullstory",
+        "name": "FullStory",
+        "description": "Digital experience analytics",
+        "field_label": "Org ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "clarity",
+        "name": "Microsoft Clarity",
+        "description": "Free heatmaps and session recordings",
+        "field_label": "Project ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "adroll",
+        "name": "AdRoll",
+        "description": "AdRoll retargeting pixel",
+        "field_label": "Advertiser ID",
+        "emits_beacon": false
+      },
+      {
+        "key": "custom",
+        "name": "Custom Script",
+        "description": "Any custom HTML/JS tracking snippet",
+        "field_label": "Script (HTML)",
+        "emits_beacon": false
+      }
+    ]
+  }
+}

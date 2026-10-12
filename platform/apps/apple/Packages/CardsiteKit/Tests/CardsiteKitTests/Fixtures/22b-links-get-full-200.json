@@ -1,0 +1,58 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/links/{id}",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "id": 22,
+      "user_id": 4,
+      "workspace_id": 234,
+      "project_id": 3,
+      "domain_id": 3,
+      "splash_page_id": 3,
+      "pixels_ids": "[3]",
+      "type": "link",
+      "url": "ncf-179177059010024",
+      "location_url": "https://example.com/full",
+      "settings": {
+        "clicks_limit": 100,
+        "cloaking_is_enabled": true,
+        "cloaking_title": "Cloaked",
+        "expiration_url": "https://example.com/expired",
+        "forward_query_parameters_is_enabled": true,
+        "http_status_code": 301,
+        "password_hash": "<redacted-hash>",
+        "sensitive_content": true,
+        "utm_campaign": "launch",
+        "utm_medium": "email",
+        "utm_source": "newsletter"
+      },
+      "display_rules": {
+        "countries": [
+          "GB",
+          "US"
+        ],
+        "device_types": [
+          "mobile"
+        ],
+        "languages": [
+          "en"
+        ]
+      },
+      "timezone": "Europe/London",
+      "scheduled_at": "2030-01-01T09:00:00Z",
+      "scheduled_end": "2030-02-01T09:00:00Z",
+      "clicks": 0,
+      "is_verified": false,
+      "is_enabled": true,
+      "directory_is_enabled": true,
+      "created_at": "2026-10-12T02:03:12.520395Z",
+      "updated_at": null,
+      "last_used_at": "2026-10-12T02:03:12.520395Z",
+      "lifecycle_state": "active",
+      "lifecycle_state_at": "2026-10-12T02:03:12.520395Z"
+    }
+  }
+}

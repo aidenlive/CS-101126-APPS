@@ -1,0 +1,13 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/auth/2fa/verify",
+    "status": 401
+  },
+  "response": {
+    "error": {
+      "title": "Invalid 2FA code",
+      "code": 401
+    }
+  }
+}

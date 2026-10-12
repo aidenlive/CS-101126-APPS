@@ -1,0 +1,12 @@
+{
+  "_request": {
+    "method": "DELETE",
+    "path": "/api/v1/data/{id}",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "message": "Data deleted"
+    }
+  }
+}

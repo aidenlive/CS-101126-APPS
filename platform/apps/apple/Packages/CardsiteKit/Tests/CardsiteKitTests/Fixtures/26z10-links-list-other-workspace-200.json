@@ -1,0 +1,15 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/links (X-Workspace-ID: new)",
+    "status": 200
+  },
+  "response": {
+    "data": null,
+    "meta": {
+      "page": 1,
+      "per_page": 25,
+      "total": 0
+    }
+  }
+}

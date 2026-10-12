@@ -1,0 +1,10 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/spotlight?q=x",
+    "status": 200
+  },
+  "response": {
+    "data": []
+  }
+}

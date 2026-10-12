@@ -1,0 +1,3913 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/biolink-blocks/types",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "type": "link",
+        "name": "Link",
+        "category": "standard",
+        "icon": "fas fa-link",
+        "color": "#4f46e5",
+        "has_statistics": true,
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Label"
+          },
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "URL"
+          },
+          {
+            "name": "icon",
+            "kind": "text",
+            "label": "Icon"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          },
+          {
+            "name": "open_in_new_tab",
+            "kind": "boolean",
+            "label": "Open in New Tab"
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "name": "Heading",
+        "category": "standard",
+        "icon": "fas fa-heading",
+        "color": "#1f2937",
+        "has_statistics": false,
+        "fields": [
+          {
+            "name": "heading",
+            "kind": "text",
+            "label": "Heading Text"
+          },
+          {
+            "name": "heading_type",
+            "kind": "select",
+            "label": "Heading Level",
+            "options": [
+              {
+                "value": "h2",
+                "label": "H2"
+              },
+              {
+                "value": "h3",
+                "label": "H3"
+              },
+              {
+                "value": "h4",
+                "label": "H4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "name": "Paragraph",
+        "category": "standard",
+        "icon": "fas fa-paragraph",
+        "color": "#6b7280",
+        "has_statistics": false,
+        "fields": [
+          {
+            "name": "text",
+            "kind": "textarea",
+            "label": "Text"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "text_alignment",
+            "kind": "select",
+            "label": "Alignment",
+            "options": [
+              {
+                "value": "left",
+                "label": "Left"
+              },
+              {
+                "value": "center",
+                "label": "Center"
+              },
+              {
+                "value": "right",
+                "label": "Right"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "avatar",
+        "name": "Avatar",
+        "category": "standard",
+        "icon": "fas fa-user-circle",
+        "color": "#8b5cf6",
+        "has_statistics": false,
+        "fields": [
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Avatar Image"
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "name": "Image",
+        "category": "standard",
+        "icon": "fas fa-image",
+        "color": "#10b981",
+        "has_statistics": true,
+        "fields": [
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Image"
+          },
+          {
+            "name": "alt",
+            "kind": "text",
+            "label": "Alt Text"
+          },
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Link URL"
+          }
+        ]
+      },
+      {
+        "type": "socials",
+        "name": "Socials",
+        "category": "standard",
+        "icon": "fas fa-share-alt",
+        "color": "#3b82f6",
+        "has_statistics": false,
+        "fields": [
+          {
+            "name": "color",
+            "kind": "color",
+            "label": "Icon Color"
+          },
+          {
+            "name": "socials",
+            "kind": "socials-map",
+            "label": "Social Links"
+          }
+        ]
+      },
+      {
+        "type": "email_collector",
+        "name": "Email Collector",
+        "category": "forms",
+        "icon": "fas fa-envelope",
+        "color": "#ef4444",
+        "has_statistics": true,
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "thank_you_url",
+            "kind": "url",
+            "label": "Thank You URL"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "notifications",
+            "kind": "notifications-picker",
+            "label": "Notifications"
+          }
+        ],
+        "collect": {
+          "fields": [
+            "name",
+            "email"
+          ],
+          "sink": "data"
+        }
+      },
+      {
+        "type": "phone_collector",
+        "name": "Phone Collector",
+        "category": "forms",
+        "icon": "fas fa-phone",
+        "color": "#f59e0b",
+        "has_statistics": true,
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "thank_you_url",
+            "kind": "url",
+            "label": "Thank You URL"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "notifications",
+            "kind": "notifications-picker",
+            "label": "Notifications"
+          }
+        ],
+        "collect": {
+          "fields": [
+            "name",
+            "phone"
+          ],
+          "sink": "data"
+        }
+      },
+      {
+        "type": "contact_collector",
+        "name": "Contact Collector",
+        "category": "forms",
+        "icon": "fas fa-address-card",
+        "color": "#06b6d4",
+        "has_statistics": true,
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "thank_you_url",
+            "kind": "url",
+            "label": "Thank You URL"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "notifications",
+            "kind": "notifications-picker",
+            "label": "Notifications"
+          }
+        ],
+        "collect": {
+          "fields": [
+            "name",
+            "email",
+            "phone"
+          ],
+          "sink": "data"
+        }
+      },
+      {
+        "type": "vcard",
+        "name": "Vcard",
+        "category": "advanced",
+        "icon": "fas fa-id-card",
+        "color": "#FAB005",
+        "has_statistics": true,
+        "fields": [
+          {
+            "name": "first_name",
+            "kind": "text",
+            "label": "First Name"
+          },
+          {
+            "name": "last_name",
+            "kind": "text",
+            "label": "Last Name"
+          },
+          {
+            "name": "email",
+            "kind": "text",
+            "label": "Email"
+          },
+          {
+            "name": "url",
+            "kind": "url",
+            "label": "Website"
+          },
+          {
+            "name": "company",
+            "kind": "text",
+            "label": "Company"
+          },
+          {
+            "name": "job_title",
+            "kind": "text",
+            "label": "Job Title"
+          },
+          {
+            "name": "birthday",
+            "kind": "text",
+            "label": "Birthday"
+          },
+          {
+            "name": "phone_number_label",
+            "kind": "text",
+            "label": "Phone Label"
+          },
+          {
+            "name": "phone_number_value",
+            "kind": "text",
+            "label": "Phone Number"
+          },
+          {
+            "name": "street",
+            "kind": "text",
+            "label": "Street"
+          },
+          {
+            "name": "city",
+            "kind": "text",
+            "label": "City"
+          },
+          {
+            "name": "zip",
+            "kind": "text",
+            "label": "ZIP"
+          },
+          {
+            "name": "region",
+            "kind": "text",
+            "label": "Region"
+          },
+          {
+            "name": "country",
+            "kind": "text",
+            "label": "Country"
+          },
+          {
+            "name": "note",
+            "kind": "textarea",
+            "label": "Note"
+          },
+          {
+            "name": "social_label",
+            "kind": "text",
+            "label": "Social Label"
+          },
+          {
+            "name": "social_value",
+            "kind": "url",
+            "label": "Social URL"
+          }
+        ]
+      },
+      {
+        "type": "map",
+        "name": "Map",
+        "category": "embeds",
+        "icon": "fas fa-map-marker-alt",
+        "color": "#ef4444",
+        "has_statistics": false,
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Google Maps URL"
+          }
+        ]
+      },
+      {
+        "type": "soundcloud",
+        "name": "SoundCloud",
+        "category": "embeds",
+        "icon": "fab fa-soundcloud",
+        "color": "#ff5500",
+        "has_statistics": false,
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "SoundCloud URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "spotify",
+        "name": "Spotify",
+        "category": "embeds",
+        "icon": "fab fa-spotify",
+        "color": "#1DB954",
+        "has_statistics": false,
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Spotify URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "youtube",
+        "name": "YouTube",
+        "category": "embeds",
+        "icon": "fab fa-youtube",
+        "color": "#FF0000",
+        "has_statistics": false,
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "YouTube URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "twitch",
+        "name": "Twitch",
+        "category": "embeds",
+        "icon": "fab fa-twitch",
+        "color": "#9146FF",
+        "has_statistics": false,
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Twitch URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "vimeo",
+        "name": "Vimeo",
+        "category": "embeds",
+        "icon": "fab fa-vimeo",
+        "color": "#1ab7ea",
+        "has_statistics": false,
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Vimeo URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "tiktok_video",
+        "name": "TikTok",
+        "category": "embeds",
+        "icon": "fab fa-tiktok",
+        "color": "#000000",
+        "has_statistics": false,
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "TikTok Video URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "paypal",
+        "name": "Paypal",
+        "category": "payments",
+        "icon": "fab fa-paypal",
+        "color": "#003087",
+        "has_statistics": true,
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "PayPal.me URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Button Label"
+          }
+        ]
+      },
+      {
+        "type": "business_hours",
+        "name": "Business Hours",
+        "category": "advanced",
+        "icon": "fas fa-clock",
+        "color": "#059669",
+        "has_statistics": false,
+        "fields": [
+          {
+            "name": "hours",
+            "kind": "times-grid",
+            "label": "Business Hours"
+          }
+        ]
+      },
+      {
+        "type": "modal_text",
+        "name": "Modal Text",
+        "category": "advanced",
+        "icon": "fas fa-window-maximize",
+        "color": "#7c3aed",
+        "has_statistics": false,
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Button Label"
+          },
+          {
+            "name": "text",
+            "kind": "richtext",
+            "label": "Modal Content"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          }
+        ]
+      },
+      {
+        "type": "header",
+        "name": "Header",
+        "category": "advanced",
+        "icon": "fas fa-theater-masks",
+        "color": "#61B123",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Cover Image"
+          },
+          {
+            "name": "avatar",
+            "kind": "image",
+            "label": "Avatar Image"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Display Name"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "rss_feed",
+        "name": "Rss Feed",
+        "category": "advanced",
+        "icon": "fas fa-rss",
+        "color": "#ee802f",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "RSS Feed URL"
+          }
+        ]
+      },
+      {
+        "type": "custom_html",
+        "name": "Custom Html",
+        "category": "advanced",
+        "icon": "fas fa-code",
+        "color": "#02234c",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "html",
+            "kind": "code",
+            "label": "HTML"
+          }
+        ]
+      },
+      {
+        "type": "code",
+        "name": "Code",
+        "category": "advanced",
+        "icon": "fas fa-terminal",
+        "color": "#8ecdd5",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "code",
+            "kind": "code",
+            "label": "Code"
+          },
+          {
+            "name": "code_language",
+            "kind": "select",
+            "label": "Language",
+            "options": [
+              {
+                "value": "javascript",
+                "label": "JavaScript"
+              },
+              {
+                "value": "typescript",
+                "label": "TypeScript"
+              },
+              {
+                "value": "python",
+                "label": "Python"
+              },
+              {
+                "value": "go",
+                "label": "Go"
+              },
+              {
+                "value": "rust",
+                "label": "Rust"
+              },
+              {
+                "value": "bash",
+                "label": "Bash"
+              },
+              {
+                "value": "sql",
+                "label": "SQL"
+              },
+              {
+                "value": "json",
+                "label": "JSON"
+              },
+              {
+                "value": "html",
+                "label": "HTML"
+              },
+              {
+                "value": "css",
+                "label": "CSS"
+              },
+              {
+                "value": "php",
+                "label": "PHP"
+              },
+              {
+                "value": "ruby",
+                "label": "Ruby"
+              },
+              {
+                "value": "java",
+                "label": "Java"
+              },
+              {
+                "value": "cpp",
+                "label": "C++"
+              }
+            ]
+          },
+          {
+            "name": "theme",
+            "kind": "select",
+            "label": "Theme",
+            "options": [
+              {
+                "value": "dark",
+                "label": "Dark"
+              },
+              {
+                "value": "light",
+                "label": "Light"
+              },
+              {
+                "value": "dracula",
+                "label": "Dracula"
+              },
+              {
+                "value": "monokai",
+                "label": "Monokai"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "alert",
+        "name": "Alert",
+        "category": "advanced",
+        "icon": "fas fa-bell",
+        "color": "#1500ff",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "text",
+            "kind": "text",
+            "label": "Message"
+          },
+          {
+            "name": "icon",
+            "kind": "text",
+            "label": "Icon Class"
+          },
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Link URL"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          },
+          {
+            "name": "border_width",
+            "kind": "number",
+            "label": "Border Width"
+          },
+          {
+            "name": "border_color",
+            "kind": "color",
+            "label": "Border Color"
+          }
+        ]
+      },
+      {
+        "type": "divider",
+        "name": "Divider",
+        "category": "advanced",
+        "icon": "fas fa-grip-lines",
+        "color": "#30a85a",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "icon",
+            "kind": "text",
+            "label": "Icon Class"
+          },
+          {
+            "name": "color",
+            "kind": "color",
+            "label": "Color"
+          },
+          {
+            "name": "margin_top",
+            "kind": "number",
+            "label": "Margin Top"
+          },
+          {
+            "name": "margin_bottom",
+            "kind": "number",
+            "label": "Margin Bottom"
+          }
+        ]
+      },
+      {
+        "type": "image_grid",
+        "name": "Image Grid",
+        "category": "standard",
+        "icon": "fas fa-images",
+        "color": "#183153",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "images",
+            "kind": "markers-list",
+            "label": "Images"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Caption"
+          },
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Link URL"
+          },
+          {
+            "name": "columns",
+            "kind": "select",
+            "label": "Columns",
+            "options": [
+              {
+                "value": "1",
+                "label": "1"
+              },
+              {
+                "value": "2",
+                "label": "2"
+              },
+              {
+                "value": "3",
+                "label": "3"
+              },
+              {
+                "value": "4",
+                "label": "4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "name": "List",
+        "category": "standard",
+        "icon": "fas fa-list",
+        "color": "#2b385e",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "text",
+            "kind": "textarea",
+            "label": "List Items"
+          },
+          {
+            "name": "icon",
+            "kind": "text",
+            "label": "Icon Class"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          }
+        ]
+      },
+      {
+        "type": "twitter_profile",
+        "name": "Twitter Profile",
+        "category": "embeds",
+        "icon": "fab fa-twitter",
+        "color": "#1DA1F2",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Twitter Profile URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "tiktok_profile",
+        "name": "TikTok Profile",
+        "category": "embeds",
+        "icon": "fab fa-tiktok",
+        "color": "#000000",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "TikTok Profile URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "pinterest_profile",
+        "name": "Pinterest Profile",
+        "category": "embeds",
+        "icon": "fab fa-pinterest",
+        "color": "#E60023",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Pinterest Profile URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "snapchat",
+        "name": "Snapchat",
+        "category": "embeds",
+        "icon": "fab fa-snapchat",
+        "color": "#FFFC00",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Snapchat URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "twitter_tweet",
+        "name": "Twitter Tweet",
+        "category": "embeds",
+        "icon": "fab fa-twitter",
+        "color": "#1DA1F2",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Tweet URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "twitter_video",
+        "name": "Twitter Video",
+        "category": "embeds",
+        "icon": "fab fa-twitter",
+        "color": "#1DA1F2",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Twitter Video URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "instagram_media",
+        "name": "Instagram Media",
+        "category": "embeds",
+        "icon": "fab fa-instagram",
+        "color": "#E1306C",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Instagram Post URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "tumblr_post",
+        "name": "Tumblr Post",
+        "category": "embeds",
+        "icon": "fab fa-tumblr",
+        "color": "#35465C",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Tumblr Post URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "bluesky_post",
+        "name": "Bluesky Post",
+        "category": "embeds",
+        "icon": "fas fa-cloud",
+        "color": "#0085FF",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Bluesky Post URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "applemusic",
+        "name": "Apple Music",
+        "category": "embeds",
+        "icon": "fab fa-apple",
+        "color": "#FA233B",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Apple Music URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "tidal",
+        "name": "Tidal",
+        "category": "embeds",
+        "icon": "fas fa-music",
+        "color": "#000000",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Tidal URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "mixcloud",
+        "name": "Mixcloud",
+        "category": "embeds",
+        "icon": "fas fa-headphones",
+        "color": "#5000ff",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "embed",
+            "kind": "embed",
+            "label": "Mixcloud Embed URL"
+          },
+          {
+            "name": "type",
+            "kind": "select",
+            "label": "Type",
+            "options": [
+              {
+                "value": "cloudcast",
+                "label": "Cloudcast"
+              },
+              {
+                "value": "playlist",
+                "label": "Playlist"
+              },
+              {
+                "value": "set",
+                "label": "Set"
+              }
+            ]
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "theme",
+            "kind": "select",
+            "label": "Theme",
+            "options": [
+              {
+                "value": "light",
+                "label": "Light"
+              },
+              {
+                "value": "dark",
+                "label": "Dark"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "bandcamp",
+        "name": "Bandcamp",
+        "category": "embeds",
+        "icon": "fab fa-bandcamp",
+        "color": "#629aa9",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "embed_type",
+            "kind": "select",
+            "label": "Type",
+            "options": [
+              {
+                "value": "track",
+                "label": "Track"
+              },
+              {
+                "value": "playlist",
+                "label": "Playlist"
+              }
+            ]
+          },
+          {
+            "name": "embed",
+            "kind": "embed",
+            "label": "Embed Code"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "size",
+            "kind": "select",
+            "label": "Size",
+            "options": [
+              {
+                "value": "small",
+                "label": "Small"
+              },
+              {
+                "value": "large",
+                "label": "Large"
+              }
+            ]
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          }
+        ]
+      },
+      {
+        "type": "vk_video",
+        "name": "VK Video",
+        "category": "embeds",
+        "icon": "fab fa-vk",
+        "color": "#4680C2",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "embed_oid",
+            "kind": "text",
+            "label": "Owner ID"
+          },
+          {
+            "name": "embed_id",
+            "kind": "text",
+            "label": "Video ID"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          }
+        ]
+      },
+      {
+        "type": "google_form",
+        "name": "Google Form",
+        "category": "embeds",
+        "icon": "fab fa-google",
+        "color": "#4285F4",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Google Form URL"
+          }
+        ]
+      },
+      {
+        "type": "canva",
+        "name": "Canva",
+        "category": "embeds",
+        "icon": "fas fa-palette",
+        "color": "#00C4CC",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Canva Design URL"
+          }
+        ]
+      },
+      {
+        "type": "kick",
+        "name": "Kick",
+        "category": "embeds",
+        "icon": "fas fa-video",
+        "color": "#53FC18",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "embed",
+            "kind": "embed",
+            "label": "Kick Channel Name"
+          }
+        ]
+      },
+      {
+        "type": "big_link",
+        "name": "Big Link",
+        "category": "standard",
+        "icon": "fas fa-external-link-square-alt",
+        "color": "#2563eb",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "description",
+            "kind": "textarea",
+            "label": "Description"
+          },
+          {
+            "name": "icon",
+            "kind": "text",
+            "label": "Icon Class"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Image"
+          },
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "URL"
+          },
+          {
+            "name": "columns",
+            "kind": "select",
+            "label": "Columns",
+            "options": [
+              {
+                "value": "1",
+                "label": "1"
+              },
+              {
+                "value": "2",
+                "label": "2"
+              },
+              {
+                "value": "3",
+                "label": "3"
+              },
+              {
+                "value": "4",
+                "label": "4"
+              }
+            ]
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "description_color",
+            "kind": "color",
+            "label": "Description Color"
+          }
+        ]
+      },
+      {
+        "type": "featured_link",
+        "name": "Featured Link",
+        "category": "standard",
+        "icon": "fas fa-star",
+        "color": "#f59e0b",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "description",
+            "kind": "textarea",
+            "label": "Description"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Image"
+          },
+          {
+            "name": "image_alt",
+            "kind": "text",
+            "label": "Image Alt Text"
+          },
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "URL"
+          },
+          {
+            "name": "open_in_new_tab",
+            "kind": "boolean",
+            "label": "Open in New Tab"
+          },
+          {
+            "name": "sensitive_content",
+            "kind": "boolean",
+            "label": "Sensitive Content Warning"
+          }
+        ]
+      },
+      {
+        "type": "cta",
+        "name": "Cta",
+        "category": "standard",
+        "icon": "fas fa-bullhorn",
+        "color": "#dc2626",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Button Label"
+          },
+          {
+            "name": "description",
+            "kind": "textarea",
+            "label": "Description"
+          },
+          {
+            "name": "icon",
+            "kind": "text",
+            "label": "Icon Class"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Background Image"
+          },
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "URL"
+          },
+          {
+            "name": "columns",
+            "kind": "select",
+            "label": "Columns",
+            "options": [
+              {
+                "value": "1",
+                "label": "1"
+              },
+              {
+                "value": "2",
+                "label": "2"
+              },
+              {
+                "value": "3",
+                "label": "3"
+              },
+              {
+                "value": "4",
+                "label": "4"
+              }
+            ]
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "audio",
+        "name": "Audio",
+        "category": "standard",
+        "icon": "fas fa-volume-up",
+        "color": "#7c3aed",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "file",
+            "kind": "file",
+            "label": "Audio File"
+          },
+          {
+            "name": "audio_controls",
+            "kind": "boolean",
+            "label": "Show Controls"
+          },
+          {
+            "name": "audio_autoplay",
+            "kind": "boolean",
+            "label": "Autoplay"
+          },
+          {
+            "name": "audio_loop",
+            "kind": "boolean",
+            "label": "Loop"
+          },
+          {
+            "name": "audio_muted",
+            "kind": "boolean",
+            "label": "Start Muted"
+          }
+        ]
+      },
+      {
+        "type": "video",
+        "name": "Video",
+        "category": "standard",
+        "icon": "fas fa-film",
+        "color": "#0ea5e9",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "file",
+            "kind": "file",
+            "label": "Video File"
+          },
+          {
+            "name": "poster_url",
+            "kind": "image",
+            "label": "Poster Image"
+          },
+          {
+            "name": "video_controls",
+            "kind": "boolean",
+            "label": "Show Controls"
+          },
+          {
+            "name": "video_autoplay",
+            "kind": "boolean",
+            "label": "Autoplay"
+          },
+          {
+            "name": "video_loop",
+            "kind": "boolean",
+            "label": "Loop"
+          },
+          {
+            "name": "video_muted",
+            "kind": "boolean",
+            "label": "Start Muted"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "file",
+        "name": "File",
+        "category": "standard",
+        "icon": "fas fa-file-download",
+        "color": "#059669",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "file",
+            "kind": "file",
+            "label": "File"
+          },
+          {
+            "name": "icon",
+            "kind": "text",
+            "label": "Icon Class"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Thumbnail"
+          },
+          {
+            "name": "columns",
+            "kind": "select",
+            "label": "Columns",
+            "options": [
+              {
+                "value": "1",
+                "label": "1"
+              },
+              {
+                "value": "2",
+                "label": "2"
+              },
+              {
+                "value": "3",
+                "label": "3"
+              },
+              {
+                "value": "4",
+                "label": "4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "iframe",
+        "name": "Embedded content",
+        "category": "standard",
+        "icon": "fas fa-window-restore",
+        "color": "#6366f1",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Embed URL"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "faq",
+        "name": "Faq",
+        "category": "advanced",
+        "icon": "fas fa-question-circle",
+        "color": "#f97316",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "items",
+            "kind": "markers-list",
+            "label": "FAQ Items"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          },
+          {
+            "name": "border_width",
+            "kind": "number",
+            "label": "Border Width"
+          },
+          {
+            "name": "border_color",
+            "kind": "color",
+            "label": "Border Color"
+          }
+        ]
+      },
+      {
+        "type": "countdown",
+        "name": "Countdown",
+        "category": "advanced",
+        "icon": "fas fa-hourglass-half",
+        "color": "#ec4899",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "counter_end_date",
+            "kind": "datetime",
+            "label": "End Date"
+          },
+          {
+            "name": "expired_text",
+            "kind": "text",
+            "label": "Expired Message"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "external_item",
+        "name": "External Item",
+        "category": "advanced",
+        "icon": "fas fa-box-open",
+        "color": "#84cc16",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Name"
+          },
+          {
+            "name": "description",
+            "kind": "textarea",
+            "label": "Description"
+          },
+          {
+            "name": "price",
+            "kind": "text",
+            "label": "Price"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Image"
+          },
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "URL"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "share",
+        "name": "Share",
+        "category": "advanced",
+        "icon": "fas fa-share-square",
+        "color": "#14b8a6",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Button Label"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Image"
+          },
+          {
+            "name": "icon",
+            "kind": "text",
+            "label": "Icon Class"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "coupon",
+        "name": "Coupon",
+        "category": "advanced",
+        "icon": "fas fa-ticket-alt",
+        "color": "#a855f7",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "description",
+            "kind": "textarea",
+            "label": "Description"
+          },
+          {
+            "name": "coupon",
+            "kind": "text",
+            "label": "Coupon Code"
+          },
+          {
+            "name": "button_text",
+            "kind": "text",
+            "label": "Button Label"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Image"
+          },
+          {
+            "name": "icon",
+            "kind": "text",
+            "label": "Icon Class"
+          },
+          {
+            "name": "columns",
+            "kind": "select",
+            "label": "Columns",
+            "options": [
+              {
+                "value": "1",
+                "label": "1"
+              },
+              {
+                "value": "2",
+                "label": "2"
+              },
+              {
+                "value": "3",
+                "label": "3"
+              },
+              {
+                "value": "4",
+                "label": "4"
+              }
+            ]
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "timeline",
+        "name": "Timeline",
+        "category": "advanced",
+        "icon": "fas fa-stream",
+        "color": "#0d9488",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "items",
+            "kind": "markers-list",
+            "label": "Timeline Items"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          },
+          {
+            "name": "line_color",
+            "kind": "color",
+            "label": "Line Color"
+          }
+        ]
+      },
+      {
+        "type": "youtube_feed",
+        "name": "Youtube Feed",
+        "category": "advanced",
+        "icon": "fab fa-youtube",
+        "color": "#FF0000",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "channel_id",
+            "kind": "text",
+            "label": "YouTube Channel ID"
+          },
+          {
+            "name": "amount",
+            "kind": "number",
+            "label": "Number of Videos"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "columns",
+            "kind": "select",
+            "label": "Columns",
+            "options": [
+              {
+                "value": "1",
+                "label": "1"
+              },
+              {
+                "value": "2",
+                "label": "2"
+              },
+              {
+                "value": "3",
+                "label": "3"
+              },
+              {
+                "value": "4",
+                "label": "4"
+              }
+            ]
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "markdown",
+        "name": "Markdown",
+        "category": "advanced",
+        "icon": "fab fa-markdown",
+        "color": "#334155",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "text",
+            "kind": "richtext",
+            "label": "Markdown Content"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "image_slider",
+        "name": "Image Slider",
+        "category": "advanced",
+        "icon": "fas fa-images",
+        "color": "#0369a1",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "items",
+            "kind": "markers-list",
+            "label": "Slides"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          },
+          {
+            "name": "autoplay",
+            "kind": "boolean",
+            "label": "Autoplay"
+          },
+          {
+            "name": "autoplay_interval",
+            "kind": "number",
+            "label": "Autoplay Interval (ms)"
+          },
+          {
+            "name": "display_arrows",
+            "kind": "boolean",
+            "label": "Show Arrows"
+          },
+          {
+            "name": "display_pagination",
+            "kind": "boolean",
+            "label": "Show Pagination Dots"
+          }
+        ]
+      },
+      {
+        "type": "review",
+        "name": "Review",
+        "category": "advanced",
+        "icon": "fas fa-star-half-alt",
+        "color": "#eab308",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "title",
+            "kind": "text",
+            "label": "Review Title"
+          },
+          {
+            "name": "stars",
+            "kind": "number",
+            "label": "Star Rating (1–5)"
+          },
+          {
+            "name": "description",
+            "kind": "textarea",
+            "label": "Review Text"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Image"
+          },
+          {
+            "name": "author_name",
+            "kind": "text",
+            "label": "Author Name"
+          },
+          {
+            "name": "author_description",
+            "kind": "text",
+            "label": "Author Description"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "weather",
+        "name": "Weather",
+        "category": "advanced",
+        "icon": "fas fa-cloud-sun",
+        "color": "#38bdf8",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "source",
+            "kind": "select",
+            "label": "Location Source",
+            "options": [
+              {
+                "value": "auto",
+                "label": "Auto (IP)"
+              },
+              {
+                "value": "coordinates",
+                "label": "Coordinates"
+              },
+              {
+                "value": "address",
+                "label": "Address"
+              }
+            ]
+          },
+          {
+            "name": "latitude",
+            "kind": "number",
+            "label": "Latitude"
+          },
+          {
+            "name": "longitude",
+            "kind": "number",
+            "label": "Longitude"
+          },
+          {
+            "name": "address",
+            "kind": "text",
+            "label": "Address"
+          },
+          {
+            "name": "unit",
+            "kind": "select",
+            "label": "Temperature Unit",
+            "options": [
+              {
+                "value": "celsius",
+                "label": "Celsius"
+              },
+              {
+                "value": "fahrenheit",
+                "label": "Fahrenheit"
+              }
+            ]
+          },
+          {
+            "name": "display_forecast",
+            "kind": "boolean",
+            "label": "Show Forecast"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "counter",
+        "name": "Counter",
+        "category": "advanced",
+        "icon": "fas fa-sort-numeric-up",
+        "color": "#e11d48",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "number",
+            "kind": "number",
+            "label": "Target Number"
+          },
+          {
+            "name": "starting_number",
+            "kind": "number",
+            "label": "Starting Number"
+          },
+          {
+            "name": "number_prefix",
+            "kind": "text",
+            "label": "Prefix"
+          },
+          {
+            "name": "number_suffix",
+            "kind": "text",
+            "label": "Suffix"
+          },
+          {
+            "name": "description",
+            "kind": "text",
+            "label": "Label"
+          },
+          {
+            "name": "columns",
+            "kind": "select",
+            "label": "Columns",
+            "options": [
+              {
+                "value": "1",
+                "label": "1"
+              },
+              {
+                "value": "2",
+                "label": "2"
+              },
+              {
+                "value": "3",
+                "label": "3"
+              },
+              {
+                "value": "4",
+                "label": "4"
+              }
+            ]
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "image_comparison",
+        "name": "Image Comparison",
+        "category": "advanced",
+        "icon": "fas fa-columns",
+        "color": "#7c3aed",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "before_image",
+            "kind": "image",
+            "label": "Before Image"
+          },
+          {
+            "name": "before_image_alt",
+            "kind": "text",
+            "label": "Before Image Alt Text"
+          },
+          {
+            "name": "after_image",
+            "kind": "image",
+            "label": "After Image"
+          },
+          {
+            "name": "after_image_alt",
+            "kind": "text",
+            "label": "After Image Alt Text"
+          },
+          {
+            "name": "before_text",
+            "kind": "text",
+            "label": "Before Label"
+          },
+          {
+            "name": "after_text",
+            "kind": "text",
+            "label": "After Label"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "appointment_calendar",
+        "name": "Appointment Calendar",
+        "category": "advanced",
+        "icon": "fas fa-calendar-check",
+        "color": "#0891b2",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Image"
+          },
+          {
+            "name": "timezone",
+            "kind": "timezone",
+            "label": "Timezone"
+          },
+          {
+            "name": "allowed_scheduling_days_ahead",
+            "kind": "number",
+            "label": "Days Ahead Allowed"
+          },
+          {
+            "name": "email_placeholder",
+            "kind": "text",
+            "label": "Email Placeholder"
+          },
+          {
+            "name": "phone_placeholder",
+            "kind": "text",
+            "label": "Phone Placeholder"
+          },
+          {
+            "name": "button_text",
+            "kind": "text",
+            "label": "Button Label"
+          }
+        ]
+      },
+      {
+        "type": "typeform",
+        "name": "Typeform",
+        "category": "embeds",
+        "icon": "fas fa-poll-h",
+        "color": "#262627",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "embed",
+            "kind": "embed",
+            "label": "Typeform Form ID"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "calendly",
+        "name": "Calendly",
+        "category": "embeds",
+        "icon": "fas fa-calendar-alt",
+        "color": "#006BFF",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Calendly URL"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "discord",
+        "name": "Discord",
+        "category": "embeds",
+        "icon": "fab fa-discord",
+        "color": "#5865F2",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "server_id",
+            "kind": "text",
+            "label": "Discord Server ID"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "facebook",
+        "name": "Facebook",
+        "category": "embeds",
+        "icon": "fab fa-facebook",
+        "color": "#1877F2",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Facebook Page/Post URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "reddit",
+        "name": "Reddit",
+        "category": "embeds",
+        "icon": "fab fa-reddit",
+        "color": "#FF4500",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Reddit Post URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "pdf_document",
+        "name": "Pdf Document",
+        "category": "embeds",
+        "icon": "fas fa-file-pdf",
+        "color": "#dc2626",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "file",
+            "kind": "file",
+            "label": "PDF File"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Thumbnail"
+          },
+          {
+            "name": "columns",
+            "kind": "select",
+            "label": "Columns",
+            "options": [
+              {
+                "value": "1",
+                "label": "1"
+              },
+              {
+                "value": "2",
+                "label": "2"
+              },
+              {
+                "value": "3",
+                "label": "3"
+              },
+              {
+                "value": "4",
+                "label": "4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "powerpoint_presentation",
+        "name": "Powerpoint Presentation",
+        "category": "embeds",
+        "icon": "fas fa-file-powerpoint",
+        "color": "#D04423",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "file",
+            "kind": "file",
+            "label": "PowerPoint File"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Thumbnail"
+          },
+          {
+            "name": "columns",
+            "kind": "select",
+            "label": "Columns",
+            "options": [
+              {
+                "value": "1",
+                "label": "1"
+              },
+              {
+                "value": "2",
+                "label": "2"
+              },
+              {
+                "value": "3",
+                "label": "3"
+              },
+              {
+                "value": "4",
+                "label": "4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "excel_spreadsheet",
+        "name": "Excel Spreadsheet",
+        "category": "embeds",
+        "icon": "fas fa-file-excel",
+        "color": "#217346",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "file",
+            "kind": "file",
+            "label": "Excel File"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Thumbnail"
+          },
+          {
+            "name": "columns",
+            "kind": "select",
+            "label": "Columns",
+            "options": [
+              {
+                "value": "1",
+                "label": "1"
+              },
+              {
+                "value": "2",
+                "label": "2"
+              },
+              {
+                "value": "3",
+                "label": "3"
+              },
+              {
+                "value": "4",
+                "label": "4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "rumble",
+        "name": "Rumble",
+        "category": "embeds",
+        "icon": "fas fa-play-circle",
+        "color": "#85C742",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Rumble Video URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "telegram",
+        "name": "Telegram",
+        "category": "embeds",
+        "icon": "fab fa-telegram",
+        "color": "#0088cc",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "Telegram Post URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "donation",
+        "name": "Donation",
+        "category": "payments",
+        "icon": "fas fa-hand-holding-usd",
+        "color": "#0d55ad",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "title",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "description",
+            "kind": "textarea",
+            "label": "Description"
+          },
+          {
+            "name": "currency",
+            "kind": "text",
+            "label": "Currency"
+          },
+          {
+            "name": "prefilled_amount",
+            "kind": "number",
+            "label": "Suggested Amount"
+          },
+          {
+            "name": "minimum_amount",
+            "kind": "number",
+            "label": "Minimum Amount"
+          },
+          {
+            "name": "allow_custom_amount",
+            "kind": "boolean",
+            "label": "Allow Custom Amount"
+          },
+          {
+            "name": "allow_message",
+            "kind": "boolean",
+            "label": "Allow Donor Message"
+          },
+          {
+            "name": "payment_processors_ids",
+            "kind": "payment-processors-picker",
+            "label": "Payment Processors"
+          },
+          {
+            "name": "thank_you_title",
+            "kind": "text",
+            "label": "Thank You Title"
+          },
+          {
+            "name": "thank_you_description",
+            "kind": "textarea",
+            "label": "Thank You Message"
+          },
+          {
+            "name": "thank_you_url",
+            "kind": "url",
+            "label": "Thank You URL"
+          },
+          {
+            "name": "email_notification",
+            "kind": "boolean",
+            "label": "Email Notification"
+          },
+          {
+            "name": "webhook_url",
+            "kind": "url",
+            "label": "Webhook URL"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Image"
+          },
+          {
+            "name": "icon",
+            "kind": "text",
+            "label": "Icon Class"
+          }
+        ]
+      },
+      {
+        "type": "product",
+        "name": "Product",
+        "category": "payments",
+        "icon": "fas fa-cube",
+        "color": "#0d1bad",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "title",
+            "kind": "text",
+            "label": "Product Name"
+          },
+          {
+            "name": "description",
+            "kind": "textarea",
+            "label": "Description"
+          },
+          {
+            "name": "currency",
+            "kind": "text",
+            "label": "Currency"
+          },
+          {
+            "name": "price",
+            "kind": "number",
+            "label": "Price"
+          },
+          {
+            "name": "minimum_price",
+            "kind": "number",
+            "label": "Minimum Price"
+          },
+          {
+            "name": "allow_custom_price",
+            "kind": "boolean",
+            "label": "Allow Custom Price"
+          },
+          {
+            "name": "payment_processors_ids",
+            "kind": "payment-processors-picker",
+            "label": "Payment Processors"
+          },
+          {
+            "name": "thank_you_title",
+            "kind": "text",
+            "label": "Thank You Title"
+          },
+          {
+            "name": "thank_you_description",
+            "kind": "textarea",
+            "label": "Thank You Message"
+          },
+          {
+            "name": "thank_you_url",
+            "kind": "url",
+            "label": "Thank You URL"
+          },
+          {
+            "name": "email_notification",
+            "kind": "boolean",
+            "label": "Email Notification"
+          },
+          {
+            "name": "webhook_url",
+            "kind": "url",
+            "label": "Webhook URL"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Product Image"
+          },
+          {
+            "name": "icon",
+            "kind": "text",
+            "label": "Icon Class"
+          },
+          {
+            "name": "file",
+            "kind": "file",
+            "label": "Downloadable File"
+          }
+        ]
+      },
+      {
+        "type": "service",
+        "name": "Service",
+        "category": "payments",
+        "icon": "fas fa-comments-dollar",
+        "color": "#3c0daa",
+        "has_statistics": true,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "title",
+            "kind": "text",
+            "label": "Service Name"
+          },
+          {
+            "name": "description",
+            "kind": "textarea",
+            "label": "Description"
+          },
+          {
+            "name": "currency",
+            "kind": "text",
+            "label": "Currency"
+          },
+          {
+            "name": "price",
+            "kind": "number",
+            "label": "Price"
+          },
+          {
+            "name": "minimum_price",
+            "kind": "number",
+            "label": "Minimum Price"
+          },
+          {
+            "name": "allow_custom_price",
+            "kind": "boolean",
+            "label": "Allow Custom Price"
+          },
+          {
+            "name": "payment_processors_ids",
+            "kind": "payment-processors-picker",
+            "label": "Payment Processors"
+          },
+          {
+            "name": "thank_you_title",
+            "kind": "text",
+            "label": "Thank You Title"
+          },
+          {
+            "name": "thank_you_description",
+            "kind": "textarea",
+            "label": "Thank You Message"
+          },
+          {
+            "name": "thank_you_url",
+            "kind": "url",
+            "label": "Thank You URL"
+          },
+          {
+            "name": "email_notification",
+            "kind": "boolean",
+            "label": "Email Notification"
+          },
+          {
+            "name": "webhook_url",
+            "kind": "url",
+            "label": "Webhook URL"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Image"
+          },
+          {
+            "name": "icon",
+            "kind": "text",
+            "label": "Icon Class"
+          }
+        ]
+      },
+      {
+        "type": "cashapp",
+        "name": "Cashapp",
+        "category": "payments",
+        "icon": "fas fa-dollar-sign",
+        "color": "#00D632",
+        "has_statistics": true,
+        "fields": [
+          {
+            "name": "cashtag",
+            "kind": "text",
+            "label": "Cash Tag ($username)"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Button Label"
+          },
+          {
+            "name": "amount",
+            "kind": "number",
+            "label": "Suggested Amount"
+          },
+          {
+            "name": "currency",
+            "kind": "text",
+            "label": "Currency"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          }
+        ]
+      },
+      {
+        "type": "venmo",
+        "name": "Venmo",
+        "category": "payments",
+        "icon": "fas fa-mobile-alt",
+        "color": "#3D95CE",
+        "has_statistics": true,
+        "fields": [
+          {
+            "name": "username",
+            "kind": "text",
+            "label": "Venmo Username"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Button Label"
+          },
+          {
+            "name": "amount",
+            "kind": "number",
+            "label": "Suggested Amount"
+          },
+          {
+            "name": "currency",
+            "kind": "text",
+            "label": "Currency"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          }
+        ]
+      },
+      {
+        "type": "progress_bar",
+        "name": "Progress Bar",
+        "category": "advanced",
+        "icon": "fas fa-tasks",
+        "color": "#0ea5e9",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Label"
+          },
+          {
+            "name": "value",
+            "kind": "number",
+            "label": "Current Value"
+          },
+          {
+            "name": "max_value",
+            "kind": "number",
+            "label": "Maximum Value"
+          },
+          {
+            "name": "bar_color",
+            "kind": "color",
+            "label": "Bar Color"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "social_proof",
+        "name": "Social Proof",
+        "category": "advanced",
+        "icon": "fas fa-thumbs-up",
+        "color": "#7c3aed",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "description",
+            "kind": "textarea",
+            "label": "Description"
+          },
+          {
+            "name": "items",
+            "kind": "markers-list",
+            "label": "Testimonials"
+          },
+          {
+            "name": "background_color",
+            "kind": "color",
+            "label": "Background Color"
+          },
+          {
+            "name": "text_color",
+            "kind": "color",
+            "label": "Text Color"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "linkedin_profile",
+        "name": "Linkedin Profile",
+        "category": "embeds",
+        "icon": "fab fa-linkedin",
+        "color": "#0A66C2",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "location_url",
+            "kind": "url",
+            "label": "LinkedIn Profile URL"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "description",
+            "kind": "textarea",
+            "label": "Headline"
+          },
+          {
+            "name": "image",
+            "kind": "image",
+            "label": "Profile Image"
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "instagram_feed",
+        "name": "Instagram Feed",
+        "category": "embeds",
+        "icon": "fab fa-instagram",
+        "color": "#E1306C",
+        "has_statistics": false,
+        "capability": "premium_blocks",
+        "fields": [
+          {
+            "name": "username",
+            "kind": "text",
+            "label": "Instagram Username"
+          },
+          {
+            "name": "amount",
+            "kind": "number",
+            "label": "Number of Posts"
+          },
+          {
+            "name": "name",
+            "kind": "text",
+            "label": "Title"
+          },
+          {
+            "name": "columns",
+            "kind": "select",
+            "label": "Columns",
+            "options": [
+              {
+                "value": "1",
+                "label": "1"
+              },
+              {
+                "value": "2",
+                "label": "2"
+              },
+              {
+                "value": "3",
+                "label": "3"
+              },
+              {
+                "value": "4",
+                "label": "4"
+              }
+            ]
+          },
+          {
+            "name": "border_radius",
+            "kind": "select",
+            "label": "Border Radius",
+            "options": [
+              {
+                "value": "0",
+                "label": "None"
+              },
+              {
+                "value": "4",
+                "label": "Small"
+              },
+              {
+                "value": "8",
+                "label": "Medium"
+              },
+              {
+                "value": "16",
+                "label": "Large"
+              },
+              {
+                "value": "9999",
+                "label": "Full"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

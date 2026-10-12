@@ -23,6 +23,7 @@ public struct StudioPageHead<Actions: View>: View {
     private let kicker: String?
     private let title: String
     private let accent: String
+    private let description: String?
     private let actions: Actions
 
     @Environment(\.studioViewport) private var viewport
@@ -36,6 +37,24 @@ public struct StudioPageHead<Actions: View>: View {
         self.kicker = kicker
         self.title = title
         self.accent = accent
+        self.description = nil
+        self.actions = actions()
+    }
+
+    /// With a one- or two-sentence description under the title, in body
+    /// type at the secondary ink, capped to a readable measure — the
+    /// heading system's "title / description" pair.
+    public init(
+        kicker: String? = nil,
+        title: String,
+        accent: String = "",
+        description: String?,
+        @ViewBuilder actions: () -> Actions
+    ) {
+        self.kicker = kicker
+        self.title = title
+        self.accent = accent
+        self.description = description
         self.actions = actions()
     }
 
@@ -46,6 +65,13 @@ public struct StudioPageHead<Actions: View>: View {
                 Text(title).studioText(.display)
             } else {
                 StudioTwoToneTitle(title, accent: accent)
+            }
+            if let description {
+                Text(description)
+                    .studioText(.body)
+                    .foregroundStyle(Color.studioText2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: 560, alignment: .leading)
             }
         }
 
@@ -70,6 +96,10 @@ public struct StudioPageHead<Actions: View>: View {
 public extension StudioPageHead where Actions == EmptyView {
     init(kicker: String? = nil, title: String, accent: String = "") {
         self.init(kicker: kicker, title: title, accent: accent) { EmptyView() }
+    }
+
+    init(kicker: String? = nil, title: String, accent: String = "", description: String?) {
+        self.init(kicker: kicker, title: title, accent: accent, description: description) { EmptyView() }
     }
 }
 
@@ -403,5 +433,101 @@ public struct StudioConfirmDialog: View {
         )
         .padding(StudioSpace.s5)
         .accessibilityAddTraits(.isModal)
+    }
+}
+
+// MARK: - Modal presentation
+
+/*
+ `studioConfirm` presents a `StudioConfirmDialog` as a centred overlay over
+ a dimmed scrim instead of inside a sheet: a sheet wraps the Studio card in
+ a second full-width system surface (double chrome). Same contract as the
+ web `.lk-modal`: the scrim owns cancel, one card, no extra wrapping. It is
+ identical on iPhone, iPad and Mac.
+
+ For plain yes/no confirmations the native `.confirmationDialog` or
+ `.alert` is still the better choice; reach for this when the dialog needs
+ the Studio card's copy and layout.
+
+ Under Reduce Motion the card fades in place instead of scaling on a
+ spring.
+ */
+private struct StudioConfirmOverlay<Dialog: View>: ViewModifier {
+    let isPresented: Bool
+    let dismiss: () -> Void
+    @ViewBuilder let dialog: () -> Dialog
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content
+            .overlay {
+                if isPresented {
+                    ZStack {
+                        Color.studioScrim
+                            .ignoresSafeArea()
+                            .onTapGesture(perform: dismiss)
+                            .accessibilityLabel("Dismiss dialog")
+                            .accessibilityAddTraits(.isButton)
+
+                        dialog()
+                            .transition(
+                                reduceMotion
+                                    ? AnyTransition.opacity
+                                    : AnyTransition.scale(scale: 0.96, anchor: .center).combined(with: .opacity)
+                            )
+                    }
+                    .zIndex(1)
+                    #if os(macOS)
+                    .onExitCommand(perform: dismiss)
+                    #endif
+                }
+            }
+            .animation(
+                reduceMotion ? StudioAnimation.base : StudioAnimation.spring,
+                value: isPresented
+            )
+    }
+}
+
+public extension View {
+    /// Presents a `StudioConfirmDialog` for the bound item as a centred
+    /// overlay with a dimmed scrim. Tapping the scrim sets the item to nil;
+    /// the dialog's own `onCancel` / `onConfirm` should do the same.
+    ///
+    ///     .studioConfirm(item: $pendingDelete) { link in
+    ///         StudioConfirmDialog(
+    ///             title: "Delete \(link.alias)?", message: "…",
+    ///             confirmTitle: "Delete", isDestructive: true,
+    ///             onConfirm: { model.delete(link); pendingDelete = nil },
+    ///             onCancel: { pendingDelete = nil }
+    ///         )
+    ///     }
+    func studioConfirm<Item: Identifiable>(
+        item: Binding<Item?>,
+        @ViewBuilder dialog: @escaping (Item) -> StudioConfirmDialog
+    ) -> some View {
+        modifier(StudioConfirmOverlay(
+            isPresented: item.wrappedValue != nil,
+            dismiss: { item.wrappedValue = nil },
+            dialog: {
+                if let current = item.wrappedValue {
+                    dialog(current)
+                }
+            }
+        ))
+    }
+
+    /// `studioConfirm(item:)`'s Bool-flag sibling, for confirms that are
+    /// not about a specific model value.
+    func studioConfirm(
+        isPresented: Binding<Bool>,
+        @ViewBuilder dialog: @escaping () -> StudioConfirmDialog
+    ) -> some View {
+        modifier(StudioConfirmOverlay(
+            isPresented: isPresented.wrappedValue,
+            dismiss: { isPresented.wrappedValue = false },
+            dialog: dialog
+        ))
     }
 }

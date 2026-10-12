@@ -2,79 +2,115 @@ import SwiftUI
 import StudioKit
 import CardsiteKit
 
+/// One code: the image on a Studio card with generous margins, its name in
+/// the display face, what it encodes, and share, save, copy, edit and delete.
 struct QRCodeDetailView: View {
     let code: QRCode
+    let typeLabel: String
+    let edit: () -> Void
     let requestDelete: () -> Void
 
     var body: some View {
         ScrollView {
             VStack(spacing: StudioSpace.s6) {
-                StudioCard {
+                StudioCard(radius: StudioRadius.xl) {
                     QRImage(code: code)
-                        .frame(maxWidth: 320)
+                        .padding(StudioSpace.s4)
+                        .frame(maxWidth: 420)
                         .frame(maxWidth: .infinity)
-                        .accessibilityLabel(Text("QR code for \(code.target ?? code.name)"))
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(Text("QR code for \(code.name)"))
+                        .accessibilityValue(Text(verbatim: code.target ?? ""))
                 }
 
-                VStack(alignment: .leading, spacing: StudioSpace.s3) {
-                    StudioKicker(String(localized: "Opens"))
-                    if let target = code.target, let url = URL(string: target), url.scheme != nil {
-                        Link(destination: url) {
-                            Text(verbatim: target).studioText(.body).multilineTextAlignment(.leading)
-                        }
-                    } else {
-                        Text(verbatim: code.target ?? "—").studioText(.body)
-                    }
+                VStack(spacing: StudioSpace.s3) {
+                    StudioKicker(typeLabel)
+                    Text(code.name)
+                        .studioText(.display)
+                        .foregroundStyle(Color.studioText)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.6)
                     if let created = code.createdAt {
                         Text("Created \(created.formatted(date: .abbreviated, time: .omitted))")
                             .studioText(.uiSm)
-                            .studioMuted()
+                            .foregroundStyle(Color.studioText3)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity)
 
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: StudioSpace.s2) { actions }
-                    VStack(alignment: .leading, spacing: StudioSpace.s2) { actions }
+                encodesCard
+
+                if let png = code.pngData {
+                    QRExportActions(png: png, fileName: code.fileName, title: code.name,
+                                    copyText: code.target, copyTitle: code.copyTitle)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text("The image is 256 × 256 px, suited to screens and small print.")
-                    .studioText(.uiSm)
-                    .studioMuted()
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                HStack(spacing: StudioSpace.s2) {
+                    StudioButton(String(localized: "Edit"), systemImage: "pencil", variant: .outline, action: edit)
+                    StudioButton(String(localized: "Delete"), systemImage: "trash", variant: .danger, action: requestDelete)
+                    Spacer(minLength: 0)
+                }
             }
             .padding(StudioSpace.s6)
-            .readableWidth(560)
+            .readableWidth(640)
         }
         .background(Color.studioBg)
         .navigationTitle(code.name)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button(action: edit) {
+                    Label("Edit", systemImage: "pencil")
+                }
+            }
+        }
     }
 
-    @ViewBuilder
-    private var actions: some View {
-        if let png = code.pngData {
-            ShareLink(item: PNGFile(data: png, name: code.fileName),
-                      preview: SharePreview(code.name, image: Image(pngData: png) ?? Image(systemName: "qrcode"))) {
-                Label("Share Image", systemImage: "square.and.arrow.up")
+    /// What a scan opens or reads.
+    private var encodesCard: some View {
+        StudioCard {
+            VStack(alignment: .leading, spacing: StudioSpace.s3) {
+                StudioKicker(QRCodeCatalog.encodesURL(code.type) ? String(localized: "Opens") : String(localized: "Encodes"))
+                if let target = code.target, !target.isEmpty {
+                    if QRCodeCatalog.encodesURL(code.type), let url = URL(string: target), url.scheme != nil {
+                        Link(destination: url) {
+                            Text(verbatim: target)
+                                .studioText(.body)
+                                .multilineTextAlignment(.leading)
+                        }
+                    } else {
+                        Text(verbatim: target)
+                            .studioText(.mono)
+                            .foregroundStyle(Color.studioText2)
+                            .textSelection(.enabled)
+                            .lineLimit(12)
+                    }
+                } else {
+                    Text("Nothing recorded")
+                        .studioText(.body)
+                        .foregroundStyle(Color.studioText3)
+                }
+                if code.type == QRCodeCatalog.dynamicURLType {
+                    Text("A dynamic code: change the link's destination and printed copies follow it.")
+                        .studioText(.uiSm)
+                        .foregroundStyle(Color.studioText3)
+                }
             }
-            .buttonStyle(.borderedProminent)
         }
-        if let target = code.target {
-            Button {
-                Pasteboard.copy(target)
-                Haptics.success()
-            } label: {
-                Label("Copy Link", systemImage: "doc.on.doc")
-            }
-            .buttonStyle(.bordered)
-        }
-        Button(role: .destructive, action: requestDelete) {
-            Label("Delete", systemImage: "trash")
-        }
-        .buttonStyle(.bordered)
+    }
+}
+
+#Preview("Detail") {
+    NavigationStack {
+        QRCodeDetailView(code: QRCodesPreviewData.codes[0], typeLabel: "URL", edit: {}, requestDelete: {})
+    }
+}
+
+#Preview("WiFi detail") {
+    NavigationStack {
+        QRCodeDetailView(code: QRCodesPreviewData.codes[1], typeLabel: "WiFi", edit: {}, requestDelete: {})
     }
 }

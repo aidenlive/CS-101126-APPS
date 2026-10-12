@@ -93,8 +93,8 @@ final class ContractDecodingTests: XCTestCase {
                                      "06f-links-create-409-duplicate", "06g-links-create-422-plan-limit")
         let client = APIClient(baseURL: base, token: "t", transport: stub)
 
-        let created = try await client.createLink(slug: "nc-179174903420425", destination: URL(string: "https://example.com")!)
-        XCTAssertEqual(created.slug, "nc-179174903420425")
+        let created = try await client.createLink(slug: "nc-1", destination: URL(string: "https://example.com")!)
+        XCTAssertTrue(created.slug.hasPrefix("nc-"), "the fixture's slug is nc-<run id>")
         XCTAssertEqual(created.destination, "https://example.com")
         XCTAssertTrue(created.isEnabled)
         XCTAssertFalse(created.isLapsing)

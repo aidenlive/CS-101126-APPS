@@ -1,0 +1,51 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/vcards",
+    "status": 201
+  },
+  "response": {
+    "data": {
+      "id": 25,
+      "user_id": 4,
+      "workspace_id": 234,
+      "type": "vcard",
+      "url": "ncv-179177059010024",
+      "settings": {
+        "vcard_birthday": "",
+        "vcard_city": "",
+        "vcard_company": "Engines",
+        "vcard_country": "",
+        "vcard_email": "ada@example.test",
+        "vcard_first_name": "Ada",
+        "vcard_job_title": "Analyst",
+        "vcard_last_name": "Lovelace",
+        "vcard_note": "",
+        "vcard_phone_numbers": [
+          {
+            "value": "+44 20 7946 0000"
+          }
+        ],
+        "vcard_region": "",
+        "vcard_socials": [
+          {
+            "label": "Site",
+            "value": "https://example.com"
+          }
+        ],
+        "vcard_street": "",
+        "vcard_url": "",
+        "vcard_zip": ""
+      },
+      "clicks": 0,
+      "is_verified": false,
+      "is_enabled": true,
+      "directory_is_enabled": true,
+      "created_at": "2026-10-12T02:03:13.861554Z",
+      "updated_at": null,
+      "last_used_at": "2026-10-12T02:03:13.861554Z",
+      "lifecycle_state": "active",
+      "lifecycle_state_at": "2026-10-12T02:03:13.861554Z"
+    }
+  }
+}

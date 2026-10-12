@@ -1,0 +1,10 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/statistics/all?type=country_code&...",
+    "status": 200
+  },
+  "response": {
+    "data": null
+  }
+}

@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreText
 
 /*
  Typography.
@@ -14,6 +15,35 @@ import SwiftUI
  · Line height is expressed as `lineSpacing` (the gap BETWEEN lines) rather
    than a multiplier, because that is what SwiftUI takes.
  */
+
+/*
+ Line height, correctly (from Studio 1.10).
+
+ The tokens express line height the way CSS does: TOTAL line-box height
+ as a multiple of the point size. SwiftUI's `lineSpacing` is EXTRA space
+ on top of the font's natural line height, which for these families runs
+ 1.2–1.4× the point size. Applying `size × (lineHeight − 1)` directly
+ double-counts the natural leading and over-airs every paragraph against
+ the web render, so the font's measured natural height comes off first:
+
+     spacing = max(0, size × lineHeight − naturalLineHeight)
+
+ Display styles whose token is at or under the natural height resolve to
+ zero extra. SwiftUI cannot set lines SHORTER than the natural height
+ without TextKit; that residual on display sizes is accepted.
+
+ The font is matched by FAMILY name (the token value), through a
+ descriptor, so it resolves whatever the face's PostScript name is. If the
+ family is not registered yet, Core Text substitutes a fallback whose
+ metrics are close enough for spacing; the result is never negative.
+ */
+func studioLineSpacing(family: String, size: CGFloat, lineHeight: CGFloat) -> CGFloat {
+    let attributes = [kCTFontFamilyNameAttribute as String: family] as CFDictionary
+    let descriptor = CTFontDescriptorCreateWithAttributes(attributes)
+    let font = CTFontCreateWithFontDescriptor(descriptor, size, nil)
+    let natural = CTFontGetAscent(font) + CTFontGetDescent(font) + CTFontGetLeading(font)
+    return max(0, size * lineHeight - natural)
+}
 
 public extension View {
 
@@ -51,8 +81,8 @@ private struct StudioTextModifier: ViewModifier {
             .font(.custom(style.family, fixedSize: size))
             .fontWeight(style.weight)
             .tracking(style.tracking * size)
-            // lineHeight is a multiplier; SwiftUI wants the extra space only.
-            .lineSpacing(max(0, size * (style.lineHeight - 1)))
+            // lineHeight is a CSS-style total; SwiftUI wants the extra only.
+            .lineSpacing(studioLineSpacing(family: style.family, size: size, lineHeight: style.lineHeight))
             .textCase(style.isUppercase ? .uppercase : nil)
     }
 }
@@ -91,7 +121,7 @@ public struct StudioTwoToneTitle: View {
                 .foregroundColor(.studioText3)
         )
         .tracking(style.tracking * size)
-        .lineSpacing(max(0, size * (style.lineHeight - 1)))
+        .lineSpacing(studioLineSpacing(family: style.family, size: size, lineHeight: style.lineHeight))
         .fixedSize(horizontal: false, vertical: true)
     }
 }

@@ -1,0 +1,62 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/links?page=1&results_per_page=2",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "id": 23,
+        "user_id": 4,
+        "workspace_id": 234,
+        "domain_id": 3,
+        "type": "link",
+        "url": "ncf-179177059010024-copy",
+        "location_url": "https://example.com/full",
+        "settings": {
+          "http_status_code": 302,
+          "password_hash": "<redacted-hash>",
+          "utm_source": "podcast"
+        },
+        "clicks": 0,
+        "is_verified": false,
+        "is_enabled": false,
+        "directory_is_enabled": false,
+        "created_at": "2026-10-12T02:03:12.687241Z",
+        "updated_at": null,
+        "last_used_at": "2026-10-12T02:03:12.687241Z",
+        "lifecycle_state": "active",
+        "lifecycle_state_at": "2026-10-12T02:03:12.687241Z"
+      },
+      {
+        "id": 22,
+        "user_id": 4,
+        "workspace_id": 234,
+        "domain_id": 3,
+        "type": "link",
+        "url": "ncf-179177059010024",
+        "location_url": "https://example.com/full",
+        "settings": {
+          "http_status_code": 302,
+          "password_hash": "<redacted-hash>",
+          "utm_source": "podcast"
+        },
+        "clicks": 0,
+        "is_verified": false,
+        "is_enabled": true,
+        "directory_is_enabled": false,
+        "created_at": "2026-10-12T02:03:12.520395Z",
+        "updated_at": "2026-10-12T02:03:12.637917Z",
+        "last_used_at": "2026-10-12T02:03:12.637917Z",
+        "lifecycle_state": "active",
+        "lifecycle_state_at": "2026-10-12T02:03:12.520395Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "per_page": 2,
+      "total": 3
+    }
+  }
+}

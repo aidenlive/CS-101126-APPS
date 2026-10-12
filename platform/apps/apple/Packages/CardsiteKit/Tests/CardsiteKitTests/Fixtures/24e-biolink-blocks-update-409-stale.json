@@ -1,0 +1,18 @@
+{
+  "_request": {
+    "method": "PUT",
+    "path": "/api/v1/biolink-blocks/{id}",
+    "status": 409
+  },
+  "response": {
+    "error": {
+      "at": "2026-10-12T02:03:13.585879Z",
+      "code": 409,
+      "last_editor": {
+        "name": "Native Contract",
+        "user_id": 4
+      },
+      "title": "Native Contract changed this block — reload it and reapply your change"
+    }
+  }
+}

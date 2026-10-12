@@ -1,0 +1,43 @@
+{
+  "_request": {
+    "method": "PUT",
+    "path": "/api/v1/qr-codes/{id}",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "id": 6,
+      "user_id": 4,
+      "workspace_id": 234,
+      "project_id": 3,
+      "link_id": 22,
+      "name": "Renamed QR",
+      "type": "url",
+      "qr_code": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAABmvDolAAAABlBMVEX///8RIjNQRD0PAAABnklEQVR42uyYvW3EMAyFKVzhUiNoFI1Gj6ZRPIJLFYJe8CjbcYK7NogJsUhwwnfF8efxR6ZNm/ZvLYJWY9GAKqno9eQL2ETkVWORLiIJ6/XkDMjorxqxEttE+vnkEiiKxs8qrgGsfEtFu1PgSGHtsgBY+/u0fzrwrVFt2VPRUD+K2IOBkysisuwJ6B8az8OBxHzGzghjv7L65ocnABFFQhMqrSzYRDv/yq02fQBbXkdtMmlP1yDAFzDElUlLvaXGmh9CE18AW6XFFm04xTLghzkAIkY+Fx0lrAFgot+l2AeA/jrfONOyrQicAWKDgdmYaUFBvo0HPoDxRgswwMKt3gBGGNZxCG2Z/+w7vgDKUgB2riYWe1gJewPYRdGWPePwQ2DQ9d6SPAAjq7mI0RtpRJ3q/CjgmszVYppXhpEBrq6Ac886VyulELFCnQHHipwR2mKC+9sPToDr1GMd06Yg4F6bjgDGmW2FAHO7i0sg2lWAQ3s38X1zhn04cFyb1a4HdtEam7Yv4DhfZf50riuhjomhugKmTZv25/YVAAD//1Sb+S4Mwr4IAAAAAElFTkSuQmCC",
+      "qr_code_foreground": "#112233",
+      "qr_code_background": "#ffffff",
+      "settings": {
+        "_style": {
+          "background_color_transparency": 0,
+          "error_level": "Q",
+          "eyes_inner_color": "",
+          "eyes_outer_color": "",
+          "foreground_gradient_color": "",
+          "foreground_gradient_type": "",
+          "frame": "",
+          "frame_color": "",
+          "frame_text": "",
+          "frame_text_font": "",
+          "frame_text_size": 0,
+          "inner_eye_style": "",
+          "outer_eye_style": "",
+          "size": 0
+        },
+        "url": "https://example.com/full"
+      },
+      "embedded_data": "https://example.com/full",
+      "created_at": "2026-10-12T02:03:13.243347Z",
+      "updated_at": null
+    }
+  }
+}

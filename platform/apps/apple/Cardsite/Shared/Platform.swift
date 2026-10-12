@@ -76,4 +76,10 @@ extension View {
 extension Int {
     /// "1,234" in the user's locale.
     var grouped: String { formatted(.number) }
+
+    /// A headline figure: grouped up to 99,999, then abbreviated ("128K"),
+    /// as the web dashboard prints them.
+    var figure: String {
+        self >= 100_000 ? formatted(.number.notation(.compactName).precision(.fractionLength(0...1))) : grouped
+    }
 }

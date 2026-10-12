@@ -1,0 +1,13 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/auth/2fa/recovery-codes",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "remaining": 10,
+      "twofa_enabled": true
+    }
+  }
+}

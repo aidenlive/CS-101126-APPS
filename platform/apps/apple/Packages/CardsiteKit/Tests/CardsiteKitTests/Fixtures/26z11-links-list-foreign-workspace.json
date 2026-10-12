@@ -1,0 +1,13 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/links (X-Workspace-ID: foreign)",
+    "status": 403
+  },
+  "response": {
+    "error": {
+      "title": "You are not a member of this workspace",
+      "code": 403
+    }
+  }
+}

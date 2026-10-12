@@ -1,0 +1,70 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/biolink-blocks?link_id={id}",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "id": 8,
+        "user_id": 4,
+        "workspace_id": 234,
+        "link_id": 24,
+        "type": "heading",
+        "settings": {
+          "heading": "Hello",
+          "heading_type": "h2"
+        },
+        "clicks": 0,
+        "is_enabled": true,
+        "order": 0,
+        "version": 2,
+        "last_editor_user_id": 4,
+        "created_at": "2026-10-12T02:03:13.521162Z",
+        "updated_at": "2026-10-12T02:03:13.659674Z"
+      },
+      {
+        "id": 7,
+        "user_id": 4,
+        "workspace_id": 234,
+        "link_id": 24,
+        "type": "link",
+        "location_url": "https://example.com/shop",
+        "settings": {
+          "name": "Shop now",
+          "open_in_new_tab": true
+        },
+        "clicks": 0,
+        "is_enabled": true,
+        "order": 1,
+        "version": 3,
+        "last_editor_user_id": 4,
+        "created_at": "2026-10-12T02:03:13.475386Z",
+        "updated_at": "2026-10-12T02:03:13.660386Z"
+      },
+      {
+        "id": 9,
+        "user_id": 4,
+        "workspace_id": 234,
+        "link_id": 24,
+        "type": "email_collector",
+        "settings": {
+          "name": "Newsletter"
+        },
+        "clicks": 0,
+        "is_enabled": true,
+        "order": 2,
+        "version": 2,
+        "last_editor_user_id": 4,
+        "created_at": "2026-10-12T02:03:13.553728Z",
+        "updated_at": "2026-10-12T02:03:13.660892Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "per_page": 25,
+      "total": 3
+    }
+  }
+}

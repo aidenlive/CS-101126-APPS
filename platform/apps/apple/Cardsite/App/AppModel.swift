@@ -16,28 +16,66 @@ final class AppModel {
     private(set) var phase: Phase = .launching
     /// Shown once on the sign-in screen after an involuntary sign-out.
     var signOutNotice: String?
-    /// Sheets opened from menu commands on Mac and keyboard shortcuts on iPad.
+    /// Sheets opened from menu commands on Mac, keyboard shortcuts on iPad
+    /// and Home's quick create.
     var composer: Composer?
     /// The token couldn't be stored, so the next launch starts signed out.
     private(set) var sessionIsEphemeral = false
 
-    enum Composer: String, Identifiable {
-        case link, qrCode
-        var id: String { rawValue }
+    /// A create sheet, optionally prefilled.
+    ///
+    /// `.link` and `.qrCode` open an empty editor. Home's paste box opens
+    /// `.link(destination:)`, and the link editor reads
+    /// `app.composer?.destination` when it appears to prefill its
+    /// destination field.
+    struct Composer: Identifiable, Hashable {
+        enum Kind: String, Hashable {
+            case link, qrCode
+        }
+
+        let kind: Kind
+        /// What the user pasted, as typed. The editor validates it.
+        var destination: String?
+
+        var id: String { kind.rawValue }
+
+        static let link = Composer(kind: .link)
+        static let qrCode = Composer(kind: .qrCode)
+
+        /// A new short link to `destination`.
+        static func link(destination: String) -> Composer {
+            let trimmed = destination.trimmingCharacters(in: .whitespacesAndNewlines)
+            return Composer(kind: .link, destination: trimmed.isEmpty ? nil : trimmed)
+        }
     }
 
     let client: APIClient
     let addresses: AddressBook
     let configuration: AppConfiguration
     private let tokens: TokenStore
+    private let defaults: UserDefaults
 
-    init(configuration: AppConfiguration = .current, tokens: TokenStore? = nil) {
+    // MARK: Workspace scope
+
+    /// The workspaces the user belongs to, for the switcher.
+    private(set) var workspaces: Loadable<[Workspace]> = .idle
+    /// The selected workspace, sent as `X-Workspace-ID`. Nil is the server's
+    /// default, the personal workspace.
+    private(set) var workspaceID: Int?
+    /// Changes on every switch. `RootView` keys the signed-in shell on it,
+    /// so every list model and screen is rebuilt for the new scope rather
+    /// than showing one workspace's rows under another's name.
+    private(set) var workspaceScope = 0
+    private static let workspaceKey = "cardsite.workspaceID"
+
+    init(configuration: AppConfiguration = .current, tokens: TokenStore? = nil, defaults: UserDefaults = .standard) {
         self.configuration = configuration
         #if canImport(Security)
         self.tokens = tokens ?? KeychainTokenStore()
         #else
         self.tokens = tokens ?? MemoryTokenStore()
         #endif
+        self.defaults = defaults
         self.addresses = AddressBook(publicHost: configuration.publicHost)
         self.client = APIClient(baseURL: configuration.apiBaseURL, userAgent: configuration.userAgent)
     }
@@ -59,6 +97,10 @@ final class AppModel {
             return
         }
         await client.setToken(token)
+        // The workspace chosen last time. Validated against the list once
+        // it loads; a workspace the user has left falls back to personal.
+        workspaceID = defaults.object(forKey: Self.workspaceKey) as? Int
+        await client.setWorkspace(workspaceID)
         do {
             phase = .signedIn(try await client.currentUser())
         } catch APIError.sessionExpired {
@@ -114,7 +156,7 @@ final class AppModel {
             sessionIsEphemeral = true
         }
         await client.setToken(session.token)
-        await client.setWorkspace(nil)
+        await resetWorkspace()
         signOutNotice = nil
         phase = .signedIn(session.user)
     }
@@ -136,10 +178,69 @@ final class AppModel {
     private func endSession(notice: String?) async {
         tokens.clear()
         await client.setToken(nil)
-        await client.setWorkspace(nil)
+        await resetWorkspace()
         composer = nil
         signOutNotice = notice
         phase = .signedOut
+    }
+
+    // MARK: Workspaces
+
+    /// The workspace on screen: the selected one, else the personal one.
+    var currentWorkspace: Workspace? {
+        guard let list = workspaces.value else { return nil }
+        return list.first { $0.id == workspaceID } ?? list.first { $0.isPersonal } ?? list.first
+    }
+
+    /// Loads the switcher's list. A remembered workspace the user is no
+    /// longer in (left, removed, deleted) falls back to personal.
+    func loadWorkspaces() async {
+        if workspaces.value == nil { workspaces = .loading }
+        do {
+            let list = try await client.workspaces()
+            workspaces = .loaded(list)
+            if let id = workspaceID, !list.contains(where: { $0.id == id }) {
+                await apply(workspace: nil)
+            }
+        } catch is CancellationError {
+            if case .loading = workspaces { workspaces = .idle }
+        } catch {
+            handle(error)
+            if workspaces.value == nil { workspaces = .failed(error.asAPIError) }
+        }
+    }
+
+    /// Switches every request to `id` (nil: personal) and rebuilds the
+    /// signed-in shell so each screen reloads in the new scope. Remembered
+    /// across launches until sign-out. Also what the Workspace screen's
+    /// `\.switchWorkspace` action calls after creating, leaving or
+    /// deleting a workspace.
+    func selectWorkspace(_ id: Int?) async {
+        guard id != workspaceID else { return }
+        await apply(workspace: id)
+        // A just-created workspace isn't in the list yet.
+        if let id, workspaces.value?.contains(where: { $0.id == id }) != true {
+            await loadWorkspaces()
+        }
+    }
+
+    private func apply(workspace id: Int?) async {
+        workspaceID = id
+        if let id {
+            defaults.set(id, forKey: Self.workspaceKey)
+        } else {
+            defaults.removeObject(forKey: Self.workspaceKey)
+        }
+        await client.setWorkspace(id)
+        composer = nil
+        workspaceScope += 1
+    }
+
+    private func resetWorkspace() async {
+        workspaceID = nil
+        workspaces = .idle
+        defaults.removeObject(forKey: Self.workspaceKey)
+        await client.setWorkspace(nil)
     }
 
     /// Central place every feature model reports errors to: an expired session
@@ -149,6 +250,25 @@ final class AppModel {
             Task { await endSession(notice: APIError.sessionExpired.localizedDescription) }
         }
     }
+
+    #if DEBUG
+    /// For previews: signed in, with workspaces, against a host that isn't
+    /// running, so screens show the data their previews hand them.
+    static func preview(
+        user: User = User(id: 4, email: "ada@example.com", name: "Ada Lovelace"),
+        workspaces: [Workspace] = [
+            Workspace(id: 234, name: "Personal", isPersonal: true),
+            Workspace(id: 301, name: "Acme Marketing", isPersonal: false, role: "admin"),
+        ]
+    ) -> AppModel {
+        let model = AppModel(configuration: .preview, tokens: MemoryTokenStore(),
+                             defaults: UserDefaults(suiteName: "cardsite.preview") ?? .standard)
+        model.phase = .signedIn(user)
+        model.workspaces = .loaded(workspaces)
+        model.workspaceID = workspaces.first?.id
+        return model
+    }
+    #endif
 }
 
 /// Values set per build configuration in Config/*.xcconfig and read from Info.plist.

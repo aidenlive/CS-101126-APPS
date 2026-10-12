@@ -1,0 +1,57 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/account/tokens",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "scopes": [
+        "account:read",
+        "ai:read",
+        "ai:write",
+        "billing:read",
+        "biolinks:read",
+        "biolinks:write",
+        "data:read",
+        "data:write",
+        "domains:read",
+        "domains:write",
+        "links:read",
+        "links:write",
+        "notifications:read",
+        "notifications:write",
+        "pixels:read",
+        "pixels:write",
+        "projects:read",
+        "projects:write",
+        "pwas:read",
+        "pwas:write",
+        "qr:read",
+        "qr:write",
+        "signatures:read",
+        "signatures:write",
+        "splash-pages:read",
+        "splash-pages:write",
+        "uploads:read",
+        "uploads:write"
+      ],
+      "tokens": [
+        {
+          "id": 3,
+          "user_id": 4,
+          "workspace_id": 0,
+          "name": "Shortcuts",
+          "scopes": [
+            "links:read",
+            "links:write"
+          ],
+          "last_used_at": null,
+          "expires_at": null,
+          "revoked_at": null,
+          "created_at": "2026-10-12T02:03:14.613076Z"
+        }
+      ]
+    }
+  }
+}

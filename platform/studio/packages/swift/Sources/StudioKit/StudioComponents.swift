@@ -332,25 +332,55 @@ public struct StudioBanner: View {
     private let lead: String
     private let message: String
     private let tone: StudioTone
+    private let onDismiss: (() -> Void)?
 
     public init(lead: String, message: String, tone: StudioTone = .info) {
         self.lead = lead
         self.message = message
         self.tone = tone
+        self.onDismiss = nil
+    }
+
+    /// A dismissible banner: adds a trailing close button — the optional
+    /// dismissal the web `.lk-banner` carries.
+    public init(
+        lead: String,
+        message: String,
+        tone: StudioTone = .info,
+        onDismiss: @escaping () -> Void
+    ) {
+        self.lead = lead
+        self.message = message
+        self.tone = tone
+        self.onDismiss = onDismiss
     }
 
     public var body: some View {
         HStack(alignment: .top, spacing: StudioSpace.s3) {
-            Image(systemName: tone.symbol)
-                .font(.system(size: 17))
-            (
-                Text(lead).fontWeight(.bold)
-                + Text(" ")
-                + Text(message)
-            )
-            .studioText(.ui)
-            .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
+            HStack(alignment: .top, spacing: StudioSpace.s3) {
+                Image(systemName: tone.symbol)
+                    .font(.system(size: 17))
+                (
+                    Text(lead).fontWeight(.bold)
+                    + Text(" ")
+                    + Text(message)
+                )
+                .studioText(.ui)
+                .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            }
+            .accessibilityElement(children: .combine)
+
+            if let onDismiss {
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark")
+                        .font(.footnote.weight(.semibold))
+                        .frame(minWidth: StudioSpace.s8, minHeight: StudioSpace.s8)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(StudioPressStyle())
+                .accessibilityLabel("Dismiss")
+            }
         }
         .padding(StudioSpace.s4)
         .foregroundStyle(tone.ink)
@@ -359,7 +389,7 @@ public struct StudioBanner: View {
             RoundedRectangle(cornerRadius: StudioRadius.md, style: .continuous)
                 .strokeBorder(tone.ink.opacity(0.25), lineWidth: 0.5)
         )
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 }
 

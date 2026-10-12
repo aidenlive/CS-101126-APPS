@@ -1,0 +1,14 @@
+{
+  "_request": {
+    "method": "PUT",
+    "path": "/api/v1/account/preferences",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "default_order_type": "DESC",
+      "default_results_per_page": 50,
+      "links_auto_copy_link": true
+    }
+  }
+}

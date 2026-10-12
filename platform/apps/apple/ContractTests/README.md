@@ -19,6 +19,16 @@ WRITE_FIXTURES=0 ./native-contract.sh http://localhost:8080   # assert only
 LIMITER_PROBE=1  ./native-contract.sh http://localhost:8080   # also prove the 429 + Retry-After
 ```
 
+```bash
+# Also exercise every endpoint the parity plan needs (fixtures 20–26). Needs
+# psql and the API's database URL: the run's user is moved to Enterprise with
+# one UPDATE and one inbox notification is seeded with one INSERT.
+PSQL_URL='postgres://cardsite@127.0.0.1:55432/cardsite_db?sslmode=disable' ./native-contract.sh http://localhost:58080
+# … plus the 2FA sign-in challenge and recovery-code sign-in (3 more counted
+# auth calls: start the API with AUTH_RATE_LIMIT_ATTEMPTS>=9). Needs python3.
+PSQL_URL=… TWOFA_LOGIN=1 ./native-contract.sh http://localhost:58080
+```
+
 The exit code is 0 only when every assertion passes. Lines marked `note` record
 known server quirks and never fail the run, so the script keeps passing once
 those quirks are fixed.
@@ -46,6 +56,42 @@ API (the limiter is in memory), or start a **dev/test** API with
 passed with the raised limit. `LIMITER_PROBE=1` deliberately exhausts the
 budget.
 
+The PARITY section adds no counted auth calls unless `TWOFA_LOGIN=1`, so
+a run with `PSQL_URL` still fits the default budget (verified, run B below).
+
+### How it was proven (2026-10-12, parity extension)
+
+Built from a scratch copy of `/home/claude/src/cardsite-platform_0.0.0/apps/api`
+(never in place) with **Go 1.25.1** (`/usr/local/go1.25.1/bin`; the default
+`go` on PATH is 1.24.7 and pgx 5.10 needs 1.25, so lowering the `go`
+directive does not work). `proxy.golang.org` is unreachable, so the build ran
+with `GOPROXY=direct GOSUMDB=off GOTOOLCHAIN=local GOFLAGS=-mod=mod` and this
+block appended to the *scratch copy's* go.mod:
+
+```
+replace (
+	golang.org/x/crypto => github.com/golang/crypto v0.55.0
+	golang.org/x/text => github.com/golang/text v0.41.0
+	golang.org/x/sync => github.com/golang/sync v0.22.0
+	golang.org/x/sys => github.com/golang/sys v0.47.0
+	go.uber.org/atomic => github.com/uber-go/atomic v1.11.0
+)
+```
+
+Postgres 16 (`/usr/lib/postgresql/16/bin`, `initdb -A trust` as the
+`postgres` user under its home directory, `:55432`; a data dir under `/tmp`
+became unreadable to `postgres` mid-run), Redis on `:56379`, `cmd/migrate
+-dir migrations up` (49 migrations), server on `:58080` with the same
+environment as below plus `UPLOAD_PATH=<scratch>/uploads`.
+
+| Run | Limiter | Flags | Result |
+|---|---|---|---|
+| A (wrote `fixtures/`) | `AUTH_RATE_LIMIT_ATTEMPTS=200` | `PSQL_URL`, `TWOFA_LOGIN=1` | **316 passed, 0 failed** |
+| B | default (6 / 10 min), fresh API | `PSQL_URL`, `LIMITER_PROBE=1` | **315 passed, 0 failed**; `14-auth-login-429` taken from this run |
+| C | default, fresh API | none (PARITY skipped) | **104 passed, 0 failed** |
+
+Every fixture in `fixtures/` is **live** (none is synthetic).
+
 ### How it was proven (2026-10-11)
 
 Run against `apps/api` built from source (snapshot of this tree), Go 1.25.1, on
@@ -71,7 +117,10 @@ checked against the repository's `go.sum` and matched.)
 
 `fixtures/NN-<endpoint>-<status>.json` has the shape
 `{"_request":{"method","path","status"}, "response": <exact body>}`. Decode
-`.response`. Every JWT is replaced with `"<redacted-jwt>"`. Ids, emails and
+`.response`. Every JWT is replaced with `"<redacted-jwt>"`, API token secrets with
+`"<redacted-token>"`, bcrypt digests with `"<redacted-hash>"`, the TOTP
+secret and `otpauth://` URL with `"<redacted-totp>"`, and recovery codes
+with `"<redacted-recovery-code>"`. Ids, emails and
 timestamps are real values from the run.
 
 | Fixture | Call |
@@ -98,6 +147,57 @@ timestamps are real values from the run.
 | 13a/13b/13c-account-delete-{401,400,200} | DELETE /api/v1/account (wrong / missing / right password) |
 | 13d-user-after-delete-401 | GET /api/v1/user with the deleted user's token |
 | 14-auth-login-429 | auth limiter tripped |
+| **PARITY** (needs `PSQL_URL`) | |
+| 20a-statistics-summary-200 | GET /api/v1/statistics (after content; cached, see quirk 5) |
+| 20b-statistics-all-overview-200 | GET /api/v1/statistics/all?type=overview&start_date&end_date |
+| 20c-statistics-all-country-200 | GET /api/v1/statistics/all?type=country_code (no rows → `null`) |
+| 20d-resources-recent-200 | GET /api/v1/resources/recent?limit=5 |
+| 20e-spotlight-200 / 20f-spotlight-short-200 | GET /api/v1/spotlight?q=… (≥2 chars / 1 char) |
+| 21a / 21b / 21c projects | POST, PUT /{id}, GET /api/v1/projects |
+| 21d / 21e domains | POST, GET /api/v1/domains |
+| 21f / 21g / 21h pixels | GET /pixels/types, POST, GET /api/v1/pixels |
+| 21i / 21j splash pages | POST, GET /api/v1/splash-pages |
+| 21k-reference-targeting-200 | GET /api/v1/reference/targeting (public) |
+| 22a-links-create-full-201 | POST /api/v1/links with project, domain, splash page, pixel, timezone, schedule, display_rules, password, UTM, clicks limit, cloaking, status code |
+| 22b-links-get-full-200 | GET /api/v1/links/{id} (full object) |
+| 22c-links-update-full-200 | PUT /api/v1/links/{id} new settings + targeting, `project_id:null` |
+| 22d-links-duplicate-201 | POST /api/v1/links/{id}/duplicate |
+| 22e-links-list-paged-200 | GET /api/v1/links?page=1&results_per_page=2 |
+| 22f-links-delete-200 / 22g-links-get-404 | DELETE /api/v1/links/{id}, then GET → 404 |
+| 23a-qr-codes-types-200 | GET /api/v1/qr-codes/types |
+| 23b / 23c qr generate | POST /api/v1/qr-codes/generate (200 / 400 nothing to encode) |
+| 23d-qr-codes-create-styled-201 / 23e-qr-codes-update-200 | POST (link_id, project_id, colours), PUT /api/v1/qr-codes/{id} |
+| 24a-biolinks-create-201 | POST /api/v1/biolinks |
+| 24b-biolink-blocks-types-200 | GET /api/v1/biolink-blocks/types (85 types) |
+| 24c-biolink-blocks-create-201 | POST /api/v1/biolink-blocks |
+| 24d / 24e block update | PUT /api/v1/biolink-blocks/{id} with `version` (200 / 409 stale) |
+| 24f-biolink-blocks-order-200 | POST /api/v1/biolink-blocks/order |
+| 24g-biolink-blocks-list-200 | GET /api/v1/biolink-blocks?link_id= |
+| 24h-biolinks-get-200 | GET /api/v1/biolinks/{id} → `{biolink, blocks}` |
+| 24i / 24j | PUT /api/v1/biolinks/{id}, GET /api/v1/biolinks |
+| 25a / 25b / 25d vcards | POST, PUT /{id}, GET /api/v1/vcards |
+| 25e / 25f / 25h events | POST, PUT /{id}, GET /api/v1/events |
+| 25i / 25j / 25k / 25l payment links | POST (201 / 422), PUT /{id}, GET /api/v1/payment-links |
+| 25m / 25n / 25o files | POST, PUT /{id} (multipart), GET /api/v1/files |
+| 25p / 25q static | POST (multipart), GET /api/v1/static |
+| 26a / 26b preferences | GET, PUT /api/v1/account/preferences |
+| 26c / 26d / 26e / 26f tokens | POST (201 / 400), GET, DELETE /{id} /api/v1/account/tokens |
+| 26g / 26h / 26i password | PUT /api/v1/account/password (401 / 400 / 200) |
+| 26j 2fa setup, 26k / 26n status | POST /auth/2fa/setup, GET /auth/2fa/recovery-codes (off / on) |
+| 26l / 26m 2fa verify | POST /auth/2fa/verify (401 bad code / 200 + recovery codes) |
+| 26o / 26p 2fa sign-in | POST /auth/login → `{twofa_required:true}`; with `recovery_code` → token (`TWOFA_LOGIN=1`) |
+| 26q / 26r 2fa disable | DELETE /api/v1/auth/2fa (401 / 200) |
+| 26s–26x inbox | GET /internal-notifications (empty / one), /unread, POST /{id}/read, /read-all, /unread again |
+| 26y-logs-200 | GET /api/v1/logs?page=1&per_page=25 |
+| 26z1 / 26z2 / 26z3 uploads | POST (multipart), GET, DELETE /api/v1/uploads |
+| 26z4 / 26z5 / 26z6 data | GET /api/v1/data, GET /{id}, DELETE /{id} (a bio page form submission) |
+| 26z7-workspaces-members-200 | GET /api/v1/workspaces/{id}/members |
+| 26z8-workspaces-activity-200 | GET /api/v1/workspaces/activity?limit=20 |
+| 26z9-workspaces-create-201 | POST /api/v1/workspaces |
+| 26z10 / 26z11 | GET /api/v1/links with `X-Workspace-ID` of the new workspace (`null`) / a foreign one (403) |
+
+Asserted but not saved (bodies are not JSON): `GET /vcards/{id}/download`
+(vCard), `GET /api/public/events/{slug}/ics` (iCalendar).
 
 ## Observed contract (source of truth for Swift)
 
@@ -183,7 +283,7 @@ These keys are omitted when empty: `payment_processor, payment_subscription_id, 
 **Workspace**: `workspace_id:Int, owner_user_id:Int, name:String ("Personal"), is_personal:Bool, created_at:Date, role:String ("owner"), storage_bytes:Int`.
 
 **Link**: `id:Int, user_id:Int, workspace_id:Int, type:String ("link"), url:String (the slug), location_url:String (the destination), settings:Object? (null when unset), clicks:Int, is_verified:Bool, is_enabled:Bool, directory_is_enabled:Bool, created_at:Date, updated_at:Date?, last_used_at:Date, lifecycle_state:String ("active"), lifecycle_state_at:Date`.
-These keys are omitted when unset: `project_id, domain_id, splash_page_id, pixels_ids` (comma-separated **String** in responses), `display_rules, timezone, scheduled_at, scheduled_end`.
+These keys are omitted when unset: `project_id, domain_id, splash_page_id, pixels_ids` (a **String** holding a JSON array, e.g. `"[2]"`; see quirk 4), `display_rules, timezone, scheduled_at, scheduled_end`.
 The server never generates a slug; the client must send `url`.
 A click on `GET /l/{slug}` gives a 302 to `location_url` and raises `clicks` by 1.
 
@@ -212,7 +312,114 @@ The Free plan has `custom_slugs_limit: 1`, which is what step 6g enforces.
 3. **`directory_is_enabled` differs by endpoint for the same row.** Create,
    get and update return `true`; the list returns `false`. Do not rely on it.
 
+## Parity endpoints (observed 2026-10-12)
+
+`Link-shaped` below means the Link object above (`id, user_id,
+workspace_id, type, url, settings, clicks, is_verified, is_enabled,
+directory_is_enabled, created_at, updated_at, last_used_at,
+lifecycle_state, lifecycle_state_at`, plus `location_url` where the type
+has a destination). `{message}` means `data:{message:String}`.
+
+**Paging.** Most lists read `page` + `results_per_page`. `/logs`,
+`/internal-notifications`, `/pwas`, `/payments` and `/payment-processors`
+read `per_page` instead. The response meta is always `{page, per_page,
+total}`. `APIClient.sendPage` sends both names with the same value. None of
+the user-facing lists takes `search` or sort parameters, except `/logs`
+(`search`, `device_type`, `country_code`, `continent_code`), `/uploads`
+(`type`, `kind`) and `/data` (`link_id`, `biolink_block_id`, `type`).
+
+| Call | Status | `data` |
+|---|---|---|
+| GET /statistics/all?type=overview | 200 | `[{date, pageviews, visitors}]` or `null`; `type=<dimension>` → `[{label, pageviews}]` or `null` |
+| GET /resources/recent?limit=1…50 (default 5) | 200 | `[Link-shaped]` of every type, newest first, **no meta**; `[]` when empty |
+| GET /spotlight?q= | 200 | `[{type, id, label, url}]`, `type` one of `link`, `biolink`, `user`; `[]` when `q` is under 2 chars |
+| POST /projects `{name,color}` · PUT /projects/{id} (partial) | 201 · 200 | `{id,user_id,workspace_id,name,color,created_at,updated_at}` |
+| POST /domains `{host,scheme,…}` | 201 | `{id,user_id,workspace_id,scheme,host,type:Int,is_enabled,ssl_is_enabled,force_ssl,redirect_type:String("301"),forward_parameters,is_verified,created_at,updated_at}` |
+| GET /pixels/types | 200 | `[{key,name,description,field_label,emits_beacon}]` |
+| POST /pixels `{name,type,pixel}` | 201 | `{id,user_id,workspace_id,type,name,pixel,created_at,updated_at}` |
+| POST /splash-pages `{name,title,description,link_unlock_seconds,auto_redirect,settings}` | 201 | `{id,user_id,workspace_id,name,title,description,link_unlock_seconds,auto_redirect,created_at}` (`settings` omitted when empty) |
+| GET /reference/targeting (no auth) | 200 | `{browsers,continents,countries,device_types,languages,operating_systems}`, each `[{value,label}]` |
+| POST /links (full) | 201 | Link + `project_id, domain_id, splash_page_id, pixels_ids, display_rules, timezone, scheduled_at, scheduled_end` |
+| POST /links/{id}/duplicate (no body) | 201 | Link; slug `<slug>-copy` (then `-copy-2`…), `is_enabled:false`, `clicks:0`, settings and targeting copied |
+| DELETE /links/{id} | 200 | `{message}`; a GET afterwards is 404 `"Link not found"` |
+| GET /qr-codes/types | 200 | `[{value,label,group}]` (28) |
+| POST /qr-codes/generate | 200 | `{png:"data:image/png;base64,…", embedded_data}`; nothing to encode → 400 |
+| POST /qr-codes (styled) | 201 | QrCode + `link_id, project_id, qr_code_foreground, qr_code_background`; `settings._style` holds the stored-but-unrendered style keys |
+| POST /biolinks `{url,settings:{title,description}}` | 201 | Link-shaped, `type:"biolink"` |
+| GET /biolinks/{id} | 200 | `{biolink: Link-shaped, blocks: [Block]}` |
+| PUT /biolinks/{id} | 200 | Link-shaped; takes `settings, display_rules, timezone, scheduled_*, project_id, domain_id, splash_page_id, pixels_ids, is_enabled, directory_is_enabled` |
+| GET /biolink-blocks/types | 200 | `[{type,name,category,icon,color,has_statistics,fields:[{name,kind,label,options?:[{value,label}]}]}]` |
+| POST /biolink-blocks `{link_id,type,location_url?,settings}` | 201 | Block `{id,user_id,workspace_id,link_id,type,location_url?,settings,clicks,is_enabled,order,version,last_editor_user_id,created_at,updated_at}` |
+| PUT /biolink-blocks/{id} `{…, version}` | 200 / **409** | Block with `version+1`; a stale `version` → 409 with extras `at`, `last_editor:{name,user_id}` |
+| POST /biolink-blocks/order `{biolink_block_ids:[…]}` | 200 | `{message}` |
+| GET /biolink-blocks?link_id= | 200 | `[Block]` + meta |
+| POST /vcards (flat `vcard_*`) | 201 | Link-shaped, `type:"vcard"`; every `vcard_*` lands in `settings` (unset ones `""`; `vcard_phone_numbers`/`vcard_socials` are arrays of objects) |
+| PUT /vcards/{id} `{url?,settings?,is_enabled?}` | 200 | Link-shaped. **Flat `vcard_*` fields are ignored and `settings` replaces the whole object**: send every field |
+| POST /events (flat `event_*`) | 201 | Link-shaped, `type:"event"`; `event_*_datetime` are local `"YYYY-MM-DDTHH:mm"` strings plus `event_timezone` |
+| PUT /events/{id} `{settings}` | 200 | Link-shaped (settings replaced) |
+| POST /payment-links `{url,location_url,settings}` | 201 / 422 | Link-shaped, `type:"payment_link"`; non-http(s) checkout URL → 422 |
+| POST /files (multipart `url`, `file`, optional `password`, `force_download_is_enabled`, `sensitive_content`, `clicks_limit`, `expiration_url`, `project_id`, `domain_id`) | 201 | Link-shaped, `type:"file"`, `settings:{file,file_path,force_download_is_enabled,sensitive_content}` |
+| PUT /files/{id} (multipart; `file` optional) | 200 | Link-shaped |
+| POST /static (multipart `url`, `file`: HTML, Markdown, SVG or ZIP) | 201 | Link-shaped, `type:"static"`, `settings:{file_path,static_folder,static_kind,sensitive_content,…}` |
+| GET / PUT /account/preferences | 200 | free-form object, `{}` when never set; PUT echoes what it stored |
+| POST /account/tokens `{name,scopes}` | 201 / 400 | `{secret:"cst_…", notice, token:{id,user_id,workspace_id,name,scopes,last_used_at,expires_at,revoked_at,created_at}}` |
+| GET /account/tokens | 200 | `{scopes:[String], tokens:[Token]}` (an object, not a list) |
+| DELETE /account/tokens/{id} | 200 | `{message}` |
+| PUT /account/password `{current_password,new_password}` | 200 / 401 / 400 | `{message}`; wrong current → **401** `"Current password is incorrect"`; new outside 8–64 → 400. The JWT stays valid |
+| POST /auth/2fa/setup | 200 | `{secret, provisioning_url:"otpauth://totp/…"}` |
+| POST /auth/2fa/verify `{code}` | 200 / **401** | `{message, recovery_codes:[String]}` (10 codes); wrong code → 401 `"Invalid 2FA code"` |
+| GET /auth/2fa/recovery-codes | 200 | `{remaining:Int, twofa_enabled:Bool}` |
+| POST /auth/login with 2FA on | 200 | `{twofa_required:true}` exactly; with `recovery_code` → `{token,user,recovery_codes_remaining}` |
+| DELETE /auth/2fa `{password}` | 200 / **401** | `{message}`; wrong password → 401 `"Invalid password"` |
+| GET /internal-notifications | 200 | `[{id,user_id,for_who,from_who,icon,title,description,url,is_read,datetime}]` + meta, `null` when empty |
+| GET /internal-notifications/unread | 200 | `{notifications:[…] or null, unread_count}` (latest 5) |
+| POST /internal-notifications/{id}/read, /read-all | 200 | `{message}` |
+| GET /logs | 200 | `[{id,user_id,type,ip,device_type?,os_name?,browser_name?,datetime}]` + meta; types seen `login, login.recovery_code, twofa.enabled, twofa.disabled` |
+| POST /uploads (multipart `type`=file\|image\|avatar\|favicon\|logo, `file`) | 201 | `{upload_id,user_id,workspace_id,name,original_name,extension,mime_type,size,storage_path,type,url,created_at}`. **The key is `upload_id`, not `id`** |
+| GET /data · GET /data/{id} | 200 | `[{id,biolink_block_id,link_id,user_id,workspace_id,type,data:{…},datetime}]` + meta |
+| GET /workspaces/{id}/members | 200 | `[{workspace_id,user_id,role,name,email,created_at}]`, no meta |
+| GET /workspaces/activity?limit= (≤100, default 25) | 200 | `[{action,actor_user_id,actor_name,at,subject_type?,subject_id?,link_id?}]`; actions `comment.posted, block.created, block.edited, resource.created, member.joined` (`member.joined` has no subject) |
+| POST /workspaces `{name}` | 201 | Workspace |
+| any call with `X-Workspace-ID` of a workspace you are not in | **403** | `"You are not a member of this workspace"` |
+
+### More quirks (asserted as `note` or documented by an assertion)
+
+4. **`pixels_ids` is a JSON array encoded in a string** in responses
+   (`"[2]"`), not the comma-separated string the older notes said. Send an
+   array of integers.
+5. **`GET /statistics` is cached for 5 minutes per user** and creates do not
+   clear it, so the counts lag right after a create.
+6. **`/resources/recent` rows have `lifecycle_state:""`** and
+   `last_used_at`/`lifecycle_state_at` `"0001-01-01T00:00:00Z"`: the query
+   does not select those columns. `Resource.isLapsing` treats `""` as
+   unknown, not lapsing.
+7. **`/spotlight` is not scoped to the caller.** It searches every
+   account's enabled links and directory-listed bio pages. Do not use it as
+   "search my resources".
+8. **`settings` is replaced, not merged, on PUT.** Observed on links and
+   vCards; the event, payment link and bio page handlers also take
+   `settings` as one whole object. `password_hash` is the one key carried
+   forward when `password` is absent (observed); the web client sends
+   `password:""` to clear it (not exercised here).
+9. **The bcrypt `settings.password_hash` is sent to the client** on every
+   link with a password. Use its presence as "has a password"; never show it.
+10. **`token.workspace_id` is the real id on create and `0` in the list.**
+11. **The sign-in response's `user.twofa_enabled` is `false`** even when
+    the sign-in needed a recovery code. Read `GET /auth/2fa/recovery-codes`.
+12. **A wrong password or code on `PUT /account/password`,
+    `POST /auth/2fa/verify` and `DELETE /auth/2fa` is a 401**, the same
+    status as an expired session. The client must send these with
+    `credentialCheck: true` or it signs the user out.
+13. `GET /internal-notifications/unread` sends `notifications:null` when
+    nothing is unread.
+
 ## Discrepancies vs openapi.yaml
+
+The list below was checked on 2026-10-11 for the original endpoint set. The
+2026-10-12 parity endpoints were **not** audited field by field against the
+spec; the spec has paths for all of them and already documents
+`per_page` versus `results_per_page` and `upload_id`. Quirks 4–13 above are
+the behaviour to code against.
 
 Checked against `shared/contracts/openapi.yaml` (info.version 1.0.0) as it
 stood on 2026-10-11. Most of the older drift (error envelope as a string,

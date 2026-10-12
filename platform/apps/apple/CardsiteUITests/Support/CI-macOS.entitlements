@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!--
+  CI only: the macOS UI-test run signs ad hoc (no team, no provisioning
+  profile). The app's real entitlements include keychain-access-groups,
+  which macOS refuses to launch without a profile, so the screens job
+  overrides CODE_SIGN_ENTITLEMENTS with this file. Fixture mode keeps the
+  session in memory and never touches the keychain or the network.
+  Never used for a shipping build.
+-->
+<dict/>
+</plist>

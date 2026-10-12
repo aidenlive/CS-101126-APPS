@@ -1,0 +1,38 @@
+{
+  "_request": {
+    "method": "PUT",
+    "path": "/api/v1/events/{id}",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "id": 26,
+      "user_id": 4,
+      "workspace_id": 234,
+      "type": "event",
+      "url": "nce-179177059010024",
+      "settings": {
+        "event_end_datetime": "2030-11-20T21:00",
+        "event_first_alert_datetime": "",
+        "event_location": "Manchester",
+        "event_name": "Launch night",
+        "event_note": "Drinks",
+        "event_second_alert_datetime": "",
+        "event_start_datetime": "2030-11-20T18:00",
+        "event_timezone": "Europe/London",
+        "event_url": "https://example.com/e",
+        "expiration_url": "",
+        "sensitive_content": false
+      },
+      "clicks": 0,
+      "is_verified": false,
+      "is_enabled": true,
+      "directory_is_enabled": true,
+      "created_at": "2026-10-12T02:03:14.036479Z",
+      "updated_at": null,
+      "last_used_at": "2026-10-12T02:03:14.036479Z",
+      "lifecycle_state": "active",
+      "lifecycle_state_at": "2026-10-12T02:03:14.036479Z"
+    }
+  }
+}

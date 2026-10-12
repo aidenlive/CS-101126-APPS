@@ -1,0 +1,13 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/qr-codes/generate",
+    "status": 200
+  },
+  "response": {
+    "data": {
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAABmvDolAAAABlBMVEX///8RIjNQRD0PAAABYElEQVR42uyYsZHFIAxE10NA6BIohdauNEqhBEICj/dGAs//vu9/BUhs4MDzIg3alYSlpaWl/0TVASCSDXtN48+PLeCUTziA2LGTrKnKn+wO2MgjHIFdiAYkKVVxC3RACtW8A6TWaa9GgdEXoY/GkDo8No51YPpk6LHHtrevRmodmNK+gABf0tE6II0zchOxyVcLVawB24mNB0KP7DMNKpCLN2B0hcQixniAVHPJ98bxAGhgXIXaWRPr3Sd9ABt56riIyLazJdZU8ptP2gCmO0gcqBHO9/CnL+wDYzzgMZekpj753hdugO28rUkjLbI7YDulToEyNw+r5Pt7MQJcUxC7vAiJAyQWuANeRxKpUtMt6cMnHQDXlqSFkm1RC/Xhk/aB19Yc2+UP+XmtNgD08SJ0PLjfBn0B8lNjUUbB5yuKbeC6kWosjrGYBe6A60jCOS/OGwmNAUtLSx71GwAA//8aI2n9uKrKdwAAAABJRU5ErkJggg==",
+      "embedded_data": "https://example.com"
+    }
+  }
+}

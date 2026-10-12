@@ -66,6 +66,30 @@ targets:
     # No `info:` block on purpose: XcodeGen would regenerate Info.plist from
     # defaults and drop the CS* keys, ATS, UILaunchScreen and the category.
 
+  # XCUITest bundle: screenshots and journeys against the fixture server
+  # (Cardsite/Debug, `-CardsiteFixtures`). See CardsiteUITests/README.md.
+  CardsiteUITests:
+    type: bundle.ui-testing
+    platform: auto
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: CardsiteUITests
+        excludes:
+          - "README.md"
+          - "ci/**"
+          - "Support/**"
+    dependencies:
+      - target: Cardsite
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(CARDSITE_BUNDLE_ID).uitests
+        TEST_TARGET_NAME: Cardsite
+        GENERATE_INFOPLIST_FILE: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        CODE_SIGN_STYLE: Automatic
+
 schemes:
   Cardsite:
     build:
@@ -77,5 +101,7 @@ schemes:
       config: Debug
       targets:
         - package: CardsiteKit/CardsiteKitTests
+        - name: CardsiteUITests
+          parallelizable: false
     archive:
       config: Release

@@ -1,0 +1,31 @@
+{
+  "_request": {
+    "method": "POST",
+    "path": "/api/v1/files (multipart)",
+    "status": 201
+  },
+  "response": {
+    "data": {
+      "id": 28,
+      "user_id": 4,
+      "workspace_id": 234,
+      "type": "file",
+      "url": "ncfile-179177059010024",
+      "settings": {
+        "file": "hello.txt",
+        "file_path": "documents/2026/10/12/94c16de1437c458e0255b423c5900683.txt",
+        "force_download_is_enabled": false,
+        "sensitive_content": false
+      },
+      "clicks": 0,
+      "is_verified": false,
+      "is_enabled": true,
+      "directory_is_enabled": true,
+      "created_at": "2026-10-12T02:03:14.312892Z",
+      "updated_at": null,
+      "last_used_at": "2026-10-12T02:03:14.312892Z",
+      "lifecycle_state": "active",
+      "lifecycle_state_at": "2026-10-12T02:03:14.312892Z"
+    }
+  }
+}

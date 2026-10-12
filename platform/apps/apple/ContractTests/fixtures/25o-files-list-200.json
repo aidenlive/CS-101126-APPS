@@ -1,0 +1,38 @@
+{
+  "_request": {
+    "method": "GET",
+    "path": "/api/v1/files?page=1&results_per_page=25",
+    "status": 200
+  },
+  "response": {
+    "data": [
+      {
+        "id": 28,
+        "user_id": 4,
+        "workspace_id": 234,
+        "type": "file",
+        "url": "ncfile-179177059010024",
+        "settings": {
+          "file": "hello.txt",
+          "file_path": "documents/2026/10/12/94c16de1437c458e0255b423c5900683.txt",
+          "force_download_is_enabled": true,
+          "sensitive_content": false
+        },
+        "clicks": 0,
+        "is_verified": false,
+        "is_enabled": true,
+        "directory_is_enabled": false,
+        "created_at": "2026-10-12T02:03:14.312892Z",
+        "updated_at": "2026-10-12T02:03:14.36839Z",
+        "last_used_at": "2026-10-12T02:03:14.36839Z",
+        "lifecycle_state": "active",
+        "lifecycle_state_at": "2026-10-12T02:03:14.312892Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "per_page": 25,
+      "total": 1
+    }
+  }
+}
