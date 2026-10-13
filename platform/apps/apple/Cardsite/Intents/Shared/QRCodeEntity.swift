@@ -77,7 +77,9 @@ struct QRCodeEntityQuery: EntityStringQuery {
     }
 
     func suggestedEntities() async throws -> [QRCodeEntity] {
-        try await recentCodes()
+        // Signed out: nothing to suggest (App Shortcuts refreshes these on
+        // every launch, and an error here only fills the console).
+        do { return try await recentCodes() } catch CardsiteIntentError.signedOut { return [] }
     }
 
     /// The first page of QR codes (50). Every row inlines its image, so the

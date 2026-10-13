@@ -141,6 +141,9 @@ extension APIError {
             switch urlError.code {
             case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed, .internationalRoamingOff:
                 return .offline
+            case .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed, .timedOut:
+                // The device is online but nothing answers at the API host.
+                return .transport(String(localized: "Can't reach Cardsite right now. Try again in a moment."))
             default:
                 return .transport(urlError.localizedDescription)
             }

@@ -109,7 +109,7 @@ private struct SignInForm: View {
                 mode = .twoFactor(email: email, password: password)
             }
         } catch {
-            self.error = error.asAPIError.localizedDescription
+            self.error = AuthErrorText.describe(error)
         }
     }
 }
@@ -177,7 +177,7 @@ private struct TwoFactorForm: View {
                 error = String(localized: "That code didn’t work. Check it and try again.")
             }
         } catch {
-            self.error = error.asAPIError.localizedDescription
+            self.error = AuthErrorText.describe(error)
         }
     }
 }
@@ -308,7 +308,7 @@ private struct ForgotPasswordForm: View {
             try await app.client.requestPasswordReset(email: email.trimmingCharacters(in: .whitespacesAndNewlines))
             sent = true
         } catch {
-            self.error = error.asAPIError.localizedDescription
+            self.error = AuthErrorText.describe(error)
         }
     }
 }
@@ -387,5 +387,21 @@ struct PasswordField: View {
                 Text(help).studioText(.uiSm).studioMuted()
             }
         }
+    }
+}
+
+/// The sign-in error line. Debug builds add where the app was trying to
+/// connect, because "Can't reach Cardsite" during development almost always
+/// means the local API isn't running.
+enum AuthErrorText {
+    static func describe(_ error: Error) -> String {
+        let apiError = error.asAPIError
+        var text = apiError.localizedDescription
+        #if DEBUG
+        if case .transport = apiError, !FixtureMode.isEnabled {
+            text += " " + String(localized: "(Debug: no API at \(AppConfiguration.current.apiBaseURL.absoluteString). Start it, set Config/Local.xcconfig, or run the Cardsite Demo scheme.)")
+        }
+        #endif
+        return text
     }
 }

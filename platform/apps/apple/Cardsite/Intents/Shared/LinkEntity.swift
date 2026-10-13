@@ -81,7 +81,9 @@ struct LinkEntityQuery: EntityStringQuery {
     }
 
     func suggestedEntities() async throws -> [LinkEntity] {
-        try await recentLinks()
+        // Signed out: nothing to suggest (App Shortcuts refreshes these on
+        // every launch, and an error here only fills the console).
+        do { return try await recentLinks() } catch CardsiteIntentError.signedOut { return [] }
     }
 
     /// The first page of short links (50), newest first.
