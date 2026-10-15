@@ -3,19 +3,22 @@ import StudioKit
 import CardsiteKit
 
 /// The Search tab (`Tab(role: .search)`): the system splits it off as the
-/// trailing circle of the iPhone tab bar, and makes it the sidebar's search
-/// field on iPad and Mac. `MainView` puts `.searchable` on the `TabView`,
-/// bound to the shared ``QuickSearchModel``, and the tab view hands the
-/// field to this tab.
+/// trailing circle of the iPhone tab bar. On iPhone and Mac `MainView` puts
+/// `.searchable` on the `TabView`, bound to the shared ``QuickSearchModel``,
+/// and the tab view hands the field to this tab; on iPad the tab carries
+/// its own field (`ownsField`).
 ///
 /// With no query it suggests where to go, what to make and what to type;
 /// with one it shows ``QuickSearchResults`` (destinations, create actions
 /// and the workspace's links). Links push their detail in this tab's stack.
 struct SearchScreen: View {
     @Environment(QuickSearchModel.self) private var search
+    /// iPad: the tab shows its own field instead of the tab view's.
+    var ownsField = false
 
     var body: some View {
-        NavigationStack {
+        @Bindable var search = search
+        return NavigationStack {
             Group {
                 if search.trimmedQuery.isEmpty {
                     SearchSuggestions()
@@ -29,6 +32,21 @@ struct SearchScreen: View {
             .navigationDestination(for: Resource.self) { link in
                 LinkDetailView(link: link)
             }
+            .modifier(OwnSearchField(isOn: ownsField, query: $search.query))
+        }
+    }
+}
+
+/// The Search tab's own field, when it has one.
+private struct OwnSearchField: ViewModifier {
+    let isOn: Bool
+    @Binding var query: String
+
+    func body(content: Content) -> some View {
+        if isOn {
+            content.searchable(text: $query, prompt: Text("Pages, actions and links"))
+        } else {
+            content
         }
     }
 }

@@ -160,7 +160,7 @@ struct MainView: View {
             destinationTab(.home)
             destinationTab(.links)
             libraryTab
-            searchTab
+            searchTab(ownsField: false)
         }
         .searchable(text: $bindableSearch.query, prompt: Text("Pages, actions and links"))
         .minimizesTabBarOnScroll()
@@ -170,20 +170,34 @@ struct MainView: View {
     /// iPad and Mac: every destination in the sidebar, in sections.
     private var sidebarTabs: some View {
         @Bindable var nav = router
+        #if os(macOS)
         @Bindable var bindableSearch = search
+        #endif
         return TabView(selection: $nav.tab) {
             overviewTabs
             sectionTabs
-            searchTab
+            searchTab(ownsField: Self.sidebarSearchIsOnTab)
         }
         .tabViewStyle(.sidebarAdaptable)
         .tabViewSidebarHeader {
             WorkspaceSwitcher()
                 .padding(.bottom, StudioSpace.s2)
         }
-        // The Search tab takes the field: the sidebar's field on iPad and
-        // Mac.
+        #if os(macOS)
+        // The Mac's field is the sidebar's.
         .searchable(text: $bindableSearch.query, prompt: Text("Pages, actions and links"))
+        #endif
+    }
+
+    /// On iPad the tab view's field showed in every tab's toolbar beside
+    /// the Search tab (CI screenshots), so the Search tab carries its own,
+    /// as in Music. The Mac keeps the sidebar's field.
+    private static var sidebarSearchIsOnTab: Bool {
+        #if os(macOS)
+        false
+        #else
+        true
+        #endif
     }
 
     /// Home, Links, Pages, QR Codes and Statistics, with no section
@@ -211,9 +225,9 @@ struct MainView: View {
     #endif
 
     @TabContentBuilder<MainTab>
-    private var searchTab: some TabContent<MainTab> {
+    private func searchTab(ownsField: Bool) -> some TabContent<MainTab> {
         Tab(String(localized: "Search"), systemImage: "magnifyingglass", value: MainTab.search, role: .search) {
-            SearchScreen()
+            SearchScreen(ownsField: ownsField)
         }
     }
 
