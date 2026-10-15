@@ -263,7 +263,7 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
 }
 
 /// `labelStyle` needs one concrete type for both branches.
-private struct AnyLabelStyle: LabelStyle {
+struct AnyLabelStyle: LabelStyle {
     let iconOnlyStyle: Bool
 
     static let iconOnly = AnyLabelStyle(iconOnlyStyle: true)

@@ -438,7 +438,7 @@ struct PageCanvasEditor: View {
     private var liveItem: some ToolbarContent {
         ToolbarItem(placement: trailingPlacement) {
             if let page = editor.page {
-                PageLiveMenu(page: page, isBusy: isTogglingPage) { isOn in
+                PageLiveMenu(page: page, isBusy: isTogglingPage, showsTitle: !isCompact) { isOn in
                     Task { await setPageEnabled(isOn) }
                 }
             }
@@ -516,6 +516,11 @@ struct PageCanvasEditor: View {
 private struct PageLiveMenu: View {
     let page: BioPage
     let isBusy: Bool
+    /// iPhone: the dot alone. A title-and-icon label in the crowded compact
+    /// bar (title, address, two items) kept the toolbar re-laying out
+    /// forever after a push (CI sample: ToolbarBridge.preferencesDidChange
+    /// → UIKitBarButtonItem.updateHost → trait updates, 100% CPU).
+    var showsTitle = true
     let setEnabled: (Bool) -> Void
 
     var body: some View {
@@ -539,7 +544,7 @@ private struct PageLiveMenu: View {
                 Image(systemName: page.isEnabled ? "circle.fill" : "circle.dashed")
                     .foregroundStyle(page.isEnabled ? Color.studioAccentLine : Color.studioText3)
             }
-            .labelStyle(.titleAndIcon)
+            .labelStyle(showsTitle ? AnyLabelStyle.titleAndIcon : AnyLabelStyle.iconOnly)
         }
         .disabled(isBusy)
         .accessibilityLabel(Text("Status"))
