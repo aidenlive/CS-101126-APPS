@@ -76,8 +76,8 @@ struct PageCanvasEditor: View {
     enum PageAction { case duplicate, delete }
 
     var body: some View {
-        withToolbar(titled)
-        .background { BlockShortcuts(editor: editor) }
+        diagToolbar
+        .background { if !Diag.noShortcuts { BlockShortcuts(editor: editor) } }
         .task { [editor, pages] in
             await editor.loadIfNeeded()
             await pages.loadCatalogIfNeeded()
@@ -109,10 +109,20 @@ struct PageCanvasEditor: View {
         }
     }
 
+    /// CI isolation switches (`Diag`); the toolbar as shipped otherwise.
+    @ViewBuilder
+    private var diagToolbar: some View {
+        if Diag.noToolbar {
+            titled
+        } else {
+            withToolbar(titled)
+        }
+    }
+
     private var titled: some View {
         content
             .navigationTitle(title)
-            .pageAddressSubtitle(subtitle)
+            .pageAddressSubtitle(Diag.noSubtitle ? nil : subtitle)
             #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -172,7 +182,9 @@ struct PageCanvasEditor: View {
                 if document.blocks.isEmpty {
                     PageFirstBlockCallout { open(.add) }
                 }
-                palette(document, isVertical: false)
+                if !Diag.noPalette {
+                    palette(document, isVertical: false)
+                }
             }
             .padding(.horizontal, StudioSpace.s4)
             .padding(.bottom, StudioSpace.s2)
@@ -995,4 +1007,21 @@ private struct BlockShortcuts: View {
         .opacity(0)
         .accessibilityHidden(true)
     }
+}
+
+/// Debug-only switches for CI's editor probes, one part of the compact
+/// canvas off at a time (`-DiagNoToolbar YES` and so on). Always off in
+/// release builds.
+enum Diag {
+    #if DEBUG
+    static let noToolbar = UserDefaults.standard.bool(forKey: "DiagNoToolbar")
+    static let noPalette = UserDefaults.standard.bool(forKey: "DiagNoPalette")
+    static let noSubtitle = UserDefaults.standard.bool(forKey: "DiagNoSubtitle")
+    static let noShortcuts = UserDefaults.standard.bool(forKey: "DiagNoShortcuts")
+    #else
+    static let noToolbar = false
+    static let noPalette = false
+    static let noSubtitle = false
+    static let noShortcuts = false
+    #endif
 }

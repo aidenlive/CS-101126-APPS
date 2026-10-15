@@ -22,6 +22,26 @@ final class DiagnosticsTests: XCTestCase {
         report(app, "after-tap")
     }
 
+    /// The same path with one part of the canvas off per launch. The
+    /// workflow logs the app's CPU (by pid) while each one sits for 20 s.
+    func testC_Isolation() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["CARDSITE_DIAG"] == "1", "CI diagnosis only")
+        for flag in ["none", "DiagNoToolbar", "DiagNoPalette", "DiagNoSubtitle", "DiagNoShortcuts"] {
+            let app = XCUIApplication()
+            app.launchArguments = ["-CardsiteFixtures", "-CardsiteOpen", "pages"]
+            if flag != "none" { app.launchArguments += ["-\(flag)", "YES"] }
+            app.launch()
+            let row = app.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier BEGINSWITH 'pages.row.'")).firstMatch
+            guard row.waitForExistence(timeout: 15) else { continue }
+            print("[diag] variant \(flag) launched at \(Date().timeIntervalSince1970)")
+            row.tap()
+            sleep(20)
+            print("[diag] variant \(flag) done at \(Date().timeIntervalSince1970)")
+            app.terminate()
+        }
+    }
+
     /// Statistics at AX5, where the AX5 walk stalled after Home.
     func testB_StatisticsAX5() throws {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["CARDSITE_DIAG"] == "1", "CI diagnosis only")

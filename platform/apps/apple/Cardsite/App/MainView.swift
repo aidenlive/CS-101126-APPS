@@ -155,14 +155,16 @@ struct MainView: View {
     #if os(iOS)
     private var compactTabs: some View {
         @Bindable var nav = router
-        @Bindable var bindableSearch = search
         return TabView(selection: $nav.tab) {
             destinationTab(.home)
             destinationTab(.links)
             libraryTab
-            searchTab(ownsField: false)
+            // The tab carries its own field. A tab-view-level field fought
+            // the pushed Pages list's own field for the bar: CI sampled the
+            // toolbar's search update and a tab bar rebuilt every frame
+            // once the page editor was pushed.
+            searchTab(ownsField: true)
         }
-        .searchable(text: $bindableSearch.query, prompt: Text("Pages, actions and links"))
         .minimizesTabBarOnScroll()
     }
     #endif
