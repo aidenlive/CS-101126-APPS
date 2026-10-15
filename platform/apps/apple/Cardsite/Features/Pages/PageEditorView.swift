@@ -177,6 +177,12 @@ struct PageCanvasEditor: View {
             .padding(.horizontal, StudioSpace.s4)
             .padding(.bottom, StudioSpace.s2)
         }
+        #if os(iOS)
+        // An editing surface owns the bottom edge, as in Photos and
+        // Freeform: the palette replaces the tab bar. The bar's
+        // scroll-driven minimising also fought the web view's insets.
+        .toolbar(.hidden, for: .tabBar)
+        #endif
     }
 
     /// Room under the page's last block for the palette and its gap.

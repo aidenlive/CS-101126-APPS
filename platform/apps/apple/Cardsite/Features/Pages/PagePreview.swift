@@ -139,6 +139,14 @@ struct PageWebView {
         configuration.websiteDataStore = .nonPersistent()
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
+        #if os(iOS) || os(visionOS)
+        // One accessibility element, so assistive tech and UI tests don't
+        // walk the page's DOM through the web process on the main thread
+        // (CI: "process main thread busy" on the iPhone editor). The blocks
+        // are read and edited in the outline and palette.
+        webView.isAccessibilityElement = true
+        webView.accessibilityLabel = String(localized: "Page preview")
+        #endif
         applyInsets(to: webView)
         context.coordinator.load(in: webView)
         return webView

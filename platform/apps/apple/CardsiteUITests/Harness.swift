@@ -326,7 +326,13 @@ struct Harness {
         // A split view's selected row can report "not hittable" while its
         // detail is already showing; tapping it again would fail the test.
         if !target.isHittable && target.isSelected { return }
-        target.tap()
+        if target.isHittable {
+            target.tap()
+        } else {
+            // At AX5 a link row's button is on screen but reports not
+            // hittable (CI hierarchy: nothing over it); tap its centre.
+            target.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
         #endif
     }
 

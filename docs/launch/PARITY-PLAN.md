@@ -211,3 +211,15 @@ Each entry is labelled _verified_ (it was run) or _not verified_.
 | UI test harness | Reworked for each platform's navigation; relaunch onto any screen (`-CardsiteOpen`); Mac recovers a window from File ▸ New Window (A29) |
 | Visual reviews of rendered screens (iPhone, iPad, Mac; light, dark, AX5) | Fixed: AX5 headlines breaking mid-word (StudioKit caps display growth); address wrapping; header actions on one line; chart's clipped last label; one sheet background; page heads in every state with inline titles on scroll; consistent account rows; no switch beside a chevron on iPhone; the matching password field; the Mac workspace switcher, sidebar width, Pages column width, doubled split-view titles, and middle-truncated rows |
 
+
+### 14–15 Oct: Liquid Glass design pass ([`DESIGN-DIRECTION.md`](DESIGN-DIRECTION.md), [`LIQUID-GLASS-BRIEF.md`](LIQUID-GLASS-BRIEF.md))
+
+| What | Result |
+|---|---|
+| iPhone dock | **Verified on CI screenshots**: exactly Home · Links · Library, with Search split off as the trailing circle; the bar minimises on scroll. The first build of it showed five tabs and a system More list: `defaultVisibility(.hidden, for: .tabBar)` is ignored by the compact tab bar. The compact shell is now its own `TabView` (`MainView.compactTabs`); iPad and Mac keep the sidebar `TabView`, whose regular-width tab bar does honour the hint |
+| Library hub, account sheet, `+` create menu | Built; Library pushes Pages, QR Codes, Statistics and the rest with single back buttons (the More list had nested them) |
+| Editors | Link: hero plus form, ✓/✕, overflow menu. Bio page: canvas with a glass palette and inspector. QR: stage with Content · Style · Output. The iPhone page editor stayed on its spinner because the pushed `navigationDestination` kept its first content; it now observes a `PageEditorSlot` |
+| Hero actions | Copy Link / Open / Card are opaque Studio capsules (`HeroActionStyle`), not glass: they sit on the content card. A `Label` as a Form row's first view drew as a tall, title-less capsule on iOS; spelled out instead |
+| Mac | `links.create` is a plain `+` button beside the full New menu (a primary-action `Menu` in a Mac toolbar is a split pull-down and the UI test's click opened the menu). Sidebar header holds a minimum width for A30 — **not yet verified** on screenshots |
+| AX5 Links | Spindump showed the app's main thread 100% busy at AX5 on Links. Rows no longer show the switch at accessibility sizes (it stays in swipe and context menus). **Not yet verified** that this clears it |
+| Builds | **Verified**: iOS, macOS, visionOS and watchOS green on CI at every commit of the pass; CardsiteKit and StudioKit tests pass |
