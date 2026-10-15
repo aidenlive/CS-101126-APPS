@@ -7,9 +7,9 @@ extension View {
     /// filter from reading as the app's Search tab, which searches
     /// everything.
     ///
-    /// `searchToolbarBehavior(_:)` and `SearchToolbarBehavior.minimize` are
-    /// iOS, iPadOS, macOS and visionOS 26.0+ (Apple's SwiftUI reference,
-    /// checked 2026-10-15). Earlier systems keep the standard field.
+    /// `SearchToolbarBehavior.minimize` is iOS, iPadOS and visionOS 26.0+;
+    /// the docs list macOS too, but the macOS 26 SDK marks it unavailable.
+    /// Earlier systems and the Mac keep the standard field.
     ///
     ///     .searchFilter(text: $model.searchText, prompt: Text("Filter links"))
     func searchFilter(text: Binding<String>, prompt: Text) -> some View {
@@ -21,10 +21,16 @@ extension View {
 /// Applied after `searchable`, as the modifier's documentation requires.
 private struct MinimizedSearchToolbar: ViewModifier {
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+        #if os(macOS)
+        // `.minimize` is unavailable on macOS (CI compile, Xcode 26.6);
+        // the Mac's toolbar field already sits in the trailing group.
+        content
+        #else
+        if #available(iOS 26.0, visionOS 26.0, *) {
             content.searchToolbarBehavior(.minimize)
         } else {
             content
         }
+        #endif
     }
 }
