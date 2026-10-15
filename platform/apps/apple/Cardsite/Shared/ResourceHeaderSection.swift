@@ -220,7 +220,7 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
             actions()
         }
         .buttonStyle(HeroActionStyle())
-        .labelStyle(compact ? AnyLabelStyle.iconOnly : AnyLabelStyle.titleAndIcon)
+        .labelStyle(HeroLabelStyle(iconOnly: compact))
         .fixedSize()
     }
 
@@ -384,5 +384,23 @@ private struct HeroActionBody: View {
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.96 : 1)
             .opacity(configuration.isPressed && reduceMotion ? 0.7 : 1)
             .animation(reduceMotion ? nil : StudioAnimation.spring, value: configuration.isPressed)
+    }
+}
+
+/// Icon and title at the Studio gap. A Form row's own label style spaces
+/// them like a list row, which left a wide gap inside the capsules.
+private struct HeroLabelStyle: LabelStyle {
+    var iconOnly = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        if iconOnly {
+            configuration.icon
+        } else {
+            HStack(spacing: StudioSpace.s2) {
+                configuration.icon
+                configuration.title
+                    .lineLimit(1)
+            }
+        }
     }
 }

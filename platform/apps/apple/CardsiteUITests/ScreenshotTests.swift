@@ -177,7 +177,9 @@ final class ScreenshotTests: XCTestCase {
             return ui.find("pages.row.0", labels: ["avery"]) != nil
         case .pageEditor:
             guard ui.open(.pages), ui.tap("pages.row.0", labels: ["avery"]) else { return false }
-            return ui.find("page.editor", labels: ["Hi, I'm Avery"]) != nil
+            // The editor's own controls first: a label search would walk
+            // the web preview's DOM, which timed out on the iPhone.
+            return ui.findAny(["page.editor", "page.editor.add", "page.editor.more", "page.editor.status"]) != nil
         case .account:
             return ui.open(.account)
         case .settings:

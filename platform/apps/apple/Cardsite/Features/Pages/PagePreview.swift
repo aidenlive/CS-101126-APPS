@@ -25,7 +25,12 @@ struct PageCanvasPreview: View {
             if let url = app.addresses.url(for: page.slug) {
                 PageWebView(url: url, revision: revision, bottomInset: bottomInset,
                             isLoading: $isLoading, failure: $failure)
+                    // One element, not the page's DOM: the blocks are
+                    // edited (and read) from the palette and outline, and a
+                    // deep web tree stalled accessibility queries.
+                    .accessibilityElement(children: .ignore)
                     .accessibilityLabel(Text("Preview of \(app.addresses.display(for: page.slug))"))
+                    .accessibilityHint(Text("The blocks are listed in the outline."))
                 if let failure {
                     Color.studioBg
                     StudioEmptyState(
