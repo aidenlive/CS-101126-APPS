@@ -69,3 +69,18 @@ Liquid Glass is **only the functional layer**: tab bar, toolbars, floating palet
   - Secondary actions (Duplicate, Show Card, Delete) go in a `…` menu, or in `ToolbarOverflowMenu` on 27 behind the compiler guard.
   - vCard and event editors get a live preview card above the form.
 - **Viewers.** Statistics is a dashboard hero plus a chart card. Uploads is a Photos-style grid. QR Codes is a grid of codes on white tiles.
+
+## 15 Oct: alignment with the approved Studio 1.10 demo and Neue Glass
+
+Sources: the Studio design system 1.10 Swift demo (`demos/swift/StudioDemo.swiftpm`) and StudioKit, both visually approved by the design owner; Neue Glass's Glass Lab (`demos/lab`) for navigation.
+
+**Navigation (Neue Glass).** The lab defines no query interaction beyond two placements: search as its own trailing glass capsule in the bottom bar (`Tab(role: .search)`), and a magnifier in the trailing toolbar group on browsing surfaces. Its other rules: five tabs or fewer; the trailing capsule is glass for search and filled only for an action; navigation is never hidden; layout follows width, not device. Applied:
+- iPhone keeps Home · Links · Library and the Search capsule. The Search tab owns its field.
+- In-section list filters are now "Filter …" fields that minimise to the toolbar magnifier on iOS/visionOS 26 (`searchFilter`, `Shared/SearchFilter.swift`). `.minimize` is unavailable on macOS 26 despite the docs (CI), so the Mac keeps its toolbar field.
+- The idiom check that keeps iPhone landscape on the tab bar stays deliberately: a regular-width iPhone must not get the sidebar shell.
+
+**Studio 1.10 (demo).** One focal element per screen; quiet `StudioSectionHeader`s; numbers in a dense flush rail; neutral catalogue glyph tiles; the accent for one primary action per view; identity (not accent) avatars; 64/44 section rhythm; entrances. StudioKit takes the 1.10 spring, card padding (s5), page-head spacing and quieter neutral tone, and keeps the repo's contrast, AppKit, dataviz and accessibility improvements.
+
+**Kept against the demo, by project rule:** editors and settings stay on the native `Form` (CLAUDE.md: native chrome), with the demo's page heads, detents and drag indicators added. The demo's compose sheet avoids `Form`.
+
+**Seen on CI screenshots (15 Oct):** Home, Library, link detail and lists on iPhone, iPad and Mac in light and dark. Open: the Mac list selection draws the system highlight in full lime with low-contrast text; the iPhone page editor render loop (native-apple.md A31).
