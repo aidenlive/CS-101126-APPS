@@ -274,14 +274,28 @@ jobs:
       - name: page editor diagnosis (iPhone)
         if: always() && matrix.device.slug == 'iphone'
         continue-on-error: true
-        timeout-minutes: 5
+        timeout-minutes: 8
         run: |
           D="screens/iphone/failures"; mkdir -p "$D"
+          # Sample the app every few seconds while the probes run; each
+          # file name carries the seconds since the probes started.
+          ( t0=$(date +%s); while [ $(( $(date +%s) - t0 )) -lt 200 ]; do
+              PID=$(pgrep -f "Cardsite.app/Cardsite" | head -n 1)
+              if [ -n "$PID" ]; then
+                el=$(( $(date +%s) - t0 ))
+                echo "t=$el pid=$PID cpu=$(ps -o %cpu= -p "$PID" | tr -d ' ')" >> "$D/editor-diagnosis.txt"
+                sample "$PID" 2 -file "$D/diag-sample-$el.txt" >/dev/null 2>&1 || true
+              fi
+              sleep 4
+            done ) &
+          SAMPLER=$!
           TEST_RUNNER_CARDSITE_DIAG=1 xcodebuild test-without-building \
             -project Cardsite.xcodeproj -scheme Cardsite -configuration Debug \
             -destination "$DESTINATION" -derivedDataPath DerivedData \
             -only-testing:CardsiteUITests/DiagnosticsTests \
-            -resultBundlePath diag.xcresult $SIGNING 2>&1 | grep -E "Test Case|error|took" | tail -n 20 >> "$D/editor-diagnosis.txt" || true
+            -test-timeouts-enabled YES -default-test-execution-time-allowance 120 \
+            -resultBundlePath diag.xcresult $SIGNING 2>&1 | grep -E "Test Case|error|took|\\[diag\\]" | tail -n 40 >> "$D/editor-diagnosis.txt" || true
+          kill $SAMPLER 2>/dev/null || true
           xcrun xcresulttool export attachments --path diag.xcresult --output-path diag-att >/dev/null 2>&1 \
             && find diag-att -name "*.txt" -exec cp {} "$D/" \; || true
 
