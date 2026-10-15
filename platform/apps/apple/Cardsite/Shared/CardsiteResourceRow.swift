@@ -7,16 +7,14 @@ import StudioKit
 /// accessory (the on/off switch, a chevron).
 ///
 /// At accessibility text sizes the row stacks: the text gets the full
-/// width, addresses wrap instead of truncating to a few characters, and
-/// the accessory moves onto its own leading-aligned line under the text.
+/// width and addresses wrap instead of truncating to a few characters.
 ///
 /// In compact width (iPhone) a row that is a navigation link already has
 /// the system disclosure chevron, and a switch next to a chevron is not a
 /// pattern Apple's lists use, so the trailing accessory is left out there.
 /// The state stays visible as the Off / Lapsing pill, and Turn On / Turn
 /// Off stays one gesture away in the leading swipe and the context menu
-/// (``ResourceActionSet``). At accessibility sizes the switch keeps its
-/// own line, where it has the room.
+/// (``ResourceActionSet``). The same holds at accessibility sizes.
 ///
 ///     CardsiteResourceRow(systemImage: "link", isLive: link.isEnabled,
 ///                         title: Text(verbatim: "card.site/spring-menu"),
@@ -42,11 +40,15 @@ struct CardsiteResourceRow<Trailing: View>: View {
 
     private var isStacked: Bool { typeSize.isAccessibilitySize }
 
-    /// The accessory is shown in regular width and at accessibility sizes;
-    /// left out in a compact, single-line row (see the type's note).
+    /// The accessory is shown in regular width; left out in a compact,
+    /// single-line row (see the type's note) and at accessibility sizes.
+    /// At AX5 a switch on its own line in the self-sizing cell kept the
+    /// Links list's main thread busy on CI (spindump: 100% CPU, no idle),
+    /// and the same action is in the row's swipe and context menus.
     private var showsTrailing: Bool {
+        if isStacked { return false }
         #if os(iOS)
-        return isStacked || sizeClass != .compact
+        return sizeClass != .compact
         #else
         return true
         #endif
@@ -87,13 +89,7 @@ struct CardsiteResourceRow<Trailing: View>: View {
             }
 
             if showsTrailing {
-                if isStacked {
-                    // Its own line, leading, with the text above it.
-                    trailing()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    trailing()
-                }
+                trailing()
             }
         }
         .padding(.vertical, Self.verticalPadding)
