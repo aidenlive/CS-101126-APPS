@@ -6,9 +6,9 @@ import CardsiteKit
  Pieces the three Organise screens share: the project colour dot and
  palette, the confirm-and-report delete flow, and preview data.
 
- The screens (ProjectsView, DomainsView, PixelsView) are `.more`
- destinations: stack-free content the shell wraps in a NavigationStack on
- iPad and Mac and pushes onto More on iPhone. Their create and edit sheets
+ The screens (ProjectsView, DomainsView, PixelsView) are stack-free
+ destinations: content the shell wraps in a NavigationStack on iPad and
+ Mac and pushes onto Library's stack on iPhone. Their create and edit sheets
  bring their own stacks, which is fine: a sheet is a new presentation.
 
  Accessibility identifiers, for CardsiteUITests (the registry's

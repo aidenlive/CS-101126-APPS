@@ -13,12 +13,15 @@ import CardsiteKit
 /// and payments · hosting), each opening its composer sheet.
 ///
 /// Pass `primary` to make a tap run that action at once and a long press
-/// open the menu (Links: a tap makes a short link).
+/// open the menu (Links: a tap makes a short link). `performPrimary`
+/// replaces the shell's composer for that tap, for a screen that presents
+/// the editor itself (Links selects the link it creates).
 struct CreateMenu: View {
     @Environment(AppModel.self) private var app
     var primary: CreateAction? = nil
     /// Links keeps `links.create`, which the UI tests tap.
     var identifier = "shell.create"
+    var performPrimary: (() -> Void)? = nil
 
     var body: some View {
         Group {
@@ -28,7 +31,11 @@ struct CreateMenu: View {
                 } label: {
                     label
                 } primaryAction: {
-                    app.composer = primary.composer
+                    if let performPrimary {
+                        performPrimary()
+                    } else {
+                        app.composer = primary.composer
+                    }
                 }
             } else {
                 Menu {
@@ -67,7 +74,7 @@ struct CreateMenu: View {
 /// The signed-in person as a circular avatar: their initial on the accent
 /// tile. Opens the account sheet. Identity imagery, so it never takes glass
 /// of its own; on OS 26 its toolbar item drops the shared glass background
-/// (``AccountToolbarItem``).
+/// (``SwiftUI/View/accountToolbarItem()``).
 struct AccountAvatarButton: View {
     @Environment(AppModel.self) private var app
     @Environment(ShellRouter.self) private var router
@@ -102,26 +109,41 @@ struct AccountAvatarButton: View {
     }
 }
 
-/// The avatar as the trailing toolbar item, in a group of its own: on
-/// iOS 26 the shared glass background is hidden, as Books splits its
-/// avatar out, so the accent disc stands alone.
-struct AccountToolbarItem: ToolbarContent {
-    var body: some ToolbarContent {
+extension View {
+    /// The avatar as the trailing toolbar item, in a group of its own: on
+    /// iOS 26 the shared glass background is hidden, as Books splits its
+    /// avatar out, so the accent disc stands alone. Not on the Mac, where
+    /// the account lives in the sidebar.
+    ///
+    /// A view modifier rather than `ToolbarContent`: the iOS 26 branch needs
+    /// `if #available` around a toolbar-content modifier, which only
+    /// `ViewBuilder` erases (`buildLimitedAvailability`) on every SDK the
+    /// app builds with.
+    @ViewBuilder
+    func accountToolbarItem() -> some View {
         #if os(iOS)
         if #available(iOS 26.0, *) {
-            ToolbarItem(placement: .primaryAction) {
-                AccountAvatarButton()
+            toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    AccountAvatarButton()
+                }
+                .sharedBackgroundVisibility(.hidden)
             }
-            .sharedBackgroundVisibility(.hidden)
         } else {
+            toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    AccountAvatarButton()
+                }
+            }
+        }
+        #elseif os(visionOS)
+        toolbar {
             ToolbarItem(placement: .primaryAction) {
                 AccountAvatarButton()
             }
         }
         #else
-        ToolbarItem(placement: .primaryAction) {
-            AccountAvatarButton()
-        }
+        self
         #endif
     }
 }

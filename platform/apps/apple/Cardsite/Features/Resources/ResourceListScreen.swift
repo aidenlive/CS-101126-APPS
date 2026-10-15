@@ -6,9 +6,9 @@ import CardsiteKit
 /// The list for one resource kind: vCards, events, payment links, file
 /// links, static pages or splash pages.
 ///
-/// A `.more` destination, so it brings no navigation stack of its own: the
-/// shell wraps it in one on iPad and Mac and pushes it onto More's stack on
-/// iPhone. Rows push the kind's editor; + opens the create sheet.
+/// A stack-free destination, so it brings no navigation stack of its own:
+/// the shell wraps it in one on iPad and Mac and pushes it onto Library's
+/// stack on iPhone. Rows push the kind's editor; + opens the create sheet.
 ///
 /// Each row has the name, address and type detail, all-time clicks and the
 /// on/off switch. The context menu and swipe actions copy, open, show the

@@ -136,7 +136,11 @@ struct MainView: View {
         @Bindable var bindableSearch = search
         return TabView(selection: $nav.tab) {
             overviewTabs
+            #if !os(macOS)
+            // iPhone and iPad's tab-bar mode only; `.sidebar` visibility
+            // doesn't exist on macOS, whose sidebar lists every destination.
             libraryTab
+            #endif
             sectionTabs
             searchTab
         }
@@ -163,6 +167,7 @@ struct MainView: View {
 
     /// The hub for everything that isn't a tab on iPhone. The sidebar lists
     /// each destination itself, so the hub stays out of it.
+    #if !os(macOS)
     @TabContentBuilder<MainTab>
     private var libraryTab: some TabContent<MainTab> {
         Tab(String(localized: "Library"), systemImage: "square.stack", value: MainTab.library) {
@@ -170,6 +175,7 @@ struct MainView: View {
         }
         .defaultVisibility(.hidden, for: .sidebar)
     }
+    #endif
 
     @TabContentBuilder<MainTab>
     private var searchTab: some TabContent<MainTab> {
@@ -239,14 +245,7 @@ struct MainView: View {
             AccountSheet()
         }
         .sheet(item: $nav.presentedLink) { link in
-            NavigationStack {
-                LinkDetailView(link: link, onDeleted: { router.presentedLink = nil })
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { router.presentedLink = nil }
-                        }
-                    }
-            }
+            PresentedLinkSheet(link: link) { router.presentedLink = nil }
             .sheet(item: $app.composer) { composer in
                 composerSheet(composer)
             }
@@ -325,6 +324,34 @@ struct MainView: View {
                 }
             }
         }
+    }
+}
+
+/// A link opened from the palette or a deep link, over any tab: its
+/// editor with ✕ Close at the leading edge. While the link has unsaved
+/// changes the editor shows its own ✕ Cancel (which asks first) in that
+/// slot, so Close steps aside rather than doubling it.
+private struct PresentedLinkSheet: View {
+    let link: Resource
+    let close: () -> Void
+    /// The editor reports its unsaved changes here (`unsavedChanges`).
+    @State private var unsaved = UnsavedChangesTracker()
+
+    var body: some View {
+        NavigationStack {
+            LinkDetailView(link: link, onDeleted: close)
+                .toolbar {
+                    if !unsaved.isDirty {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(action: close) {
+                                EditorBarLabel(title: String(localized: "Close"), systemImage: "xmark")
+                            }
+                            .keyboardShortcut(.cancelAction)
+                        }
+                    }
+                }
+        }
+        .environment(unsaved)
     }
 }
 

@@ -1,6 +1,9 @@
 import SwiftUI
 import StudioKit
 import CardsiteKit
+#if os(iOS)
+import UIKit
+#endif
 
 /// One code, presented like a photo: the code large on the white stage,
 /// its name in the display face, what it points to as a row, then Share,

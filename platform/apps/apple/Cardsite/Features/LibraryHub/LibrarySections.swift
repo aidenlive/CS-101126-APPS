@@ -216,8 +216,8 @@ struct LibraryGroupSection: View {
     }
 }
 
-/// A row that opens its destination: pushed onto Library's stack, or (Pages
-/// and QR Codes, which own their navigation) opened as their own tab.
+/// A row that opens its destination: its stack-free view, pushed onto
+/// Library's stack.
 struct LibraryTypeLink: View {
     @Environment(ShellRouter.self) private var router
     let destination: AppDestination

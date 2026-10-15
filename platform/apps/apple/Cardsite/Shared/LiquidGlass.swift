@@ -52,7 +52,7 @@ extension View {
     /// One per screen, on imagery or a theme band — never on text.
     @ViewBuilder
     func heroBackgroundExtension() -> some View {
-        if #available(iOS 26.0, macOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
             backgroundExtensionEffect()
         } else {
             self
@@ -63,7 +63,7 @@ extension View {
     /// (iOS/macOS 26 `safeAreaBar`); `safeAreaInset` before 26.
     @ViewBuilder
     func edgeBar<Bar: View>(_ edge: VerticalEdge, @ViewBuilder bar: () -> Bar) -> some View {
-        if #available(iOS 26.0, macOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
             safeAreaBar(edge: edge) { bar() }
         } else {
             safeAreaInset(edge: edge) { bar() }

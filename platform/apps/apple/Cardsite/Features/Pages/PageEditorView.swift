@@ -85,10 +85,17 @@ struct PageCanvasEditor: View {
         .sheet(item: $sheet, onDismiss: sheetDidDismiss) { sheet in
             sheetContent(sheet)
         }
+        #if os(visionOS)
+        // visionOS has no `.inspector`: the block opens in a sheet there.
+        .sheet(isPresented: inspectorIsPresented) {
+            regularInspector
+        }
+        #else
         .inspector(isPresented: inspectorIsPresented) {
             regularInspector
                 .inspectorColumnWidth(min: 300, ideal: 340, max: 440)
         }
+        #endif
         .pageBlockConflictAlert(editor: editor, isActive: !(isCompact && sheet != nil))
         .pageBlockDeleteDialog($pendingDelete, editor: editor)
         #if os(macOS)

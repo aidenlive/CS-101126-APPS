@@ -57,7 +57,7 @@ final class ProjectsModel {
     }
 }
 
-/// The registry's `.more` destination: stack-free.
+/// The registry's stack-free destination.
 struct ProjectsView: View {
     @Environment(AppModel.self) private var app
     @State private var model: ProjectsModel

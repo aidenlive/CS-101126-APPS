@@ -83,7 +83,7 @@ final class PixelsModel {
     }
 }
 
-/// The registry's `.more` destination: stack-free.
+/// The registry's stack-free destination.
 struct PixelsView: View {
     @Environment(AppModel.self) private var app
     @State private var model: PixelsModel

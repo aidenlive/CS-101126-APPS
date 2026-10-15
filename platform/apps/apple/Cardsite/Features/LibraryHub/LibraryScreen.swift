@@ -27,10 +27,8 @@ struct LibraryScreen: View {
                     ToolbarItem(placement: .primaryAction) {
                         CreateMenu()
                     }
-                    #if !os(macOS)
-                    AccountToolbarItem()
-                    #endif
                 }
+                .accountToolbarItem()
                 .navigationDestination(for: AppDestination.self) { destination in
                     DestinationView(destination: destination)
                 }

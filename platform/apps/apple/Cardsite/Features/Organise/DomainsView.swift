@@ -113,7 +113,7 @@ final class DomainsModel {
     }
 }
 
-/// The registry's `.more` destination: stack-free.
+/// The registry's stack-free destination.
 struct DomainsView: View {
     @Environment(AppModel.self) private var app
     @State private var model: DomainsModel

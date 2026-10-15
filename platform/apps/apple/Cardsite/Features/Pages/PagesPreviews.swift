@@ -96,6 +96,14 @@ enum PagesPreviewData {
         .environment(PagesPreviewData.pagesModel())
 }
 
+#Preview("Pages, pushed on iPhone") {
+    NavigationStack {
+        PagesStackView()
+    }
+    .environment(PagesPreviewData.app())
+    .environment(PagesPreviewData.pagesModel())
+}
+
 #Preview("Canvas, iPhone") {
     let pages = PagesPreviewData.pagesModel()
     NavigationStack {

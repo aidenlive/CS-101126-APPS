@@ -1,14 +1,20 @@
 import SwiftUI
 import StudioKit
 import CardsiteKit
+#if os(iOS)
+import UIKit
+#endif
 
-/// Bio pages: a library of pages beside the open page's canvas editor.
-/// On iPhone the split view collapses to a stack (pages → canvas). Opening
-/// a page on iPad folds the pages column away to give the canvas the room;
-/// the sidebar button or ✕ brings it back.
+/// Bio pages on iPad and Mac: a library of pages beside the open page's
+/// canvas editor. Opening a page on iPad folds the pages column away to
+/// give the canvas the room; the sidebar button or ✕ brings it back.
+///
+/// iPhone uses ``PagesStackView`` instead, pushed onto Library's stack, so
+/// this split view never nests inside another stack.
 struct PagesScreen: View {
     @Environment(AppModel.self) private var app
     @Environment(PagesModel.self) private var model
+    @Environment(\.toasts) private var toasts
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var sizeClass
     #endif
@@ -18,14 +24,7 @@ struct PagesScreen: View {
     @State private var columns: NavigationSplitViewVisibility = .all
     @State private var isCreating = false
     @State private var pendingDelete: BioPage? = nil
-    @State private var actionError: ActionError? = nil
-    @Environment(\.toasts) private var toasts
-
-    struct ActionError: Identifiable {
-        let id = UUID()
-        let title: String
-        let message: String
-    }
+    @State private var actionError: PageActionError? = nil
 
     private var isCompact: Bool {
         #if os(iOS)
@@ -35,12 +34,17 @@ struct PagesScreen: View {
         #endif
     }
 
+    private var actions: PageListActions {
+        PageListActions(app: app, pages: model, toasts: toasts)
+    }
+
     var body: some View {
         NavigationSplitView(columnVisibility: $columns) {
             PagesListColumn(
                 selection: $selection,
                 isCreating: $isCreating,
                 pendingDelete: $pendingDelete,
+                pushesEditor: false,
                 setEnabled: { page, isOn in Task { await setEnabled(page, isOn) } },
                 duplicate: { page in Task { await duplicate(page) } }
             )
@@ -85,48 +89,19 @@ struct PagesScreen: View {
         .sheet(isPresented: $isCreating) {
             CreatePageSheet { page in selection = page.id }
         }
-        .confirmationDialog(
-            "Delete this bio page?",
-            isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
-            titleVisibility: .visible,
-            presenting: pendingDelete
-        ) { page in
-            Button("Delete", role: .destructive) {
-                Task { await delete(page) }
-            }
-        } message: { _ in
-            Text("Anyone who opens or scans this address will get a not-found page, and every block on the page is deleted. This can’t be undone.")
-        }
-        .alert(
-            actionError?.title ?? "",
-            isPresented: Binding(get: { actionError != nil }, set: { if !$0 { actionError = nil } }),
-            presenting: actionError
-        ) { _ in
-            Button("OK", role: .cancel) {}
-        } message: { error in
-            Text(error.message)
+        .pageListDialogs(pendingDelete: $pendingDelete, actionError: $actionError) { page in
+            Task { await delete(page) }
         }
     }
 
     // MARK: Editor lifecycle
 
     private func open(_ id: BioPage.ID?) {
-        if let previous = editor, previous.pageID != id, previous.hasAnyUnsavedChanges {
-            Task { await previous.saveAllDrafts() }
-        }
-        guard let id else {
-            editor = nil
-            return
-        }
-        guard editor?.pageID != id else { return }
-        let next = PageEditorModel(pageID: id, pages: model)
-        next.onError = app.handle
-        next.announce = { [toasts] message, variant in toasts?.show(message, variant: variant) }
-        editor = next
+        editor = actions.editor(for: id, replacing: editor)
         #if os(iOS)
         // iPad: the canvas, rail and inspector need the width. The Mac
         // keeps its sidebar; the window is the user's to size.
-        if !isCompact {
+        if editor != nil, !isCompact {
             withAnimation(StudioAnimation.base) { columns = .detailOnly }
         }
         #endif
@@ -141,46 +116,243 @@ struct PagesScreen: View {
     // MARK: Page actions
 
     private func setEnabled(_ page: BioPage, _ isOn: Bool) async {
+        actionError = await actions.setEnabled(page, isOn, editor: editor)
+    }
+
+    private func duplicate(_ page: BioPage) async {
+        actionError = await actions.duplicate(page)
+    }
+
+    private func delete(_ page: BioPage) async {
+        let error = await actions.delete(page)
+        if error == nil, selection == page.id { selection = nil }
+        actionError = error
+        pendingDelete = nil
+    }
+}
+
+// MARK: - iPhone
+
+/// Bio pages on iPhone: the page list, then the canvas editor pushed onto
+/// the hosting stack (Library's) with `navigationDestination(item:)`.
+///
+/// A stack-free destination: it brings no NavigationStack of its own, so
+/// Library can push it without nesting stacks. The editor runs in its
+/// iPhone mode: the page edge to edge, the floating palette, detented
+/// sheets, and the system back button instead of ✕.
+struct PagesStackView: View {
+    @Environment(AppModel.self) private var app
+    @Environment(PagesModel.self) private var model
+    @Environment(\.toasts) private var toasts
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
+
+    @State private var selection: BioPage.ID? = nil
+    @State private var editor: PageEditorModel? = nil
+    @State private var isCreating = false
+    @State private var pendingDelete: BioPage? = nil
+    @State private var actionError: PageActionError? = nil
+
+    /// The canvas's iPhone mode on every iPhone (landscape included), and
+    /// in a compact iPad window.
+    private var isCompact: Bool {
+        #if os(iOS)
+        return UIDevice.current.userInterfaceIdiom == .phone || sizeClass == .compact
+        #else
+        return false
+        #endif
+    }
+
+    private var actions: PageListActions {
+        PageListActions(app: app, pages: model, toasts: toasts)
+    }
+
+    var body: some View {
+        PagesListColumn(
+            selection: $selection,
+            isCreating: $isCreating,
+            pendingDelete: $pendingDelete,
+            pushesEditor: true,
+            setEnabled: { page, isOn in Task { await setEnabled(page, isOn) } },
+            duplicate: { page in Task { await duplicate(page) } }
+        )
+        .navigationDestination(item: $selection) { id in
+            editorView(for: id)
+        }
+        .task { [list = model.list] in await list.loadIfNeeded() }
+        .onChange(of: selection) { _, id in
+            editor = actions.editor(for: id, replacing: editor)
+        }
+        .onChange(of: model.openRequest, initial: true) { _, id in
+            guard let id else { return }
+            model.openRequest = nil
+            selection = id
+        }
+        .onDisappear {
+            if let editor, editor.hasAnyUnsavedChanges {
+                Task { await editor.saveAllDrafts() }
+            }
+        }
+        .sheet(isPresented: $isCreating) {
+            CreatePageSheet { page in selection = page.id }
+        }
+        .pageListDialogs(pendingDelete: $pendingDelete, actionError: $actionError) { page in
+            Task { await delete(page) }
+        }
+    }
+
+    @ViewBuilder
+    private func editorView(for id: BioPage.ID) -> some View {
+        if let editor, editor.pageID == id {
+            PageCanvasEditor(
+                editor: editor,
+                isCompact: isCompact,
+                actions: PageEditorActions(
+                    duplicate: { page in Task { await duplicate(page) } },
+                    delete: { page in pendingDelete = page }
+                )
+            )
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("page.editor")
+            .id(editor.pageID)
+        } else {
+            // The editor model is made a moment after the push.
+            ProgressView()
+                .controlSize(.large)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.studioBg)
+                .accessibilityLabel(Text("Loading"))
+        }
+    }
+
+    private func setEnabled(_ page: BioPage, _ isOn: Bool) async {
+        actionError = await actions.setEnabled(page, isOn, editor: editor)
+    }
+
+    private func duplicate(_ page: BioPage) async {
+        actionError = await actions.duplicate(page)
+    }
+
+    /// Deleting the open page pops its editor.
+    private func delete(_ page: BioPage) async {
+        let error = await actions.delete(page)
+        if error == nil, selection == page.id { selection = nil }
+        actionError = error
+        pendingDelete = nil
+    }
+}
+
+// MARK: - Shared page actions
+
+/// A failed page action, as an alert.
+struct PageActionError: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
+}
+
+/// What both Pages layouts do to a page: open its editor, turn it on or
+/// off, duplicate and delete it. Each action returns the error to show.
+@MainActor
+struct PageListActions {
+    let app: AppModel
+    let pages: PagesModel
+    let toasts: StudioToastCenter?
+
+    /// The editor for `id`: `current` when it is already that page's, a new
+    /// one otherwise, nil for no page. A page left with unsaved drafts
+    /// saves them.
+    func editor(for id: BioPage.ID?, replacing current: PageEditorModel?) -> PageEditorModel? {
+        if let current, current.pageID != id, current.hasAnyUnsavedChanges {
+            Task { await current.saveAllDrafts() }
+        }
+        guard let id else { return nil }
+        if let current, current.pageID == id { return current }
+        let next = PageEditorModel(pageID: id, pages: pages)
+        next.onError = app.handle
+        next.announce = { [toasts] message, variant in toasts?.show(message, variant: variant) }
+        return next
+    }
+
+    func setEnabled(_ page: BioPage, _ isOn: Bool, editor: PageEditorModel?) async -> PageActionError? {
         do {
             if let editor, editor.pageID == page.id {
                 try await editor.savePage(BioPageChanges(isEnabled: isOn))
             } else {
-                try await model.setEnabled(page, isOn)
+                try await pages.setEnabled(page, isOn)
             }
+            return nil
         } catch {
-            actionError = ActionError(title: String(localized: "Couldn’t change the status"),
-                                      message: error.asAPIError.localizedDescription)
+            return PageActionError(title: String(localized: "Couldn’t change the status"),
+                                   message: error.asAPIError.localizedDescription)
         }
     }
 
-    private func duplicate(_ page: BioPage) async {
+    func duplicate(_ page: BioPage) async -> PageActionError? {
         do {
-            let copy = try await model.duplicate(page)
+            let copy = try await pages.duplicate(page)
             Haptics.success()
             toasts?.show(
                 String(localized: "Copied to \(app.addresses.display(for: copy.slug)). It’s off until you turn it on."),
                 variant: .success
             )
+            return nil
         } catch {
-            actionError = ActionError(title: String(localized: "Couldn’t duplicate"),
-                                      message: error.asAPIError.localizedDescription)
+            return PageActionError(title: String(localized: "Couldn’t duplicate"),
+                                   message: error.asAPIError.localizedDescription)
         }
     }
 
-    private func delete(_ page: BioPage) async {
+    func delete(_ page: BioPage) async -> PageActionError? {
         do {
-            try await model.delete(page)
-            if selection == page.id { selection = nil }
+            try await pages.delete(page)
+            return nil
         } catch {
-            actionError = ActionError(title: String(localized: "Couldn’t delete"),
-                                      message: error.asAPIError.localizedDescription)
+            return PageActionError(title: String(localized: "Couldn’t delete"),
+                                   message: error.asAPIError.localizedDescription)
         }
-        pendingDelete = nil
+    }
+}
+
+private extension View {
+    /// The delete confirmation and the action-error alert both layouts show.
+    func pageListDialogs(
+        pendingDelete: Binding<BioPage?>,
+        actionError: Binding<PageActionError?>,
+        delete: @escaping (BioPage) -> Void
+    ) -> some View {
+        confirmationDialog(
+            "Delete this bio page?",
+            isPresented: Binding(get: { pendingDelete.wrappedValue != nil },
+                                 set: { if !$0 { pendingDelete.wrappedValue = nil } }),
+            titleVisibility: .visible,
+            presenting: pendingDelete.wrappedValue
+        ) { page in
+            Button("Delete", role: .destructive) {
+                delete(page)
+            }
+        } message: { _ in
+            Text("Anyone who opens or scans this address will get a not-found page, and every block on the page is deleted. This can’t be undone.")
+        }
+        .alert(
+            actionError.wrappedValue?.title ?? "",
+            isPresented: Binding(get: { actionError.wrappedValue != nil },
+                                 set: { if !$0 { actionError.wrappedValue = nil } }),
+            presenting: actionError.wrappedValue
+        ) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { error in
+            Text(error.message)
+        }
     }
 }
 
 // MARK: - Pages column
 
+/// The page list. In the split view it drives the selection; pushed on
+/// iPhone (`pushesEditor`), each row is a button that sets the selection
+/// the host pushes the editor for.
 private struct PagesListColumn: View {
     @Environment(AppModel.self) private var app
     @Environment(PagesModel.self) private var model
@@ -188,6 +360,7 @@ private struct PagesListColumn: View {
     @Binding var selection: BioPage.ID?
     @Binding var isCreating: Bool
     @Binding var pendingDelete: BioPage?
+    let pushesEditor: Bool
     let setEnabled: (BioPage, Bool) -> Void
     let duplicate: (BioPage) -> Void
 
@@ -204,7 +377,11 @@ private struct PagesListColumn: View {
             ),
             retry: { [list = model.list] in await list.refresh() }
         ) { _ in
-            pageList
+            if pushesEditor {
+                pageList(List { rows })
+            } else {
+                pageList(List(selection: $selection) { rows })
+            }
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AppDestination.pages.screenIdentifier)
@@ -223,37 +400,62 @@ private struct PagesListColumn: View {
         }
     }
 
-    private var pageList: some View {
-        List(selection: $selection) {
-            if let error = model.list.refreshError {
-                RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
-                    .studioClearRow()
-            }
-            if model.visiblePages.isEmpty, !model.searchText.isEmpty {
-                ContentUnavailableView.search(text: model.searchText)
-                    .studioClearRow()
-            }
-            ForEach(model.visiblePages) { page in
-                NavigationLink(value: page.id) {
-                    BioPageRow(page: page)
-                }
+    private func pageList<L: View>(_ list: L) -> some View {
+        list
+            .studioList()
+            .refreshable { [list = model.list] in await list.refresh() }
+    }
+
+    @ViewBuilder
+    private var rows: some View {
+        if let error = model.list.refreshError {
+            RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
+                .studioClearRow()
+        }
+        if model.visiblePages.isEmpty, !model.searchText.isEmpty {
+            ContentUnavailableView.search(text: model.searchText)
+                .studioClearRow()
+        }
+        ForEach(model.visiblePages) { page in
+            row(page)
                 .accessibilityIdentifier("pages.row.\(page.id)")
                 .contextMenu { ResourceMenuItems(actions: actions(for: page)) }
                 .resourceSwipeActions(actions(for: page))
-                .studioRowBackground(isSelected: selection == page.id)
+                .studioRowBackground(isSelected: !pushesEditor && selection == page.id)
+        }
+        if model.list.hasMore, model.searchText.isEmpty {
+            HStack {
+                Spacer()
+                ProgressView()
+                Spacer()
             }
-            if model.list.hasMore, model.searchText.isEmpty {
-                HStack {
-                    Spacer()
-                    ProgressView()
-                    Spacer()
+            .studioClearRow()
+            .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
+        }
+    }
+
+    @ViewBuilder
+    private func row(_ page: BioPage) -> some View {
+        if pushesEditor {
+            Button {
+                selection = page.id
+            } label: {
+                HStack(spacing: StudioSpace.s2) {
+                    BioPageRow(page: page)
+                    Image(systemName: "chevron.right")
+                        .imageScale(.small)
+                        .foregroundStyle(Color.studioText4)
+                        .accessibilityHidden(true)
                 }
-                .studioClearRow()
-                .task(id: model.list.items.count) { [list = model.list] in await list.loadMore() }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(Text("Opens the page editor"))
+        } else {
+            NavigationLink(value: page.id) {
+                BioPageRow(page: page)
             }
         }
-        .studioList()
-        .refreshable { [list = model.list] in await list.refresh() }
     }
 
     private func actions(for page: BioPage) -> ResourceActionSet {

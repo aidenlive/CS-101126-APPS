@@ -32,6 +32,7 @@ struct HomeScreen: View {
                 #endif
                 .shellSubtitle(app.currentWorkspace?.name)
                 .toolbar { toolbar }
+                .accountToolbarItem()
                 .navigationDestination(for: Resource.self) { link in
                     LinkDetailView(link: link)
                 }
@@ -56,7 +57,8 @@ struct HomeScreen: View {
         .refreshable { [model] in await model.refresh() }
     }
 
-    /// At most two groups: [search · bell · +] and the avatar on its own.
+    /// At most two groups: [search · bell · +] here, and the avatar on its
+    /// own (`accountToolbarItem()`).
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         #if os(macOS)
@@ -85,9 +87,6 @@ struct HomeScreen: View {
             #endif
             CreateMenu()
         }
-        #if !os(macOS)
-        AccountToolbarItem()
-        #endif
     }
 }
 

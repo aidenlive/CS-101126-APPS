@@ -59,12 +59,10 @@ struct LinksScreen: View {
             }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        isComposing = true
-                    } label: {
-                        Label("New Short Link", systemImage: "plus")
-                    }
-                    .accessibilityIdentifier("links.create")
+                    // A tap makes a short link here, so the new link opens
+                    // in this list; a long press offers every type.
+                    CreateMenu(primary: .shortLink, identifier: "links.create",
+                               performPrimary: { isComposing = true })
                 }
                 ToolbarItem(placement: .primaryAction) {
                     filterMenu

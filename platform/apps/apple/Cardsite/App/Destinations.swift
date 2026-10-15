@@ -23,14 +23,15 @@ import CardsiteKit
  Fill in its group, title and glyph (the switches won't compile until you
  do), and its Library group if it belongs in the hub.
 
- THE ROOT CONTRACT. An `ownsNavigation` destination's view is a
- self-contained screen that owns its navigation (a NavigationStack or
- NavigationSplitView). Every other destination's view must NOT contain a
- NavigationStack: the shell wraps it in one when it is a sidebar item, and
- pushes it onto the Library stack (or the account sheet's) on iPhone.
- Nesting stacks is unsupported in SwiftUI. Most feature folders already
- ship both shapes (`WorkspaceScreen` wraps `WorkspaceView`); register the
- inner one.
+ THE ROOT CONTRACT. Every destination has a stack-free view: content
+ with no NavigationStack, which the shell pushes onto Library's stack (or
+ Home's, or the account sheet's) on iPhone. Nesting stacks is unsupported
+ in SwiftUI. As a sidebar tab on iPad and Mac the shell wraps that view in
+ a stack, except for `ownsNavigation` destinations, whose root is a
+ self-contained screen with its own NavigationStack or NavigationSplitView
+ (Pages' split view; QR Codes' stack around `QRCodesView`). Most feature
+ folders ship both shapes (`WorkspaceScreen` wraps `WorkspaceView`); the
+ registry uses the stack-free one everywhere but the sidebar.
 
  ORDER. `allCases` order is sidebar order within a group, and the groups
  run Overview, Content, Organise, Account, as on the web. Content follows
@@ -254,9 +255,9 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         }
     }
 
-    /// Screens that bring their own NavigationStack or NavigationSplitView
-    /// (see the root contract). Everything else is stack-free content the
-    /// shell wraps or pushes.
+    /// Destinations whose sidebar root brings its own NavigationStack or
+    /// NavigationSplitView (see the root contract). Their pushed form is
+    /// stack-free like everyone else's.
     var ownsNavigation: Bool {
         switch self {
         case .home, .links, .pages, .qrCodes: return true
@@ -264,15 +265,12 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         }
     }
 
-    /// True when iPhone can push this destination onto the Library stack.
-    ///
-    /// Pages (a NavigationSplitView) and QR Codes (a NavigationStack) can't
-    /// be pushed without nesting stacks, so until they ship stack-free
-    /// roots the router selects their own tab instead, which the tab bar
-    /// doesn't show (`defaultVisibility(.hidden, for: .tabBar)`). When they
-    /// do, register those roots for iPhone in `DestinationView` and drop
-    /// them from `ownsNavigation` for compact widths.
-    var pushesOntoLibrary: Bool { !ownsNavigation }
+    /// True when iPhone shows this destination pushed onto Library's stack
+    /// rather than as a tab: everything but Home and Links. Every one of
+    /// them has a stack-free view (Pages: `PagesStackView`, QR Codes:
+    /// `QRCodesView`), so the router never selects a tab that the iPhone
+    /// tab bar doesn't show.
+    var pushesOntoLibrary: Bool { phonePlacement != .tab }
 
     /// `nav.<rawValue>`: the Library hub row (the avatar for `.account`).
     var navIdentifier: String { "nav.\(rawValue)" }
@@ -288,17 +286,22 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
 }
 
 /// The view for each destination: the single switch the registry's root
-/// contract describes.
+/// contract describes. Stack-free unless `isSidebarRoot`, which only
+/// ``DestinationRoot`` passes.
 struct DestinationView: View {
     @Environment(AppModel.self) private var app
     @Environment(InboxModel.self) private var inbox
     let destination: AppDestination
+    /// True for a sidebar tab's root, where `ownsNavigation` destinations
+    /// bring their own stack or split view.
+    var isSidebarRoot = false
 
     var body: some View {
         if destination.ownsNavigation {
             // A tab root is a NavigationStack or NavigationSplitView, and an
             // identifier on that container doesn't surface to XCUITest. Those
-            // screens stamp `screen.<rawValue>` on their own primary content.
+            // screens (and their stack-free forms) stamp `screen.<rawValue>`
+            // on their own primary content.
             root
         } else {
             root
@@ -312,8 +315,10 @@ struct DestinationView: View {
         switch destination {
         case .home: HomeScreen()
         case .links: LinksScreen()
-        case .pages: PagesScreen()
-        case .qrCodes: QRCodesScreen()
+        case .pages:
+            if isSidebarRoot { PagesScreen() } else { PagesStackView() }
+        case .qrCodes:
+            if isSidebarRoot { QRCodesScreen() } else { QRCodesView() }
         case .statistics: StatisticsScreen(linkID: nil)
         case .vcards: ResourceListScreen(kind: .vcard)
         case .paymentLinks: ResourceListScreen(kind: .paymentLink)
@@ -345,7 +350,7 @@ struct DestinationRoot: View {
 
     var body: some View {
         if destination.ownsNavigation {
-            DestinationView(destination: destination)
+            DestinationView(destination: destination, isSidebarRoot: true)
         } else {
             NavigationStack {
                 DestinationView(destination: destination)
@@ -502,7 +507,13 @@ enum MainTab: Hashable, Sendable {
         } else if storageKey == Self.searchKey {
             self = .search
         } else {
+            #if os(macOS)
+            // The Mac has no Library tab: its sidebar lists every
+            // destination.
+            self = .destination(.home)
+            #else
             self = .library
+            #endif
         }
     }
 
@@ -536,12 +547,13 @@ final class ShellRouter {
     /// Goes to a destination the way the current layout shows it: its
     /// sidebar item on iPad and Mac; on iPhone its tab, or pushed onto
     /// Library's stack. Deep links, the palette, search, the Go menu and
-    /// UI tests' `-CardsiteOpen` all come through here.
+    /// UI tests' `-CardsiteOpen` all come through here. On iPhone it never
+    /// selects a tab the tab bar doesn't show.
     func open(_ destination: AppDestination) {
         isPalettePresented = false
         presentedLink = nil
         isAccountPresented = false
-        if isCompact && destination.phonePlacement != .tab && destination.pushesOntoLibrary {
+        if isCompact && destination.pushesOntoLibrary {
             libraryPath = NavigationPath([destination])
             libraryTop = destination
             tab = .library
@@ -550,9 +562,8 @@ final class ShellRouter {
         }
     }
 
-    /// A Library hub row: pushes the destination onto Library's stack, in
-    /// any layout that shows the hub. Screens that own their navigation
-    /// (Pages, QR Codes) open as their own tab instead.
+    /// A Library hub row: pushes the destination's stack-free view onto
+    /// Library's stack, in any layout that shows the hub.
     func showFromLibrary(_ destination: AppDestination) {
         guard destination.pushesOntoLibrary else {
             open(destination)
@@ -574,7 +585,7 @@ final class ShellRouter {
         isCompact = compact
         switch tab {
         case .destination(let destination)
-            where compact && destination.phonePlacement != .tab && destination.pushesOntoLibrary:
+            where compact && destination.pushesOntoLibrary:
             libraryPath = NavigationPath([destination])
             libraryTop = destination
             tab = .library

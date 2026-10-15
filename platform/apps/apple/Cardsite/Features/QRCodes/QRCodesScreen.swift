@@ -2,12 +2,27 @@ import SwiftUI
 import StudioKit
 import CardsiteKit
 
+/// QR Codes as a sidebar tab on iPad and Mac: the grid in a stack of its
+/// own. iPhone pushes ``QRCodesView`` onto Library's stack instead, so the
+/// two never nest.
+struct QRCodesScreen: View {
+    var body: some View {
+        NavigationStack {
+            QRCodesView()
+        }
+    }
+}
+
 /// QR codes as an adaptive grid of white tiles: two columns on iPhone, as
 /// many as fit on iPad and Mac. A card opens the code; its menu edits, shares or
 /// deletes it.
-struct QRCodesScreen: View {
+///
+/// A stack-free destination: it brings no NavigationStack, and opens a code
+/// with `navigationDestination(item:)` on whichever stack hosts it
+/// (``QRCodesScreen``'s, or Library's on iPhone).
+struct QRCodesView: View {
     @Environment(QRCodesModel.self) private var model
-    @State private var path: [QRCode.ID] = []
+    @State private var opened: QRCode.ID? = nil
     @State private var isComposing = false
     @State private var editing: QRCode? = nil
     @State private var pendingDelete: QRCode? = nil
@@ -24,57 +39,55 @@ struct QRCodesScreen: View {
 
     var body: some View {
         @Bindable var bindable = model
-        NavigationStack(path: $path) {
-            content
-                .accessibilityElement(children: .contain)
-                .accessibilityIdentifier(AppDestination.qrCodes.screenIdentifier)
-                .background(Color.studioBg)
-                .navigationTitle("QR Codes")
-                .searchable(text: $bindable.searchText, prompt: Text("Search QR codes"))
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button { isComposing = true } label: {
-                            Label("New QR Code", systemImage: "plus")
-                        }
-                        .accessibilityIdentifier("qr.create")
+        content
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier(AppDestination.qrCodes.screenIdentifier)
+            .background(Color.studioBg)
+            .navigationTitle("QR Codes")
+            .searchable(text: $bindable.searchText, prompt: Text("Search QR codes"))
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button { isComposing = true } label: {
+                        Label("New QR Code", systemImage: "plus")
                     }
+                    .accessibilityIdentifier("qr.create")
                 }
-                .navigationDestination(for: QRCode.ID.self) { id in
-                    if let code = model.list.items.first(where: { $0.id == id }) {
-                        QRCodeDetailView(code: code,
-                                         typeLabel: model.typeLabel(for: code.type),
-                                         edit: { editing = code },
-                                         requestDelete: { pendingDelete = code })
-                    } else {
-                        ContentUnavailableView("This QR code was deleted", systemImage: "qrcode")
-                    }
-                }
-        }
-        .task { [list = model.list] in await list.loadIfNeeded() }
-        .task { [model] in await model.loadTypesIfNeeded() }
-        .sheet(isPresented: $isComposing) {
-            QRCodeEditorView { code in path = [code.id] }
-        }
-        .sheet(item: $editing) { code in
-            QRCodeEditorView(editing: code)
-        }
-        .confirmationDialog(
-            "Delete this QR code?",
-            isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
-            titleVisibility: .visible,
-            presenting: pendingDelete
-        ) { code in
-            Button("Delete", role: .destructive) {
-                Task { await delete(code) }
             }
-        } message: { _ in
-            Text("This removes it from your workspace. Printed copies keep encoding the same content.")
-        }
-        .alert(String(localized: "Couldn’t delete"), isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(deleteError ?? "")
-        }
+            .navigationDestination(item: $opened) { id in
+                if let code = model.list.items.first(where: { $0.id == id }) {
+                    QRCodeDetailView(code: code,
+                                     typeLabel: model.typeLabel(for: code.type),
+                                     edit: { editing = code },
+                                     requestDelete: { pendingDelete = code })
+                } else {
+                    ContentUnavailableView("This QR code was deleted", systemImage: "qrcode")
+                }
+            }
+            .task { [list = model.list] in await list.loadIfNeeded() }
+            .task { [model] in await model.loadTypesIfNeeded() }
+            .sheet(isPresented: $isComposing) {
+                QRCodeEditorView { code in opened = code.id }
+            }
+            .sheet(item: $editing) { code in
+                QRCodeEditorView(editing: code)
+            }
+            .confirmationDialog(
+                "Delete this QR code?",
+                isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
+                titleVisibility: .visible,
+                presenting: pendingDelete
+            ) { code in
+                Button("Delete", role: .destructive) {
+                    Task { await delete(code) }
+                }
+            } message: { _ in
+                Text("This removes it from your workspace. Printed copies keep encoding the same content.")
+            }
+            .alert(String(localized: "Couldn’t delete"), isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(deleteError ?? "")
+            }
     }
 
     // MARK: States
@@ -160,7 +173,7 @@ struct QRCodesScreen: View {
     }
 
     private func card(for code: QRCode) -> some View {
-        NavigationLink(value: code.id) {
+        Button { opened = code.id } label: {
             QRCodeCard(code: code, typeLabel: model.typeLabel(for: code.type))
         }
         .buttonStyle(StudioPressStyle(scale: 0.98))
@@ -234,7 +247,7 @@ struct QRCodesScreen: View {
     private func delete(_ code: QRCode) async {
         do {
             try await model.delete(code)
-            path.removeAll { $0 == code.id }
+            if opened == code.id { opened = nil }
         } catch {
             deleteError = error.asAPIError.localizedDescription
         }
