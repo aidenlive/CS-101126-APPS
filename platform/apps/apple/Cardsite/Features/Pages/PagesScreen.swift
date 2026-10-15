@@ -189,6 +189,14 @@ struct PagesStackView: View {
             editorView(for: id)
         }
         .task { [list = model.list] in await list.loadIfNeeded() }
+        #if DEBUG
+        // `-CardsiteOpenFirstPage YES`: CI's editor diagnosis.
+        .onChange(of: model.list.items.first?.id, initial: true) { _, id in
+            guard FixtureMode.isEnabled, UserDefaults.standard.bool(forKey: "CardsiteOpenFirstPage"),
+                  selection == nil, let id else { return }
+            selection = id
+        }
+        #endif
         .onChange(of: selection) { _, id in
             editor = actions.editor(for: id, replacing: editor)
         }
