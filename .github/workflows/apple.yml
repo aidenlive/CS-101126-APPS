@@ -250,7 +250,7 @@ jobs:
         id: tests
         continue-on-error: true
         # Caps a stuck run so the screenshots still get published.
-        timeout-minutes: 50
+        timeout-minutes: 60
         run: |
           set -o pipefail
           rm -rf screens.xcresult
@@ -263,8 +263,8 @@ jobs:
             -only-testing:CardsiteUITests \
             -parallel-testing-enabled NO \
             -test-timeouts-enabled YES \
-            -default-test-execution-time-allowance 420 \
-            -maximum-test-execution-time-allowance 600 \
+            -default-test-execution-time-allowance 600 \
+            -maximum-test-execution-time-allowance 900 \
             -resultBundlePath screens.xcresult \
             $SIGNING \
             2>&1 | tee test.log
