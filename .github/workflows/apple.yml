@@ -280,26 +280,30 @@ jobs:
             $SIGNING \
             2>&1 | tee test.log
 
-      # The iPhone page editor pinned the main thread under UI tests. Open
-      # it directly, then sample the process from the host (the simulator
-      # app is a macOS process, and its own frames symbolicate).
+      # The iPhone page editor left the main thread "busy" for XCTest's
+      # accessibility snapshots, yet sat idle when opened directly. Run the
+      # snapshot probe alone and sample the app while it waits.
       - name: page editor diagnosis (iPhone)
         if: always() && matrix.device.slug == 'iphone'
         continue-on-error: true
-        timeout-minutes: 5
+        timeout-minutes: 8
         run: |
           D="screens/iphone/failures"; mkdir -p "$D"
-          UDID=$(xcrun simctl list devices booted -j | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next((x["udid"] for v in d.values() for x in v if x["state"]=="Booted"), ""))')
-          [ -n "$UDID" ] || { echo "no booted simulator" > "$D/editor-diagnosis.txt"; exit 0; }
-          xcrun simctl terminate "$UDID" com.cardsite.app 2>/dev/null || true
-          xcrun simctl launch "$UDID" com.cardsite.app -CardsiteFixtures -CardsiteOpen pages -CardsiteOpenFirstPage YES
-          sleep 20
-          xcrun simctl io "$UDID" screenshot "$D/editor-diagnosis.png" || true
-          PID=$(pgrep -f "Cardsite.app/Cardsite" | head -n 1)
-          echo "pid=$PID" > "$D/editor-diagnosis.txt"
-          ps -o pid,%cpu,etime,command -p "$PID" >> "$D/editor-diagnosis.txt" 2>&1 || true
-          [ -n "$PID" ] && sample "$PID" 5 -file "$D/editor-sample.txt" >/dev/null 2>&1 || true
-          xcrun simctl terminate "$UDID" com.cardsite.app 2>/dev/null || true
+          ( sleep 25; for n in 1 2 3 4; do
+              PID=$(pgrep -f "Cardsite.app/Cardsite" | head -n 1)
+              echo "t=$n pid=$PID $(ps -o %cpu=,etime= -p "$PID" 2>/dev/null)" >> "$D/editor-diagnosis.txt"
+              [ -n "$PID" ] && sample "$PID" 3 -file "$D/editor-sample-$n.txt" >/dev/null 2>&1
+              sleep 7
+            done ) &
+          SAMPLER=$!
+          TEST_RUNNER_CARDSITE_DIAG=1 xcodebuild test-without-building \
+            -project Cardsite.xcodeproj -scheme Cardsite -configuration Debug \
+            -destination "$DESTINATION" -derivedDataPath DerivedData \
+            -only-testing:CardsiteUITests/DiagnosticsTests \
+            -resultBundlePath diag.xcresult $SIGNING 2>&1 | grep -E "Test Case|error|took" | tail -n 20 >> "$D/editor-diagnosis.txt" || true
+          wait $SAMPLER || true
+          xcrun xcresulttool export attachments --path diag.xcresult --output-path diag-att >/dev/null 2>&1 \
+            && find diag-att -name "*.txt" -exec cp {} "$D/" \; || true
 
       - name: keep busy samples
         if: always() && matrix.device.platform == 'iOS'
