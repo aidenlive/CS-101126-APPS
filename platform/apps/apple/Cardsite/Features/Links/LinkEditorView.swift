@@ -19,6 +19,9 @@ import CardsiteKit
 /// as on the web.
 struct LinkEditorView: View {
     @Environment(AppModel.self) private var app
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
     @Environment(LinksModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -93,7 +96,9 @@ struct LinkEditorView: View {
         }
         .cardsiteSheet(.form)
         #if os(iOS)
-        .presentationDetents([.medium, .large])
+        // Half height suits an iPhone; an iPad's form sheet at .medium
+        // clipped the address section.
+        .presentationDetents(sizeClass == .compact ? [.medium, .large] : [.large])
         #endif
     }
 
@@ -145,7 +150,7 @@ struct LinkEditorView: View {
             }
             .padding(.vertical, StudioSpace.s1)
         } header: {
-            EditorSectionHeader(String(localized: "Destination"))
+            EditorSectionHeader(String(localized: "Where it goes"))
         } footer: {
             Text("You can change it later: the address and any QR codes follow.")
         }
@@ -198,7 +203,7 @@ struct LinkEditorView: View {
             }
             .accessibilityElement(children: .combine)
         } header: {
-            EditorSectionHeader(String(localized: "Address"))
+            EditorSectionHeader(String(localized: "The short link"))
         } footer: {
             Text("Scheduling, targeting and passwords are on the link’s page once it exists.")
         }

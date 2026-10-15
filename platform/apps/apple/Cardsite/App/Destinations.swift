@@ -507,12 +507,12 @@ enum MainTab: Hashable, Sendable {
         } else if storageKey == Self.searchKey {
             self = .search
         } else {
-            #if os(macOS)
-            // The Mac has no Library tab: its sidebar lists every
+            #if os(iOS)
+            self = .library
+            #else
+            // Only the iPhone's tab bar has Library; a sidebar lists every
             // destination.
             self = .destination(.home)
-            #else
-            self = .library
             #endif
         }
     }
@@ -589,8 +589,9 @@ final class ShellRouter {
             libraryPath = NavigationPath([destination])
             libraryTop = destination
             tab = .library
-        case .library where !compact && !libraryPath.isEmpty:
-            tab = .destination(libraryTop ?? .home)
+        case .library where !compact:
+            // The sidebar has no Library: its top destination, or Home.
+            tab = .destination(libraryPath.isEmpty ? .home : (libraryTop ?? .home))
             libraryPath = NavigationPath()
             libraryTop = nil
         default:

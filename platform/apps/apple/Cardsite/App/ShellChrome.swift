@@ -25,28 +25,64 @@ struct CreateMenu: View {
 
     var body: some View {
         Group {
+            #if os(macOS)
             if let primary {
+                // A Mac toolbar draws a primary-action menu as a split
+                // pull-down whose centre click is ambiguous, so the Mac
+                // gets a plain + button beside the full menu.
+                Button {
+                    runPrimary(primary)
+                } label: {
+                    label
+                }
+                .accessibilityIdentifier(identifier)
+                .help(primary.title)
                 Menu {
                     items
                 } label: {
-                    label
-                } primaryAction: {
-                    if let performPrimary {
-                        performPrimary()
-                    } else {
-                        app.composer = primary.composer
-                    }
+                    Label("More New Items", systemImage: "square.and.pencil")
                 }
+                .accessibilityIdentifier("\(identifier).menu")
+                .help("Create something new")
             } else {
                 Menu {
                     items
                 } label: {
                     label
                 }
+                .accessibilityIdentifier(identifier)
+                .help("Create something new")
             }
+            #else
+            if let primary {
+                Menu {
+                    items
+                } label: {
+                    label
+                } primaryAction: {
+                    runPrimary(primary)
+                }
+                .accessibilityIdentifier(identifier)
+                .help("Create something new")
+            } else {
+                Menu {
+                    items
+                } label: {
+                    label
+                }
+                .accessibilityIdentifier(identifier)
+                .help("Create something new")
+            }
+            #endif
         }
-        .accessibilityIdentifier(identifier)
-        .help("Create something new")
+    }
+
+    private func runPrimary(_ primary: CreateAction) {
+        if let performPrimary {
+            performPrimary()
+        } else {
+            app.composer = primary.composer
+        }
     }
 
     private var label: some View {

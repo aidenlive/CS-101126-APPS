@@ -16,13 +16,12 @@ import UIKit
 ///   the avatar on Home and Library opens the account sheet.
 /// · iPad and Mac: a sidebar in sections (Overview, Content, Organize,
 ///   Account) holding every destination, under the workspace switcher.
-///   Search is the sidebar's search field. iPad's tab-bar mode shows the
-///   iPhone's four.
+///   Search is the sidebar's search field.
 ///
-/// Sidebar-only tabs use `defaultVisibility(.hidden, for: .tabBar)` and
-/// Library `defaultVisibility(.hidden, for: .sidebar)` (TabContent, iOS 18
-/// and macOS 15, the deployment targets). No tab uses `.hidden(_:)`: with
-/// the iOS 27 SDK a selection that points at a removed tab can crash.
+/// The two are separate tab views chosen by size class (`tabs`). No tab
+/// uses `.hidden(_:)`: with the iOS 27 SDK a selection that points at a
+/// removed tab can crash, so the router keeps the selection valid for the
+/// tab view on screen.
 ///
 /// A `NavigationSplitView` shell was the alternative. It was rejected
 /// because Links and Pages are themselves split views (list and detail),
@@ -131,16 +130,49 @@ struct MainView: View {
     // The body is split into stages so the type checker handles each one
     // separately (one long chain timed out on Xcode 26).
 
+    /// Two tab views, one per size class, as Apple recommends when the
+    /// tab structure changes between them. CI showed that
+    /// `defaultVisibility(.hidden, for: .tabBar)` alone doesn't trim an
+    /// iPhone's tab bar (it applies to customizable tab views): every
+    /// destination became a tab and the overflow went to a system More
+    /// list, nesting each screen's stack inside More's.
+    @ViewBuilder
     private var tabs: some View {
+        #if os(iOS)
+        if isCompact {
+            compactTabs
+        } else {
+            sidebarTabs
+        }
+        #else
+        sidebarTabs
+        #endif
+    }
+
+    /// iPhone and compact iPad windows: exactly Home · Links · Library,
+    /// and Search split off as the trailing circle. The router keeps the
+    /// selection on one of these four (`adapt(isCompact:)`).
+    #if os(iOS)
+    private var compactTabs: some View {
+        @Bindable var nav = router
+        @Bindable var bindableSearch = search
+        return TabView(selection: $nav.tab) {
+            destinationTab(.home)
+            destinationTab(.links)
+            libraryTab
+            searchTab
+        }
+        .searchable(text: $bindableSearch.query, prompt: Text("Pages, actions and links"))
+        .minimizesTabBarOnScroll()
+    }
+    #endif
+
+    /// iPad and Mac: every destination in the sidebar, in sections.
+    private var sidebarTabs: some View {
         @Bindable var nav = router
         @Bindable var bindableSearch = search
         return TabView(selection: $nav.tab) {
             overviewTabs
-            #if !os(macOS)
-            // iPhone and iPad's tab-bar mode only; `.sidebar` visibility
-            // doesn't exist on macOS, whose sidebar lists every destination.
-            libraryTab
-            #endif
             sectionTabs
             searchTab
         }
@@ -149,14 +181,16 @@ struct MainView: View {
             WorkspaceSwitcher()
                 .padding(.bottom, StudioSpace.s2)
         }
-        // The tab view hands the field to the Search tab: the bottom search
-        // circle on iPhone, the sidebar's field on iPad and Mac.
+        // The Search tab takes the field: the sidebar's field on iPad and
+        // Mac.
         .searchable(text: $bindableSearch.query, prompt: Text("Pages, actions and links"))
-        .minimizesTabBarOnScroll()
     }
 
-    /// Home and Links (also in the tab bar), then Pages, QR Codes and
-    /// Statistics (sidebar only), with no section heading, as on the web.
+    /// Home, Links, Pages, QR Codes and Statistics, with no section
+    /// heading, as on the web. iPad's top tab bar (sidebar collapsed)
+    /// keeps the iPhone's set: Home and Links, the selected item and
+    /// Search. CI shows the regular-width tab bar honours these hints;
+    /// the compact one doesn't, hence `compactTabs`.
     @TabContentBuilder<MainTab>
     private var overviewTabs: some TabContent<MainTab> {
         ForEach(AppDestination.Group.overview.destinations) { (destination: AppDestination) in
@@ -166,14 +200,13 @@ struct MainView: View {
     }
 
     /// The hub for everything that isn't a tab on iPhone. The sidebar lists
-    /// each destination itself, so the hub stays out of it.
-    #if !os(macOS)
+    /// each destination itself, so the hub is only in the compact tab bar.
+    #if os(iOS)
     @TabContentBuilder<MainTab>
     private var libraryTab: some TabContent<MainTab> {
         Tab(String(localized: "Library"), systemImage: "square.stack", value: MainTab.library) {
             LibraryScreen()
         }
-        .defaultVisibility(.hidden, for: .sidebar)
     }
     #endif
 
@@ -191,9 +224,9 @@ struct MainView: View {
         section(.account)
     }
 
-    /// One sidebar section, sidebar-only. Sections are spelled out rather
-    /// than built with a `ForEach` over groups: nested `ForEach` in a tab
-    /// builder crashed the type checker on Xcode 26.
+    /// One sidebar section. Sections are spelled out rather than built with
+    /// a `ForEach` over groups: nested `ForEach` in a tab builder crashed
+    /// the type checker on Xcode 26.
     private func section(_ group: AppDestination.Group) -> some TabContent<MainTab> {
         TabSection(group.title) {
             ForEach(group.destinations) { (destination: AppDestination) in
