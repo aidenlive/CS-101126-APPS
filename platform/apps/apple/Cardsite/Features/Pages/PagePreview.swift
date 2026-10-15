@@ -98,6 +98,15 @@ struct PageWebView {
             if let loaded, loaded.0 == parent.url, loaded.1 == parent.revision { return }
             loaded = (parent.url, parent.revision)
             parent.failure = nil
+            #if DEBUG
+            // Fixture runs (UI tests, the demo scheme) never reach the
+            // network: the public address belongs to no fixture server, and
+            // whatever a live host serves would make CI depend on it.
+            if FixtureMode.isEnabled {
+                webView.loadHTMLString(Self.fixtureHTML(for: parent.url), baseURL: nil)
+                return
+            }
+            #endif
             webView.load(URLRequest(url: parent.url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30))
         }
 
@@ -121,6 +130,19 @@ struct PageWebView {
             let cancelled = (error as NSError).code == NSURLErrorCancelled
             MainActor.assumeIsolated { finish(failing: message, cancelled: cancelled) }
         }
+
+        #if DEBUG
+        /// A plain stand-in page in the system's own colours and type.
+        static func fixtureHTML(for url: URL) -> String {
+            let address = (url.host() ?? "") + url.path()
+            return """
+            <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+            <style>:root{color-scheme:light dark;font:-apple-system-body;}body{margin:0;padding:48px 24px;text-align:center}
+            h1{font:-apple-system-title1;margin:0 0 8px}p{margin:0;opacity:.6}</style></head>
+            <body><h1>\(address)</h1><p>Fixture preview. A real build shows the live page here.</p></body></html>
+            """
+        }
+        #endif
 
         private func finish(failing message: String, cancelled: Bool) {
             parent.isLoading = false
