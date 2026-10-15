@@ -134,7 +134,12 @@ struct PagesScreen: View {
 // MARK: - iPhone
 
 /// Bio pages on iPhone: the page list, then the canvas editor pushed onto
-/// the hosting stack (Library's) with `navigationDestination(item:)`.
+/// Library's stack as a ``PageEditorRoute`` in the router's path.
+///
+/// Not `navigationDestination(item:)`: inside a stack bound to a path, a
+/// tapped row's item push kept writing back to the path, and the shell's
+/// tab view rebuilt its tab bar every frame (CI sample: 100% CPU in
+/// `UITabBarController _rebuildTabBarItems`, the app unresponsive).
 ///
 /// A stack-free destination: it brings no NavigationStack of its own, so
 /// Library can push it without nesting stacks. The editor runs in its
@@ -142,6 +147,7 @@ struct PagesScreen: View {
 /// sheets, and the system back button instead of ✕.
 struct PagesStackView: View {
     @Environment(AppModel.self) private var app
+    @Environment(ShellRouter.self) private var router
     @Environment(PagesModel.self) private var model
     @Environment(\.toasts) private var toasts
     #if os(iOS)
@@ -161,6 +167,8 @@ struct PagesStackView: View {
     @State private var isCreating = false
     @State private var pendingDelete: BioPage? = nil
     @State private var actionError: PageActionError? = nil
+    /// Library's depth with the editor on top, to notice the pop.
+    @State private var editorDepth: Int? = nil
 
     /// The canvas's iPhone mode on every iPhone (landscape included), and
     /// in a compact iPad window.
@@ -185,8 +193,8 @@ struct PagesStackView: View {
             setEnabled: { page, isOn in Task { await setEnabled(page, isOn) } },
             duplicate: { page in Task { await duplicate(page) } }
         )
-        .navigationDestination(item: $selection) { id in
-            editorView(for: id)
+        .navigationDestination(for: PageEditorRoute.self) { route in
+            editorView(for: route.pageID)
         }
         .task { [list = model.list] in await list.loadIfNeeded() }
         #if DEBUG
@@ -199,6 +207,21 @@ struct PagesStackView: View {
         #endif
         .onChange(of: selection) { _, id in
             editor = actions.editor(for: id, replacing: editor)
+            guard let id else { return }
+            if let depth = editorDepth, router.libraryPath.count == depth {
+                // Another page while one is open (a created page, a deep
+                // link): swap the top route rather than stacking editors.
+                router.libraryPath.removeLast()
+            }
+            router.libraryPath.append(PageEditorRoute(pageID: id))
+            editorDepth = router.libraryPath.count
+        }
+        .onChange(of: router.libraryPath.count) { _, count in
+            // Back from the editor: the page list is on top again.
+            if let depth = editorDepth, count < depth {
+                editorDepth = nil
+                selection = nil
+            }
         }
         .onChange(of: model.openRequest, initial: true) { _, id in
             guard let id else { return }
@@ -241,7 +264,11 @@ struct PagesStackView: View {
     /// Deleting the open page pops its editor.
     private func delete(_ page: BioPage) async {
         let error = await actions.delete(page)
-        if error == nil, selection == page.id { selection = nil }
+        if error == nil, selection == page.id, let depth = editorDepth,
+           router.libraryPath.count >= depth {
+            // Pops the editor; the depth check above clears the selection.
+            router.libraryPath.removeLast(router.libraryPath.count - depth + 1)
+        }
         actionError = error
         pendingDelete = nil
     }
@@ -697,4 +724,9 @@ private struct PageEditorDestination: View {
                 .accessibilityLabel(Text("Loading"))
         }
     }
+}
+
+/// The iPhone page editor's place in Library's path.
+struct PageEditorRoute: Hashable, Codable, Sendable {
+    let pageID: BioPage.ID
 }
