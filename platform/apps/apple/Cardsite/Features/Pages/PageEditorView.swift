@@ -122,7 +122,7 @@ struct PageCanvasEditor: View {
     private var titled: some View {
         content
             .navigationTitle(title)
-            .pageAddressSubtitle(Diag.noSubtitle ? nil : subtitle)
+            .pageAddressSubtitle(Diag.noSubtitle || isCompact ? nil : subtitle)
             #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -133,7 +133,12 @@ struct PageCanvasEditor: View {
         return page.title ?? app.addresses.display(for: page.slug)
     }
 
-    /// The address, under a page that has a name.
+    /// The address, under a page that has a name. Not on iPhone: in the
+    /// compact bar (title, subtitle, status and actions) CI caught the
+    /// editor re-laying out every frame at 100% CPU after the push. Taking
+    /// out any one part of the crowded screen (the subtitle, the toolbar,
+    /// the palette) stopped it; the subtitle is the one we can spare. The
+    /// address stays in the actions menu and on the canvas.
     private var subtitle: String? {
         guard let page = editor.page, page.title != nil else { return nil }
         return app.addresses.display(for: page.slug)

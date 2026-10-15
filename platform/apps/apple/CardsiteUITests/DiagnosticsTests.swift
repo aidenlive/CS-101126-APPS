@@ -26,7 +26,7 @@ final class DiagnosticsTests: XCTestCase {
     /// workflow logs the app's CPU (by pid) while each one sits for 20 s.
     func testC_Isolation() throws {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["CARDSITE_DIAG"] == "1", "CI diagnosis only")
-        for flag in ["none", "DiagNoToolbar", "DiagNoPalette", "DiagNoSubtitle", "DiagNoShortcuts"] {
+        for flag in ["none", "DiagNoToolbar", "none"] {
             let app = XCUIApplication()
             app.launchArguments = ["-CardsiteFixtures", "-CardsiteOpen", "pages"]
             if flag != "none" { app.launchArguments += ["-\(flag)", "YES"] }
