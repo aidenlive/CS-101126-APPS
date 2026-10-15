@@ -115,7 +115,7 @@ struct WorkspaceSwitcher: View {
     }
 }
 
-/// The switcher's choices, shared by the sidebar menu and More.
+/// The switcher's choices, for the sidebar menu.
 struct WorkspaceMenuItems: View {
     @Environment(AppModel.self) private var app
 
@@ -162,7 +162,8 @@ struct WorkspaceMenuItems: View {
     }
 }
 
-/// The switcher as a row at the top of More on iPhone: a native picker.
+/// The switcher as a row in the account sheet (the avatar on Home and
+/// Library): a native picker.
 struct WorkspacePickerRow: View {
     @Environment(AppModel.self) private var app
 
@@ -230,7 +231,7 @@ struct WorkspacePickerRow: View {
         .environment(AppModel.preview())
 }
 
-#Preview("More row") {
+#Preview("Account sheet row") {
     List {
         Section { WorkspacePickerRow() }
     }

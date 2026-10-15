@@ -60,8 +60,10 @@ struct ScheduleSection: View {
         } footer: {
             if isScheduled, !canRemove {
                 Text("A saved schedule can be moved but not removed yet.")
-                    .studioText(.uiSm)
-                    .foregroundStyle(Color.studioText3)
+            } else if isScheduled {
+                Text("It’s live only inside this window, in the time zone below.")
+            } else {
+                Text("Off: it’s live whenever its switch is on.")
             }
         }
         .environment(\.timeZone, zone)
@@ -147,7 +149,9 @@ struct TimeZonePickerSheet: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button { dismiss() } label: {
+                        EditorBarLabel(title: String(localized: "Done"), systemImage: "checkmark")
+                    }
                 }
             }
         }

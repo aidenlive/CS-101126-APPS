@@ -74,7 +74,13 @@ private struct StatisticsContent: View {
     let subtitle: String?
 
     @Environment(\.studioViewport) private var viewport
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .body) private var tileMinWidth: CGFloat = 150
+
+    /// iPad and Mac at wide widths: tiles and chart side by side.
+    private var isWide: Bool {
+        viewport != .compact && !dynamicTypeSize.isAccessibilitySize
+    }
 
     var body: some View {
         Group {
@@ -89,8 +95,20 @@ private struct StatisticsContent: View {
                         if let error = model.refreshError {
                             RefreshErrorBanner(error: error) { model.dismissRefreshError() }
                         }
-                        tiles
-                        trafficCard
+                        if isWide {
+                            // A balanced two-column grid: the four tiles as
+                            // a 2 × 2 block beside the chart card.
+                            HStack(alignment: .top, spacing: StudioSpace.s4) {
+                                tiles(columns: [GridItem(.flexible(), spacing: StudioSpace.s3),
+                                                GridItem(.flexible(), spacing: StudioSpace.s3)])
+                                    .frame(maxWidth: .infinity)
+                                trafficCard
+                                    .frame(maxWidth: .infinity)
+                            }
+                        } else {
+                            tiles(columns: [GridItem(.adaptive(minimum: tileMinWidth), spacing: StudioSpace.s3)])
+                            trafficCard
+                        }
                         breakdownCard
                     }
                     .padding(.horizontal, viewport.contentPadding)
@@ -125,40 +143,50 @@ private struct StatisticsContent: View {
 
     // MARK: Header
 
+    /// The dashboard hero: the kicker, the two-tone title, the resource's
+    /// address, and the range as one wide segmented pill.
     private var header: some View {
-        VStack(alignment: .leading, spacing: StudioSpace.s3) {
+        VStack(alignment: .leading, spacing: StudioSpace.s4) {
             StudioPageHead(
                 kicker: String(localized: "Statistics · Last \(model.range.rawValue) days"),
                 title: String(localized: "The whole "),
                 accent: model.target == .all ? String(localized: "workspace.") : String(localized: "story.")
-            ) {
-                Picker(String(localized: "Date range"), selection: $model.range) {
-                    ForEach(StatisticsModel.Range.allCases, id: \.self) { range in
-                        Text(range.shortTitle)
-                            .tag(range)
-                            .accessibilityLabel(Text(range.accessibilityTitle))
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
-            }
+            )
             if let subtitle {
-                Text(verbatim: subtitle)
-                    .studioText(.ui)
-                    .foregroundStyle(Color.studioText2)
-                    .textSelection(.enabled)
+                Label {
+                    Text(verbatim: subtitle)
+                        .textSelection(.enabled)
+                } icon: {
+                    Image(systemName: "link")
+                        .foregroundStyle(Color.studioText3)
+                }
+                .studioText(.ui)
+                .foregroundStyle(Color.studioText2)
+            }
+            rangePicker
+        }
+    }
+
+    private var rangePicker: some View {
+        Picker(String(localized: "Date range"), selection: $model.range) {
+            ForEach(StatisticsModel.Range.allCases, id: \.self) { range in
+                Text(range.shortTitle)
+                    .tag(range)
+                    .accessibilityLabel(Text(range.accessibilityTitle))
             }
         }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .controlSize(.large)
+        .frame(maxWidth: viewport == .compact ? .infinity : CardsiteMeasure.narrow.width)
     }
 
     // MARK: Tiles
 
-    private var tiles: some View {
+    private func tiles(columns: [GridItem]) -> some View {
         let overview = model.overview.value
         let placeholder = overview == nil
-        return LazyVGrid(columns: [GridItem(.adaptive(minimum: tileMinWidth), spacing: StudioSpace.s3)],
-                         alignment: .leading, spacing: StudioSpace.s3) {
+        return LazyVGrid(columns: columns, alignment: .leading, spacing: StudioSpace.s3) {
             StatisticTile(
                 title: String(localized: "Pageviews"),
                 systemImage: "cursorarrow.click",
@@ -404,11 +432,27 @@ private struct BreakdownBar: View {
         }
         .padding(.horizontal, StudioSpace.s3)
         .padding(.vertical, StudioSpace.s2)
+        // The share as a quiet fill behind the row, so the label and the
+        // figures always sit on a near-surface tint and keep their contrast
+        // (a solid lime or grey bar under text failed it). The top row of a
+        // ranked list takes the accent: a soft accent fill and an accent rule.
         .background(alignment: .leading) {
             GeometryReader { proxy in
-                RoundedRectangle(cornerRadius: StudioRadius.xs, style: .continuous)
-                    .fill(isLeading ? Color.studioVizHighlight : Color.studioVizOther)
-                    .frame(width: max(StudioSpace.s1, proxy.size.width * fraction))
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: StudioRadius.sm, style: .continuous)
+                        .fill(Color.studioSurface2)
+                    RoundedRectangle(cornerRadius: StudioRadius.sm, style: .continuous)
+                        .fill(isLeading ? Color.studioAccentSoft : Color.studioViz1.opacity(0.12))
+                        .frame(width: max(StudioSpace.s1, proxy.size.width * fraction))
+                }
+            }
+        }
+        .overlay(alignment: .leading) {
+            if isLeading {
+                Capsule()
+                    .fill(Color.studioAccentLine)
+                    .frame(width: StudioSpace.s1 / 2)
+                    .padding(.vertical, StudioSpace.s2)
             }
         }
         .accessibilityElement(children: .ignore)
@@ -418,6 +462,7 @@ private struct BreakdownBar: View {
 
     private var labelText: some View {
         Text(verbatim: label)
+            .fontWeight(isLeading ? .semibold : nil)
             .studioText(.ui)
             .foregroundStyle(Color.studioText)
             .lineLimit(2)
@@ -433,7 +478,7 @@ private struct BreakdownBar: View {
     private var shareText: some View {
         Text(share.formatted(.percent.precision(.fractionLength(1))))
             .studioText(.uiSm)
-            .foregroundStyle(Color.studioText3)
+            .foregroundStyle(Color.studioText2)
             .monospacedDigit()
     }
 }

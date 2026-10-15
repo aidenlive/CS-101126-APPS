@@ -8,9 +8,12 @@ import CardsiteKit
 /// hides behind `bio_page_unwired_settings` are hidden the same way.
 struct PageSettingsView: View {
     let editor: PageEditorModel
+    /// A section to open straight away (the canvas's Theme tool opens Theme).
+    var initialPane: Pane? = nil
 
     @Environment(\.dismiss) private var dismiss
     @State private var settings: PageSettingsModel? = nil
+    @State private var path: [Pane] = []
 
     enum Pane: String, CaseIterable, Identifiable, Hashable {
         case page, seo, theme, branding, targeting, pixels
@@ -51,7 +54,7 @@ struct PageSettingsView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if let settings {
                     List {
@@ -80,15 +83,17 @@ struct PageSettingsView: View {
                         .studioRowBackground()
                     }
                     .studioList()
-                    .navigationDestination(for: Pane.self) { section in
-                        PageSettingsSectionView(section: section, settings: settings)
-                    }
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
             .background(Color.studioBg)
+            .navigationDestination(for: Pane.self) { section in
+                if let settings {
+                    PageSettingsSectionView(section: section, settings: settings)
+                }
+            }
             .navigationTitle("Page Settings")
             #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -105,7 +110,14 @@ struct PageSettingsView: View {
             }
         }
         .task {
-            if settings == nil { settings = PageSettingsModel(editor: editor) }
+            guard settings == nil else { return }
+            settings = PageSettingsModel(editor: editor)
+            if let initialPane {
+                // Open on the section asked for, without a push animation.
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { path = [initialPane] }
+            }
         }
         .onDisappear {
             if let settings { Task { await settings.flush() } }

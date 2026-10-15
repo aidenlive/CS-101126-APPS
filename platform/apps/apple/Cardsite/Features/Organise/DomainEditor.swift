@@ -324,11 +324,16 @@ struct DomainCreateSheet: View {
             .toolbar {
                 if created != nil {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") { dismiss() }
+                        Button { dismiss() } label: {
+                            EditorBarLabel(title: String(localized: "Done"), systemImage: "checkmark")
+                        }
+                        .keyboardShortcut(.defaultAction)
+                        .tint(Color.studioAccentLine)
                     }
                 } else {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { dismiss() }
+                        Button { dismiss() } label: { EditorBarLabel.cancel() }
+                            .keyboardShortcut(.cancelAction)
                             .disabled(isSaving)
                     }
                     ToolbarItem(placement: .confirmationAction) {
@@ -336,8 +341,11 @@ struct DomainCreateSheet: View {
                             ProgressView()
                                 .accessibilityLabel(Text("Saving"))
                         } else {
-                            Button("Add") { Task { await save() } }
-                                .disabled(!canSave)
+                            Button { Task { await save() } } label: {
+                                EditorBarLabel(title: String(localized: "Add"), systemImage: "checkmark")
+                            }
+                            .tint(Color.studioAccentLine)
+                            .disabled(!canSave)
                                 .keyboardShortcut("s", modifiers: .command)
                                 .accessibilityIdentifier("org.domains.editor.save")
                         }

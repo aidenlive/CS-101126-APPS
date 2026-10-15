@@ -96,7 +96,19 @@ struct CardsiteResourceRow<Trailing: View>: View {
                 }
             }
         }
-        .padding(.vertical, StudioSpace.s1)
+        .padding(.vertical, Self.verticalPadding)
+        .contentShape(Rectangle())
+    }
+
+    /// The row rhythm: a touch row breathes (the tile, two lines and the
+    /// system insets land near Mail's density); a Mac list column stays
+    /// tight, as Finder and Mail's are.
+    private static var verticalPadding: CGFloat {
+        #if os(macOS)
+        return StudioSpace.s1
+        #else
+        return StudioSpace.s2
+        #endif
     }
 
     @ViewBuilder

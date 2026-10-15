@@ -10,15 +10,22 @@ import UIKit
 /// One sidebar-adaptable `TabView` serves every width, following Apple's
 /// own pattern for changing tab structure between size classes:
 ///
-/// · iPad and Mac: a sidebar. Overview destinations sit at the top with no
-///   heading, as on the web, and the other groups are `TabSection`s. The
-///   workspace switcher heads the sidebar.
-/// · iPhone (and compact-width iPad windows): a tab bar of Home, Links,
-///   Pages, QR and More. More is a native grouped list of everything else,
-///   with the workspace switcher at the top.
+/// · iPhone (and compact-width iPad windows): a tab bar of exactly Home,
+///   Links and Library, plus the Search tab, which the system splits off
+///   as the trailing circle. Library is the hub for everything else, and
+///   the avatar on Home and Library opens the account sheet.
+/// · iPad and Mac: a sidebar in sections (Overview, Content, Organize,
+///   Account) holding every destination, under the workspace switcher.
+///   Search is the sidebar's search field. iPad's tab-bar mode shows the
+///   iPhone's four.
+///
+/// Sidebar-only tabs use `defaultVisibility(.hidden, for: .tabBar)` and
+/// Library `defaultVisibility(.hidden, for: .sidebar)` (TabContent, iOS 18
+/// and macOS 15, the deployment targets). No tab uses `.hidden(_:)`: with
+/// the iOS 27 SDK a selection that points at a removed tab can crash.
 ///
 /// A `NavigationSplitView` shell was the alternative. It was rejected
-/// because Links and QR Codes are themselves split views (list and detail),
+/// because Links and Pages are themselves split views (list and detail),
 /// and SwiftUI doesn't support nesting split views; the tab view gives each
 /// destination its own container and the system draws the sidebar, the
 /// tab bar and the Liquid Glass chrome on OS 26.
@@ -40,6 +47,7 @@ struct MainView: View {
     @State private var qrCodes: QRCodesModel
     @State private var pages: PagesModel
     @State private var home: HomeModel
+    @State private var library: LibraryModel
     @State private var search: QuickSearchModel
     /// One for the session, so the badge and the Inbox list agree.
     @State private var inbox: InboxModel
@@ -51,6 +59,7 @@ struct MainView: View {
         _qrCodes = State(initialValue: QRCodesModel(client: client))
         _pages = State(initialValue: PagesModel(client: client))
         _home = State(initialValue: HomeModel(client: client))
+        _library = State(initialValue: LibraryModel(client: client))
         _search = State(initialValue: QuickSearchModel(client: client))
         _inbox = State(initialValue: InboxModel(client: client))
     }
@@ -72,6 +81,7 @@ struct MainView: View {
             .environment(qrCodes)
             .environment(pages)
             .environment(home)
+            .environment(library)
             .environment(search)
             .environment(inbox)
             .studioToasts(toasts)
@@ -94,6 +104,7 @@ struct MainView: View {
                 qrCodes.onError = model.handle
                 pages.onError = model.handle
                 home.onError = model.handle
+                library.onError = model.handle
                 search.onError = model.handle
                 inbox.onError = model.handle
                 router.tab = MainTab(storageKey: storedTab)
@@ -122,33 +133,49 @@ struct MainView: View {
 
     private var tabs: some View {
         @Bindable var nav = router
+        @Bindable var bindableSearch = search
         return TabView(selection: $nav.tab) {
             overviewTabs
-            moreTab
+            libraryTab
             sectionTabs
+            searchTab
         }
         .tabViewStyle(.sidebarAdaptable)
         .tabViewSidebarHeader {
             WorkspaceSwitcher()
                 .padding(.bottom, StudioSpace.s2)
         }
+        // The tab view hands the field to the Search tab: the bottom search
+        // circle on iPhone, the sidebar's field on iPad and Mac.
+        .searchable(text: $bindableSearch.query, prompt: Text("Pages, actions and links"))
+        .minimizesTabBarOnScroll()
     }
 
+    /// Home and Links (also in the tab bar), then Pages, QR Codes and
+    /// Statistics (sidebar only), with no section heading, as on the web.
     @TabContentBuilder<MainTab>
     private var overviewTabs: some TabContent<MainTab> {
         ForEach(AppDestination.Group.overview.destinations) { (destination: AppDestination) in
-            destinationTab(destination, title: isCompact ? destination.tabTitle : destination.title)
-                .hidden(isCompact && destination.iPhoneTab == .more)
+            destinationTab(destination)
+                .defaultVisibility(destination.isInTabBar ? .automatic : .hidden, for: .tabBar)
         }
     }
 
+    /// The hub for everything that isn't a tab on iPhone. The sidebar lists
+    /// each destination itself, so the hub stays out of it.
     @TabContentBuilder<MainTab>
-    private var moreTab: some TabContent<MainTab> {
-        Tab(String(localized: "More"), systemImage: "ellipsis.circle", value: MainTab.more) {
-            MoreScreen()
+    private var libraryTab: some TabContent<MainTab> {
+        Tab(String(localized: "Library"), systemImage: "square.stack", value: MainTab.library) {
+            LibraryScreen()
         }
-        .badge(isCompact ? inbox.unreadCount : 0)
-        .hidden(!isCompact)
+        .defaultVisibility(.hidden, for: .sidebar)
+    }
+
+    @TabContentBuilder<MainTab>
+    private var searchTab: some TabContent<MainTab> {
+        Tab(String(localized: "Search"), systemImage: "magnifyingglass", value: MainTab.search, role: .search) {
+            SearchScreen()
+        }
     }
 
     @TabContentBuilder<MainTab>
@@ -158,20 +185,20 @@ struct MainView: View {
         section(.account)
     }
 
-    /// One sidebar section. Sections are spelled out rather than built with
-    /// a `ForEach` over groups: nested `ForEach` in a tab builder crashed the
-    /// type checker on Xcode 26.
+    /// One sidebar section, sidebar-only. Sections are spelled out rather
+    /// than built with a `ForEach` over groups: nested `ForEach` in a tab
+    /// builder crashed the type checker on Xcode 26.
     private func section(_ group: AppDestination.Group) -> some TabContent<MainTab> {
         TabSection(group.title) {
             ForEach(group.destinations) { (destination: AppDestination) in
-                destinationTab(destination, title: destination.title)
+                destinationTab(destination)
             }
         }
-        .hidden(isCompact || group.destinations.isEmpty)
+        .defaultVisibility(.hidden, for: .tabBar)
     }
 
-    private func destinationTab(_ destination: AppDestination, title: String) -> some TabContent<MainTab> {
-        Tab(title, systemImage: destination.systemImage, value: MainTab.destination(destination)) {
+    private func destinationTab(_ destination: AppDestination) -> some TabContent<MainTab> {
+        Tab(destination.title, systemImage: destination.systemImage, value: MainTab.destination(destination)) {
             DestinationRoot(destination: destination)
         }
         .badge(badgeCount(for: destination))
@@ -207,6 +234,9 @@ struct MainView: View {
         return withPalette
         .sheet(item: composerBinding) { composer in
             composerSheet(composer)
+        }
+        .sheet(isPresented: $nav.isAccountPresented) {
+            AccountSheet()
         }
         .sheet(item: $nav.presentedLink) { link in
             NavigationStack {
@@ -251,6 +281,13 @@ struct MainView: View {
         }
     }
 
+    /// Something was created: Home's figures and recents, and Library's
+    /// counts and shelf, catch up.
+    private func refreshOverviews() {
+        Task { [home] in await home.refresh() }
+        Task { [library] in await library.refresh() }
+    }
+
     /// The inbox's unread count on its sidebar item; zero hides the badge.
     private func badgeCount(for destination: AppDestination) -> Int {
         destination == .inbox ? inbox.unreadCount : 0
@@ -264,75 +301,28 @@ struct MainView: View {
         case .link:
             LinkEditorView(prefill: composer.prefill) { _ in
                 router.open(.links)
-                Task { [home] in await home.refresh() }
+                refreshOverviews()
             }
             .environment(links)
         case .qrCode:
             QRCodeEditorView(prefillURL: composer.prefill) { _ in
                 router.open(.qrCodes)
-                Task { [home] in await home.refresh() }
+                refreshOverviews()
             }
             .environment(qrCodes)
         case .bioPage:
             CreatePageSheet { page in
                 pages.openRequest = page.id
                 router.open(.pages)
-                Task { [home] in await home.refresh() }
+                refreshOverviews()
             }
             .environment(pages)
         case .vcard, .event, .paymentLink, .file, .staticPage, .splash:
             if let kind = composer.kind.resourceKind {
                 ResourceComposerSheet(kind: kind) { _ in
                     router.open(AppDestination(resourceKind: kind))
-                    Task { [home] in await home.refresh() }
+                    refreshOverviews()
                 }
-            }
-        }
-    }
-}
-
-/// iPhone's More tab: every destination without a tab of its own, grouped
-/// as in the sidebar, under the workspace switcher.
-struct MoreScreen: View {
-    @Environment(ShellRouter.self) private var router
-    @Environment(InboxModel.self) private var inbox
-
-    private var groups: [AppDestination.Group] {
-        AppDestination.Group.allCases.filter { group in
-            group.destinations.contains { $0.iPhoneTab == .more }
-        }
-    }
-
-    var body: some View {
-        @Bindable var nav = router
-        NavigationStack(path: $nav.morePath) {
-            List {
-                Section {
-                    WorkspacePickerRow()
-                } header: {
-                    Text("Workspace")
-                } footer: {
-                    Text("Links, pages and codes belong to a workspace. Switch to see another one’s.")
-                }
-                .studioRowBackground()
-
-                ForEach(groups) { group in
-                    Section(group.title) {
-                        ForEach(group.destinations.filter { $0.iPhoneTab == .more }) { destination in
-                            NavigationLink(value: destination) {
-                                Label(destination.title, systemImage: destination.systemImage)
-                            }
-                            .badge(destination == .inbox ? inbox.unreadCount : 0)
-                            .accessibilityIdentifier(destination.navIdentifier)
-                        }
-                    }
-                    .studioRowBackground()
-                }
-            }
-            .studioList()
-            .navigationTitle("More")
-            .navigationDestination(for: AppDestination.self) { destination in
-                DestinationView(destination: destination)
             }
         }
     }
@@ -353,13 +343,4 @@ private struct MainPreview: View {
     MainPreview()
 }
 
-#Preview("More") {
-    let app = AppModel.preview()
-    let router = ShellRouter()
-    router.adapt(isCompact: true)
-    return MoreScreen()
-        .environment(app)
-        .environment(router)
-        .environment(InboxModel(client: app.client))
-}
 #endif

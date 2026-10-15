@@ -80,10 +80,13 @@ struct PaymentLinkEditorView: View {
             EmptyView()
         } fields: {
             Section {
+                CheckoutSummary(checkout: model.form.normalizedCheckout)
                 ResourceNote(
                     systemImage: "info.circle",
                     message: String(localized: "Cardsite doesn’t process this payment. The address only sends buyers to your checkout; the payment is taken there, by your payment provider.")
                 )
+            } header: {
+                EditorSectionHeader(String(localized: "Checkout"))
             }
             .studioRowBackground()
 
@@ -118,6 +121,37 @@ struct PaymentLinkEditorView: View {
             )
         }
         .onChange(of: model.form) { model.formChanged() }
+    }
+}
+
+/// Where buyers go: the checkout's host on a lock tile, or a prompt
+/// until a secure address is entered.
+private struct CheckoutSummary: View {
+    let checkout: URL?
+
+    var body: some View {
+        HStack(alignment: .center, spacing: StudioSpace.s3) {
+            RowGlyphTile(systemImage: checkout == nil ? "creditcard" : "lock.fill", isActive: checkout != nil)
+            VStack(alignment: .leading, spacing: StudioSpace.s1) {
+                Text("Buyers pay at")
+                    .studioText(.uiSm)
+                    .foregroundStyle(Color.studioText3)
+                if let host = checkout?.host() {
+                    Text(verbatim: host.hasPrefix("www.") ? String(host.dropFirst(4)) : host)
+                        .studioText(.titleSm)
+                        .foregroundStyle(Color.studioText)
+                        .lineLimit(2)
+                        .truncationMode(.middle)
+                } else {
+                    Text("Add a checkout URL below")
+                        .studioText(.ui)
+                        .foregroundStyle(Color.studioText3)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, StudioSpace.s1)
+        .accessibilityElement(children: .combine)
     }
 }
 

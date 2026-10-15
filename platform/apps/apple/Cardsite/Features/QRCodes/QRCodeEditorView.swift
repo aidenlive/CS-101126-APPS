@@ -2,13 +2,15 @@ import SwiftUI
 import StudioKit
 import CardsiteKit
 
-/// The QR builder, for a new code or an existing one: a native form beside
-/// a live server preview.
+/// The QR builder, for a new code or an existing one, laid out like the
+/// Photos editor: a stage with the live server preview, and the controls in
+/// three groups (Content · Style · Output).
 ///
-/// - iPad and Mac (or any window 760 pt and wider): form and preview side
-///   by side; the preview pane stays put while the form scrolls.
-/// - iPhone: the preview is pinned above the form and folds into a compact
-///   strip once the form scrolls.
+/// - iPad and Mac (any window 680 pt and wider, below accessibility text
+///   sizes): the stage on the leading side, sticky; the switcher at the top
+///   of the controls column beside it.
+/// - iPhone: the stage on top, folding into a compact strip as the controls
+///   scroll; the switcher is a wide glass pill in the bottom bar.
 ///
 /// Usable from anywhere that can present a sheet with `QRCodesModel` in the
 /// environment, e.g. a link's "Create QR Code":
@@ -52,23 +54,58 @@ struct QRCodeEditorView: View {
     }
 }
 
+/// The builder's three groups of controls.
+enum QRBuilderSection: String, CaseIterable, Identifiable {
+    case content, style, output
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .content: return String(localized: "Content")
+        case .style: return String(localized: "Style")
+        case .output: return String(localized: "Output")
+        }
+    }
+}
+
 private struct QRCodeBuilderView: View {
     @Bindable var builder: QRCodeBuilderModel
     let onSaved: (QRCode) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isWide = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var width: CGFloat = 0
+    @State private var section: QRBuilderSection = .content
     @State private var isHeaderCollapsed = false
     @State private var confirmDiscard = false
     @State private var addressQuery = ""
+    @State private var isExporting = false
+    @State private var exportError: String? = nil
 
-    private static let wideThreshold: CGFloat = 760
-    private static let previewPaneWidth: CGFloat = 380
+    private static let wideThreshold: CGFloat = 680
+
+    /// Side by side only when there is room and the text isn't at an
+    /// accessibility size; otherwise the stage stacks above the controls.
+    private var isWide: Bool {
+        width >= Self.wideThreshold && !dynamicTypeSize.isAccessibilitySize
+    }
+
+    /// The stage column: about two fifths of the window, within bounds.
+    private var stageWidth: CGFloat {
+        min(max(width * 0.42, StudioSpace.s16 * 5 + StudioSpace.s5), StudioSpace.s16 * 8)
+    }
 
     var body: some View {
         NavigationStack {
             content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onGeometryChange(for: CGFloat.self) { proxy in
+                    proxy.size.width
+                } action: { newWidth in
+                    width = newWidth
+                }
                 .background(Color.studioBg)
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("qr.editor")
@@ -80,6 +117,14 @@ private struct QRCodeBuilderView: View {
                 .confirmationDialog("Discard your changes?", isPresented: $confirmDiscard, titleVisibility: .visible) {
                     Button("Discard Changes", role: .destructive) { dismiss() }
                     Button("Keep Editing", role: .cancel) {}
+                }
+                .qrImageExporter(isPresented: $isExporting, png: builder.preview.png,
+                                 fileName: builder.fileName, error: $exportError)
+                .alert(String(localized: "Couldn’t save the image"),
+                       isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text(exportError ?? "")
                 }
         }
         .interactiveDismissDisabled(builder.hasChanges || builder.isSaving)
@@ -98,53 +143,101 @@ private struct QRCodeBuilderView: View {
         case .failed(let error):
             ErrorStateView(error: error) { [builder] in await builder.load() }
         case .ready:
-            Group {
-                if isWide {
-                    HStack(spacing: 0) {
-                        form
-                        Divider()
-                        previewPane
-                            .frame(width: Self.previewPaneWidth)
-                    }
-                } else {
-                    VStack(spacing: 0) {
-                        compactHeader
-                        Divider()
-                        form
-                            .onScrollGeometryChange(for: CGFloat.self) { geometry in
-                                geometry.contentOffset.y + geometry.contentInsets.top
-                            } action: { _, offset in
-                                updateHeader(forOffset: offset)
-                            }
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .onGeometryChange(for: Bool.self) { proxy in
-                proxy.size.width >= Self.wideThreshold
-            } action: { wide in
-                isWide = wide
+            if isWide {
+                wideLayout
+            } else {
+                compactLayout
             }
         }
     }
 
-    /// While an existing code loads: its stored image and a skeleton form.
+    /// iPad and Mac: the stage sticky on the leading side, the controls
+    /// beside it with the switcher on top.
+    private var wideLayout: some View {
+        HStack(spacing: 0) {
+            stageColumn
+                .frame(width: stageWidth)
+            Divider()
+            VStack(spacing: 0) {
+                sectionPicker
+                    .frame(maxWidth: CardsiteMeasure.sheet.width)
+                    .padding(.horizontal, StudioSpace.s5)
+                    .padding(.vertical, StudioSpace.s3)
+                    .frame(maxWidth: .infinity)
+                Divider()
+                controls
+            }
+        }
+    }
+
+    /// The stage centred in its column while it fits; scrolls in a short
+    /// window instead of clipping.
+    private var stageColumn: some View {
+        ViewThatFits(in: .vertical) {
+            VStack(spacing: 0) {
+                Spacer(minLength: StudioSpace.s8)
+                stage(.regular)
+                Spacer(minLength: StudioSpace.s8)
+            }
+            .padding(.horizontal, StudioSpace.s8)
+            ScrollView {
+                stage(.regular)
+                    .padding(StudioSpace.s8)
+            }
+        }
+        .frame(maxHeight: .infinity)
+        .background(Color.studioCanvasBg)
+    }
+
+    /// iPhone (and accessibility sizes): the stage above the controls, the
+    /// switcher in the bottom bar.
+    private var compactLayout: some View {
+        VStack(spacing: 0) {
+            compactHeader
+            Divider()
+            controls
+                .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                    geometry.contentOffset.y + geometry.contentInsets.top
+                } action: { _, offset in
+                    updateHeader(forOffset: offset)
+                }
+                .edgeBar(.bottom) { bottomBar }
+        }
+    }
+
+    /// While an existing code loads: its stored image on the stage and a
+    /// skeleton of the controls.
     private var loadingLayout: some View {
-        VStack(spacing: StudioSpace.s6) {
-            QRArtwork(png: builder.preview.png, isLoading: true)
-                .frame(maxWidth: StudioSpace.s16 * 3)
+        VStack(spacing: 0) {
+            QRStage(png: builder.preview.png,
+                    isLoading: true,
+                    title: loadingCode?.name ?? "",
+                    typeLabel: QRCodeCatalog.fallbackLabel(loadingCode?.type ?? builder.draft.type),
+                    typeSymbol: QRCodeCatalog.symbol(for: loadingCode?.type ?? builder.draft.type),
+                    scale: isWide ? .regular : .compact,
+                    accessibilityLabel: Text("QR code preview"))
+                .padding(StudioSpace.s6)
+                .frame(maxWidth: .infinity)
+                .background(Color.studioCanvasBg)
+            Divider()
             VStack(alignment: .leading, spacing: StudioSpace.s3) {
                 ForEach(0..<4, id: \.self) { _ in
                     QRSkeleton()
                         .frame(height: StudioSpace.s10)
                 }
             }
+            .padding(StudioSpace.s6)
             .frame(maxWidth: CardsiteMeasure.sheet.width)
+            Spacer(minLength: 0)
         }
-        .padding(StudioSpace.s6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Loading QR code"))
+    }
+
+    private var loadingCode: QRCode? {
+        if case .edit(let code) = builder.mode { return code }
+        return nil
     }
 
     private func updateHeader(forOffset offset: CGFloat) {
@@ -161,15 +254,59 @@ private struct QRCodeBuilderView: View {
         }
     }
 
+    // MARK: Switcher
+
+    private var sectionPicker: some View {
+        Picker(selection: $section) {
+            ForEach(QRBuilderSection.allCases) { item in
+                Text(item.title).tag(item)
+            }
+        } label: {
+            Text("Builder Controls")
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .accessibilityIdentifier("qr.editor.section")
+    }
+
+    /// iPhone: the switcher as a wide floating pill. The glass is chrome over
+    /// the controls, never over the code; StudioKit makes it opaque under
+    /// Reduce Transparency.
+    private var bottomBar: some View {
+        sectionPicker
+            .controlSize(.large)
+            .padding(StudioSpace.s1)
+            .studioGlass(cornerRadius: StudioRadius.pill)
+            .frame(maxWidth: CardsiteMeasure.narrow.width)
+            .padding(.horizontal, StudioSpace.s5)
+            .padding(.vertical, StudioSpace.s2)
+            .frame(maxWidth: .infinity)
+    }
+
     // MARK: Toolbar
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
-            Button("Cancel") {
+            Button(role: .cancel) {
                 if builder.hasChanges { confirmDiscard = true } else { dismiss() }
+            } label: {
+                Label("Cancel", systemImage: "xmark")
             }
+            .labelStyle(QRToolbarLabelStyle())
+            .keyboardShortcut(.cancelAction)
             .disabled(builder.isSaving)
+        }
+        if builder.isEditing {
+            ToolbarItemGroup(placement: .primaryAction) {
+                shareButton
+                Button {
+                    isExporting = true
+                } label: {
+                    Label("Save Image", systemImage: "square.and.arrow.down")
+                }
+                .disabled(exportablePNG == nil)
+            }
         }
         ToolbarItem(placement: .confirmationAction) {
             if builder.isSaving {
@@ -179,72 +316,65 @@ private struct QRCodeBuilderView: View {
                 Button {
                     Task { await save() }
                 } label: {
-                    builder.isEditing ? Text("Save") : Text("Create")
+                    Label {
+                        builder.isEditing ? Text("Save") : Text("Create")
+                    } icon: {
+                        Image(systemName: "checkmark")
+                    }
                 }
-                .keyboardShortcut("s", modifiers: .command)
+                .labelStyle(QRToolbarLabelStyle())
+                .modifier(QRConfirmButtonStyle())
+                .tint(Color.studioAccentLine)
+                .keyboardShortcut(.defaultAction)
                 .accessibilityIdentifier("qr.editor.save")
                 .disabled(builder.phase != .ready)
             }
         }
     }
 
+    /// The preview image, once it shows what the draft encodes.
+    private var exportablePNG: Data? {
+        guard let png = builder.preview.png, !builder.preview.isLoading, builder.draft.hasContent else { return nil }
+        return png
+    }
+
+    @ViewBuilder
+    private var shareButton: some View {
+        if let png = exportablePNG {
+            ShareLink(item: PNGFile(data: png, name: builder.fileName),
+                      preview: SharePreview(displayName, image: Image(pngData: png) ?? Image(systemName: "qrcode"))) {
+                Label("Share Image", systemImage: "square.and.arrow.up")
+            }
+        } else {
+            Button {} label: {
+                Label("Share Image", systemImage: "square.and.arrow.up")
+            }
+            .disabled(true)
+        }
+    }
+
     private func save() async {
-        guard let code = await builder.save() else { return }
+        guard let code = await builder.save() else {
+            // Show the field that needs attention.
+            if builder.nameError != nil || builder.linkError != nil || !builder.draft.hasContent {
+                section = .content
+            }
+            return
+        }
         Haptics.success()
         onSaved(code)
         dismiss()
     }
 
-    // MARK: Form
+    // MARK: Controls
 
-    private var form: some View {
+    private var controls: some View {
         Form {
-            Section {
-                QRTextRow(label: String(localized: "Name"),
-                          placeholder: String(localized: "My QR Code"),
-                          help: String(localized: "Only you see this."),
-                          text: $builder.draft.name,
-                          error: builder.nameError)
-                    .accessibilityIdentifier("qr.editor.name")
+            switch section {
+            case .content: contentSections
+            case .style: styleSections
+            case .output: outputSections
             }
-            .studioRowBackground()
-
-            Section {
-                typeRow
-            }
-            .studioRowBackground()
-
-            detailSections
-
-            Section {
-                colorRow(String(localized: "Foreground"), hex: $builder.draft.foreground, fallback: .studioText)
-                colorRow(String(localized: "Background"), hex: $builder.draft.background, fallback: .studioSurface)
-                transparencyRow
-            } header: {
-                Text("Colors")
-            }
-            .studioRowBackground()
-
-            Section {
-                Stepper(value: $builder.draft.size, in: QRCodeDraft.sizeRange, step: QRCodeDraft.sizeStep) {
-                    LabeledContent("Size") {
-                        Text("\(builder.draft.size) px").monospacedDigit()
-                    }
-                }
-                Picker("Error Correction", selection: $builder.draft.errorLevel) {
-                    ForEach(QRErrorLevel.allCases) { level in
-                        Text(verbatim: level.rawValue)
-                            .accessibilityLabel(Text(level.title))
-                            .tag(level.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-            } header: {
-                Text("Output")
-            } footer: {
-                Text(QRErrorLevel(rawValue: builder.draft.errorLevel)?.explanation ?? "")
-            }
-            .studioRowBackground()
 
             if let error = builder.formError {
                 Section {
@@ -253,8 +383,31 @@ private struct QRCodeBuilderView: View {
                 .studioRowBackground()
             }
         }
-        .studioForm()
+        .studioForm(measure: .sheet)
         .dismissesKeyboardOnScroll()
+        .disabled(builder.isSaving)
+    }
+
+    // MARK: Content
+
+    @ViewBuilder
+    private var contentSections: some View {
+        Section {
+            QRTextRow(label: String(localized: "Name"),
+                      placeholder: String(localized: "My QR Code"),
+                      help: String(localized: "Only you see this."),
+                      text: $builder.draft.name,
+                      error: builder.nameError)
+                .accessibilityIdentifier("qr.editor.name")
+        }
+        .studioRowBackground()
+
+        Section {
+            typeRow
+        }
+        .studioRowBackground()
+
+        detailSections
     }
 
     @ViewBuilder
@@ -396,18 +549,43 @@ private struct QRCodeBuilderView: View {
         Task { [builder] in await builder.findCoordinates(for: query) }
     }
 
-    private func colorRow(_ title: String, hex: Binding<String>, fallback: Color) -> some View {
-        ColorPicker(selection: HexColor.binding(hex, fallback: fallback), supportsOpacity: false) {
-            HStack(spacing: StudioSpace.s2) {
-                Text(title)
-                Spacer(minLength: StudioSpace.s2)
-                Text(verbatim: hex.wrappedValue.uppercased())
-                    .studioText(.mono)
-                    .foregroundStyle(Color.studioText3)
-                    .accessibilityHidden(true)
-            }
+    // MARK: Style
+
+    @ViewBuilder
+    private var styleSections: some View {
+        Section {
+            QRPresetRow(draft: $builder.draft)
+        } header: {
+            Text("Presets")
         }
-        .accessibilityValue(Text(verbatim: hex.wrappedValue.uppercased()))
+        .studioRowBackground()
+
+        Section {
+            QRSwatchRow(title: String(localized: "Foreground"), hex: $builder.draft.foreground, fallback: .studioText)
+            QRSwatchRow(title: String(localized: "Background"), hex: $builder.draft.background, fallback: .studioSurface)
+            Button {
+                let foreground = builder.draft.foreground
+                builder.draft.foreground = builder.draft.background
+                builder.draft.background = foreground
+            } label: {
+                Label("Swap Colors", systemImage: "arrow.up.arrow.down")
+            }
+            if let note = QRContrastNote.message(for: builder.draft) {
+                QRContrastNote(message: note)
+            }
+        } header: {
+            Text("Colors")
+        }
+        .studioRowBackground()
+
+        Section {
+            transparencyRow
+        } header: {
+            Text("Transparency")
+        } footer: {
+            Text("A transparent background takes the color of whatever the code is printed on. The stage shows it as a checkerboard.")
+        }
+        .studioRowBackground()
     }
 
     private var transparencyRow: some View {
@@ -429,18 +607,63 @@ private struct QRCodeBuilderView: View {
         }
     }
 
-    // MARK: Preview
+    // MARK: Output
 
-    private var artwork: some View {
-        QRArtwork(
+    @ViewBuilder
+    private var outputSections: some View {
+        Section {
+            Stepper(value: $builder.draft.size, in: QRCodeDraft.sizeRange, step: QRCodeDraft.sizeStep) {
+                LabeledContent("Size") {
+                    Text("\(builder.draft.size) × \(builder.draft.size) px").monospacedDigit()
+                }
+            }
+        } header: {
+            Text("Image")
+        } footer: {
+            Text("The width and height of the saved PNG.")
+        }
+        .studioRowBackground()
+
+        Section {
+            Picker("Error Correction", selection: $builder.draft.errorLevel) {
+                ForEach(QRErrorLevel.allCases) { level in
+                    Text(verbatim: level.rawValue)
+                        .accessibilityLabel(Text(level.title))
+                        .tag(level.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+        } header: {
+            Text("Error Correction")
+        } footer: {
+            Text(QRErrorLevel(rawValue: builder.draft.errorLevel)?.explanation ?? "")
+        }
+        .studioRowBackground()
+    }
+
+    // MARK: Stage
+
+    private func stage(_ scale: QRStageScale) -> some View {
+        QRStage(
             png: builder.preview.png,
             isTransparent: builder.draft.transparency > 0,
             isLoading: builder.preview.isLoading,
-            isEmpty: !builder.draft.hasContent
-        )
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("QR code preview"))
-        .accessibilityValue(previewAccessibilityValue)
+            isEmpty: !builder.draft.hasContent,
+            title: displayName,
+            isTitlePlaceholder: builder.draft.trimmedName.isEmpty,
+            typeLabel: builder.typeLabel,
+            typeSymbol: QRCodeCatalog.symbol(for: builder.draft.type),
+            scale: scale,
+            accessibilityLabel: Text("QR code preview"),
+            accessibilityValue: previewAccessibilityValue
+        ) {
+            if scale == .compact {
+                compactStatusLine
+            } else {
+                previewStatus
+            }
+        }
     }
 
     private var previewAccessibilityValue: Text {
@@ -454,85 +677,45 @@ private struct QRCodeBuilderView: View {
         builder.draft.trimmedName.isEmpty ? String(localized: "Untitled") : builder.draft.trimmedName
     }
 
-    /// iPad and Mac: the preview on a Studio card with generous margins, the
-    /// name underneath in the display face.
-    private var previewPane: some View {
-        ScrollView {
-            VStack(spacing: StudioSpace.s5) {
-                StudioCard(radius: StudioRadius.xl) {
-                    artwork
-                        .padding(StudioSpace.s4)
-                }
-
-                VStack(spacing: StudioSpace.s2) {
-                    Text(displayName)
-                        .studioText(.title)
-                        .foregroundStyle(builder.draft.trimmedName.isEmpty ? Color.studioText4 : Color.studioText)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(3)
-                    HStack(spacing: StudioSpace.s2) {
-                        StudioStatusPill(builder.typeLabel)
-                        Text("\(builder.draft.size) × \(builder.draft.size) px")
-                            .studioText(.uiSm)
-                            .foregroundStyle(Color.studioText3)
-                            .monospacedDigit()
-                    }
-                }
-                .frame(maxWidth: .infinity)
-
-                previewStatus
-                previewActions
-            }
-            .padding(StudioSpace.s6)
-        }
-        .background(Color.studioBg)
-    }
-
-    /// iPhone: the preview pinned above the form, folding to a strip.
+    /// iPhone: the stage pinned above the controls, folding to a strip once
+    /// they scroll. At accessibility sizes it stays a strip, so the controls
+    /// keep the room.
     private var compactHeader: some View {
         Group {
-            if isHeaderCollapsed {
+            if isHeaderCollapsed || dynamicTypeSize.isAccessibilitySize {
                 HStack(spacing: StudioSpace.s3) {
-                    artwork
-                        .padding(StudioSpace.s1)
-                        .background(Color.studioSurface, in: RoundedRectangle(cornerRadius: StudioRadius.sm, style: .continuous))
-                        .frame(width: StudioSpace.s16)
+                    QRPaper(padding: StudioSpace.s1, radius: StudioRadius.sm, elevated: false) {
+                        QRArtwork(png: builder.preview.png,
+                                  isTransparent: builder.draft.transparency > 0,
+                                  isLoading: builder.preview.isLoading,
+                                  isEmpty: !builder.draft.hasContent)
+                    }
+                    .frame(width: StudioSpace.s16)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Text("QR code preview"))
+                    .accessibilityValue(previewAccessibilityValue)
+                    .accessibilityAddTraits(.isImage)
                     VStack(alignment: .leading, spacing: StudioSpace.s1) {
                         Text(displayName)
                             .studioText(.ui)
                             .fontWeight(.semibold)
-                            .foregroundStyle(Color.studioText)
-                            .lineLimit(1)
+                            .foregroundStyle(builder.draft.trimmedName.isEmpty ? Color.studioText4 : Color.studioText)
+                            .lineLimit(2)
                         compactStatusLine
                     }
-                    Spacer(minLength: StudioSpace.s2)
-                    shareButton(iconOnly: true)
+                    Spacer(minLength: 0)
                 }
                 .padding(.horizontal, StudioSpace.s5)
                 .padding(.vertical, StudioSpace.s3)
             } else {
-                VStack(spacing: StudioSpace.s3) {
-                    artwork
-                        .padding(StudioSpace.s4)
-                        .background(Color.studioSurface, in: RoundedRectangle(cornerRadius: StudioRadius.xl, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: StudioRadius.xl, style: .continuous)
-                                .strokeBorder(Color.studioBorder, lineWidth: 0.5)
-                        )
-                        .frame(maxWidth: StudioSpace.s16 * 3)
-                    Text(displayName)
-                        .studioText(.titleSm)
-                        .foregroundStyle(builder.draft.trimmedName.isEmpty ? Color.studioText4 : Color.studioText)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(2)
-                    compactStatusLine
-                }
-                .padding(.horizontal, StudioSpace.s5)
-                .padding(.vertical, StudioSpace.s4)
+                stage(.compact)
+                    .padding(.horizontal, StudioSpace.s5)
+                    .padding(.top, StudioSpace.s5)
+                    .padding(.bottom, StudioSpace.s4)
             }
         }
         .frame(maxWidth: .infinity)
-        .background(Color.studioBg)
+        .background(Color.studioCanvasBg)
     }
 
     @ViewBuilder
@@ -562,50 +745,68 @@ private struct QRCodeBuilderView: View {
         return String(localized: "Saved exactly as previewed.")
     }
 
-    @ViewBuilder
+    /// iPad and Mac: the size, then the status or the preview error.
     private var previewStatus: some View {
-        if let error = builder.preview.error {
-            VStack(alignment: .leading, spacing: StudioSpace.s3) {
-                StudioBanner(lead: String(localized: "Couldn’t preview."),
-                             message: error.localizedDescription,
-                             tone: error == .offline ? .warning : .error)
-                StudioButton(String(localized: "Try Again"), systemImage: "arrow.clockwise", variant: .outline,
-                             isLoading: builder.preview.isLoading) {
-                    Task { [builder] in await builder.retryPreview() }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        } else {
-            Text(statusText)
+        VStack(spacing: StudioSpace.s3) {
+            Text("\(builder.draft.size) × \(builder.draft.size) px")
                 .studioText(.uiSm)
                 .foregroundStyle(Color.studioText3)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-        }
-    }
-
-    @ViewBuilder
-    private var previewActions: some View {
-        if let png = builder.preview.png, !builder.preview.isLoading, builder.draft.hasContent {
-            QRExportActions(png: png,
-                            fileName: builder.fileName,
-                            title: displayName,
-                            copyText: builder.preview.embeddedData,
-                            copyTitle: QRCodeCatalog.encodesURL(builder.draft.type)
-                                ? String(localized: "Copy Link") : String(localized: "Copy Content"))
-        }
-    }
-
-    @ViewBuilder
-    private func shareButton(iconOnly: Bool) -> some View {
-        if let png = builder.preview.png, !builder.preview.isLoading, builder.draft.hasContent {
-            ShareLink(item: PNGFile(data: png, name: builder.fileName),
-                      preview: SharePreview(displayName, image: Image(pngData: png) ?? Image(systemName: "qrcode"))) {
-                Label("Share Image", systemImage: "square.and.arrow.up")
-                    .labelStyle(.iconOnly)
+                .monospacedDigit()
+            if let error = builder.preview.error {
+                VStack(alignment: .leading, spacing: StudioSpace.s3) {
+                    StudioBanner(lead: String(localized: "Couldn’t preview."),
+                                 message: error.localizedDescription,
+                                 tone: error == .offline ? .warning : .error)
+                    StudioButton(String(localized: "Try Again"), systemImage: "arrow.clockwise", variant: .outline,
+                                 isLoading: builder.preview.isLoading) {
+                        Task { [builder] in await builder.retryPreview() }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Text(statusText)
+                    .studioText(.uiSm)
+                    .foregroundStyle(Color.studioText3)
+                    .multilineTextAlignment(.center)
             }
-            .accessibilityLabel(Text("Share Image"))
         }
+        .padding(.top, StudioSpace.s1)
+    }
+}
+
+// MARK: - Toolbar styling
+
+/// ✕ and ✓ as symbols on iOS 26, where the system draws them as round glass
+/// buttons; the words below 26 and on the Mac, where a text button is the
+/// convention. VoiceOver reads the title either way.
+private struct QRToolbarLabelStyle: LabelStyle {
+    @ViewBuilder
+    func makeBody(configuration: Configuration) -> some View {
+        #if os(iOS)
+        if #available(iOS 26.0, *) {
+            configuration.icon
+        } else {
+            configuration.title
+        }
+        #else
+        configuration.title
+        #endif
+    }
+}
+
+/// The one prominent action: `.glassProminent` on 26, the system's own
+/// confirmation style before it.
+private struct QRConfirmButtonStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        #if os(visionOS)
+        content
+        #else
+        if #available(iOS 26.0, macOS 26.0, *) {
+            content.buttonStyle(.glassProminent)
+        } else {
+            content
+        }
+        #endif
     }
 }
 
@@ -642,6 +843,12 @@ enum QRErrorLevel: String, CaseIterable, Identifiable {
 
 #Preview("Prefilled link") {
     QRCodeEditorView(prefillURL: URL(string: "https://card.site/menu"))
+        .environment(QRCodesPreviewData.app)
+        .environment(QRCodesPreviewData.model())
+}
+
+#Preview("Editing") {
+    QRCodeEditorView(editing: QRCodesPreviewData.codes[1])
         .environment(QRCodesPreviewData.app)
         .environment(QRCodesPreviewData.model())
 }

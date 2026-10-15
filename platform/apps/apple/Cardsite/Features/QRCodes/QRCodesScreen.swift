@@ -2,8 +2,8 @@ import SwiftUI
 import StudioKit
 import CardsiteKit
 
-/// QR codes as an adaptive grid of cards: two columns on iPhone, as many as
-/// fit on iPad and Mac. A card opens the code; its menu edits, shares or
+/// QR codes as an adaptive grid of white tiles: two columns on iPhone, as
+/// many as fit on iPad and Mac. A card opens the code; its menu edits, shares or
 /// deletes it.
 struct QRCodesScreen: View {
     @Environment(QRCodesModel.self) private var model
@@ -242,8 +242,10 @@ struct QRCodesScreen: View {
     }
 }
 
-/// One code in the grid: the image on a quiet surface, then name, type and
-/// date. The menu button sits over the top-right corner, outside this view.
+/// One code in the grid: the image on a white tile, so every code shows in
+/// its true colours, then name, type and date in Studio type. The name
+/// always reserves two lines and the date one, so tiles in a row line up.
+/// The menu button sits over the top-right corner, outside this view.
 struct QRCodeCard: View {
     let code: QRCode
     let typeLabel: String
@@ -254,37 +256,54 @@ struct QRCodeCard: View {
                 QRImage(code: code)
                     .padding(StudioSpace.s5)
                     .frame(maxWidth: .infinity)
-                    .background(Color.studioSurface2)
+                    .background(Color.StudioPalette.neutral0)
+                    // Studio tokens inside resolve light, on white.
+                    .environment(\.colorScheme, .light)
                     .accessibilityHidden(true)
 
-                VStack(alignment: .leading, spacing: StudioSpace.s2) {
+                Rectangle()
+                    .fill(Color.studioBorder)
+                    .frame(height: 0.5)
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: StudioSpace.s1) {
                     Text(code.name)
                         .studioText(.ui)
                         .fontWeight(.semibold)
                         .foregroundStyle(Color.studioText)
-                        .lineLimit(2)
+                        .lineLimit(2, reservesSpace: true)
                         .multilineTextAlignment(.leading)
-                    HStack(spacing: StudioSpace.s2) {
-                        Image(systemName: QRCodeCatalog.symbol(for: code.type))
-                            .font(.caption)
-                            .foregroundStyle(Color.studioText3)
-                            .accessibilityHidden(true)
+                    Label {
                         Text(typeLabel)
-                            .studioText(.uiSm)
-                            .foregroundStyle(Color.studioText3)
+                    } icon: {
+                        Image(systemName: QRCodeCatalog.symbol(for: code.type))
+                            .accessibilityHidden(true)
                     }
-                    if let created = code.createdAt {
-                        Text("Created \(created.formatted(date: .abbreviated, time: .omitted))")
-                            .studioText(.uiSm)
-                            .foregroundStyle(Color.studioText3)
-                    }
+                    .studioText(.uiSm)
+                    .foregroundStyle(Color.studioText3)
+                    .lineLimit(1)
+                    Text(createdText ?? typeLabel)
+                        .studioText(.uiSm)
+                        .foregroundStyle(Color.studioText4)
+                        .lineLimit(1)
+                        // Holds the line when there's no date, for even tiles.
+                        .opacity(createdText == nil ? 0 : 1)
                 }
-                .padding(StudioSpace.s5)
+                .padding(.horizontal, StudioSpace.s4)
+                .padding(.vertical, StudioSpace.s3)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text("\(code.name), \(typeLabel)"))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(accessibilityText))
+    }
+
+    private var createdText: String? {
+        code.createdAt.map { String(localized: "Created \($0.formatted(date: .abbreviated, time: .omitted))") }
+    }
+
+    private var accessibilityText: String {
+        [code.name, typeLabel, createdText].compactMap { $0 }.joined(separator: ", ")
     }
 }
 

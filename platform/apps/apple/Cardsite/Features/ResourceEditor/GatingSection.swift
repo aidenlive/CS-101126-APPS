@@ -71,6 +71,8 @@ struct GatingSection: View {
             .toggleStyle(.switch)
         } header: {
             EditorSectionHeader(title)
+        } footer: {
+            Text("Who can open it, and when it stops working.")
         }
         .studioRowBackground()
     }

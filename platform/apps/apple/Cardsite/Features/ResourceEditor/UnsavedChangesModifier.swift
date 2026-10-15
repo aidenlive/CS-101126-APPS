@@ -10,9 +10,9 @@ import Observation
                          discard: { model.discard() })
 
  What it does:
- - A Save button (⌘S) in the confirmation slot, enabled only with changes,
-   and a spinner while saving.
- - With changes, the back button is replaced by Cancel, which asks: Save,
+ - Save (✓ on iOS 26, ⌘S) in the confirmation slot, shown only while there
+   are changes, and a spinner while saving.
+ - With changes, the back button is replaced by Cancel (✕, Esc), which asks: Save,
    Discard, or Keep Editing. In a sheet it also blocks swipe-to-dismiss.
    On iPad and Mac, where the editor is the root of the detail column,
    Discard reverts the form in place.
@@ -47,19 +47,24 @@ struct UnsavedChangesModifier: ViewModifier {
             .toolbar {
                 if isDirty {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { isConfirming = true }
+                        Button { isConfirming = true } label: { EditorBarLabel.cancel() }
+                            .keyboardShortcut(.cancelAction)
                             .disabled(isSaving)
                     }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    if isSaving {
-                        ProgressView()
-                            .accessibilityLabel(Text("Saving"))
-                    } else {
-                        Button("Save") { Task { _ = await save() } }
-                            .accessibilityIdentifier(saveIdentifier)
-                            .disabled(!isDirty)
-                            .keyboardShortcut("s", modifiers: .command)
+                // The one prominent action, and only while there is
+                // something to save: an untouched editor shows no ✓.
+                if isDirty || isSaving {
+                    ToolbarItem(placement: .confirmationAction) {
+                        if isSaving {
+                            ProgressView()
+                                .accessibilityLabel(Text("Saving"))
+                        } else {
+                            Button { Task { _ = await save() } } label: { EditorBarLabel.save() }
+                                .accessibilityIdentifier(saveIdentifier)
+                                .keyboardShortcut("s", modifiers: .command)
+                                .tint(Color.studioAccentLine)
+                        }
                     }
                 }
             }

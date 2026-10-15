@@ -9,13 +9,17 @@ import UIKit
 /// How each surface exposes a destination:
 /// · The iPad and Mac sidebar, and the tab bar, are drawn by the system from
 ///   `Tab(...)` items and carry no accessibility identifier; they are found
-///   by `title` (sidebar) or `tabTitle` (iPhone tab bar).
-/// · iPhone's More list rows carry `nav.<rawValue>`.
+///   by `title`.
+/// · iPhone's tab bar is Home · Links · Library · Search. Library hub rows
+///   carry `nav.<rawValue>`.
+/// · The account avatar (Home and Library) carries `nav.account` and opens
+///   the account sheet (`account.sheet`), whose rows carry
+///   `account.sheet.<rawValue>` and whose ✕ is `account.sheet.close`.
 /// · The destination's root content carries `screen.<rawValue>`.
 enum Destination: String, CaseIterable {
     case home, links, statistics, qrCodes, pages, account, settings, workspace, inbox, uploads
 
-    /// `AppDestination.title`: the sidebar, More and the navigation title.
+    /// `AppDestination.title`: the sidebar, Library and the navigation title.
     var title: String {
         switch self {
         case .home: "Home"
@@ -31,17 +35,21 @@ enum Destination: String, CaseIterable {
         }
     }
 
-    /// `AppDestination.tabTitle`: the iPhone tab bar's shorter name.
-    var tabTitle: String {
-        self == .qrCodes ? "QR" : title
+    /// Where iPhone shows it (`AppDestination.phonePlacement`).
+    enum PhonePlacement {
+        /// A tab of its own.
+        case tab
+        /// A row in the Library tab's hub.
+        case library
+        /// A row in the account sheet, opened from the avatar.
+        case account
     }
 
-    /// `AppDestination.iPhoneTab == .tab`: a tab of its own on iPhone;
-    /// everything else is a row in More.
-    var isPhoneTab: Bool {
+    var phonePlacement: PhonePlacement {
         switch self {
-        case .home, .links, .pages, .qrCodes: true
-        default: false
+        case .home, .links: .tab
+        case .statistics, .qrCodes, .pages, .uploads: .library
+        case .account, .settings, .workspace, .inbox: .account
         }
     }
 
@@ -437,7 +445,8 @@ struct Harness {
     // MARK: Navigation
 
     /// Opens a destination the way this device shows it (Mac sidebar, iPad
-    /// tab bar or sidebar, iPhone tab bar or More), and waits for it.
+    /// tab bar or sidebar, iPhone tab bar, Library or the account sheet),
+    /// and waits for it.
     /// Returns at once if it is already on screen.
     @discardableResult
     func open(_ destination: Destination) -> Bool {
@@ -466,39 +475,105 @@ struct Harness {
         return false
     }
     #else
-    /// iPhone (and a compact-width iPad window): the tab bar, or More.
+    /// iPhone (and a compact-width iPad window): a tab, a Library hub row,
+    /// or a row in the account sheet.
     private func openOnPhone(_ destination: Destination) -> Bool {
-        if destination.isPhoneTab {
-            guard let tab = tabButton(destination.tabTitle, timeout: 3) else { return false }
+        switch destination.phonePlacement {
+        case .tab:
+            closeAccountSheet()
+            guard let tab = tabButton(destination.title, timeout: 3) else { return false }
             tab.tap()
             return waitForScreen(destination)
+        case .library:
+            closeAccountSheet()
+            guard showLibraryRoot() else { return false }
+            // By identifier only: a title fallback could hit a section head.
+            guard let row = findScrolling(destination.navIdentifier, timeout: 2) else {
+                return false
+            }
+            press(row)
+            return waitForScreen(destination)
+        case .account:
+            guard showAccountSheet() else { return false }
+            guard let row = findScrolling("account.sheet.\(destination.rawValue)", timeout: 2) else {
+                return false
+            }
+            press(row)
+            return waitForScreen(destination)
         }
-        guard let more = tabButton("More", timeout: 3) else { return false }
-        more.tap()
-        showMoreRoot()
-        // By identifier only: a title fallback could hit a section header
-        // ("Account" heads the section holding the Account row).
-        guard let row = findScrolling(destination.navIdentifier, timeout: 2) else {
-            return false
-        }
-        press(row)
-        return waitForScreen(destination)
     }
 
-    /// More keeps its stack between visits: pop back to its list.
-    private func showMoreRoot() {
-        for _ in 0..<3 {
-            if poll(1, { app.navigationBars["More"].exists }) { return }
-            let back = app.navigationBars.buttons
-                .matching(NSPredicate(format: "label == 'More' OR label == 'Back' OR identifier == 'BackButton'"))
-                .firstMatch
-            guard back.exists else { return }
-            back.tap()
+    /// The Library tab at its hub, popping whatever it had pushed.
+    @discardableResult
+    private func showLibraryRoot() -> Bool {
+        guard let library = tabButton("Library", timeout: 3) else { return false }
+        library.tap()
+        for _ in 0..<4 {
+            if poll(1, { element("screen.library").exists }) { return true }
+            guard tapBack(labels: ["Library", "Back"]) else { break }
         }
+        return element("screen.library").exists
+    }
+
+    /// The account sheet at its root: opened from the avatar on Home (or
+    /// Library), or popped back to if a row is already open in it.
+    private func showAccountSheet() -> Bool {
+        for _ in 0..<3 {
+            if poll(1, { element("account.sheet.close").exists }) { return true }
+            // A row is open in the sheet: back to the sheet's list.
+            guard tapBack(labels: ["Your Account", "Back"]) else { break }
+        }
+        if element("account.sheet.close").exists { return true }
+        for tabTitle in ["Home", "Library"] {
+            guard let tab = tabButton(tabTitle, timeout: 2) else { continue }
+            tab.tap()
+            // The avatar is on the tab's root; pop to it.
+            for _ in 0..<3 {
+                if poll(1, { element(Destination.account.navIdentifier).exists }) { break }
+                guard tapBack(labels: [tabTitle, "Back"]) else { break }
+            }
+            if tap(Destination.account.navIdentifier, timeout: 2) {
+                return poll(3) { element("account.sheet.close").exists }
+            }
+        }
+        return false
+    }
+
+    /// Closes the account sheet if it is up (popping a row first), so the
+    /// tab bar can be reached again.
+    private func closeAccountSheet() {
+        guard element("account.sheet").exists || element("account.sheet.close").exists
+            || app.navigationBars.matching(identifier: "Your Account").firstMatch.exists
+            || app.navigationBars.buttons.matching(Self.text("Your Account")).firstMatch.exists else { return }
+        for _ in 0..<3 {
+            let close = element("account.sheet.close")
+            if close.exists && close.isHittable {
+                close.tap()
+                _ = poll(3) { !element("account.sheet.close").exists }
+                return
+            }
+            guard tapBack(labels: ["Your Account", "Back"]) else { break }
+        }
+        // Last resort: drag the sheet away.
+        app.swipeDown(velocity: .fast)
+    }
+
+    /// Taps the frontmost navigation bar's back button whose label is one
+    /// of `labels`. False when there is none.
+    private func tapBack(labels: [String]) -> Bool {
+        var formats = labels.map { NSPredicate(format: "label == %@", $0) }
+        formats.append(NSPredicate(format: "identifier == 'BackButton'"))
+        let back = app.navigationBars.buttons
+            .matching(NSCompoundPredicate(orPredicateWithSubpredicates: formats))
+            .allElementsBoundByIndex
+            .last { $0.exists && $0.isHittable }
+        guard let back else { return false }
+        back.tap()
+        return true
     }
 
     /// iPad: the tab bar, then the sidebar (showing it if it is hidden),
-    /// then the compact layout's More.
+    /// then the compact layout's Library or account sheet.
     private func openOnPad(_ destination: Destination) -> Bool {
         if let tab = tabButton(destination.title, timeout: 0.5), tab.isHittable {
             tab.tap()
@@ -516,7 +591,7 @@ struct Harness {
         return openOnPhone(destination)
     }
 
-    /// A tab bar button titled `title` (a badge may follow: "More, 2").
+    /// A tab bar button titled `title` (a badge may follow: "Inbox, 2").
     private func tabButton(_ title: String, timeout: TimeInterval) -> XCUIElement? {
         let button = app.tabBars.buttons.matching(Self.title(title)).firstMatch
         return poll(timeout, { button.exists }) ? button : nil
@@ -664,7 +739,7 @@ enum Device {
         #endif
     }
 
-    /// True on iPhone: a tab bar with More, never a sidebar.
+    /// True on iPhone: a tab bar with Library, never a sidebar.
     static var isPhone: Bool {
         #if os(macOS)
         return false

@@ -1,19 +1,29 @@
 import SwiftUI
 import StudioKit
 
-/// The head of a saved resource's detail form, shared by the short link
-/// detail and every resource editor: the state pill (and "Saved"), the
-/// name, the address, Copy Link / Open in Browser / Show Card plus the
-/// type's own actions, the Live switch, the figures, then the caller's rows
-/// (Statistics, Create QR Code) and the release-window banner.
+/// The hero at the top of a saved resource's editor, shared by the short
+/// link detail and every resource editor (DESIGN-DIRECTION "Editors"):
+///
+/// - the state pill (and "Saved"), with the type's name where it helps;
+/// - the address in display type, wrapping after dots and slashes;
+/// - where it leads (the destination's host and path), under it;
+/// - the figures: clicks and visitors over 30 days, and all-time clicks;
+/// - the actions: Copy Link (the one prominent glass button), Open and
+///   Card (glass), plus the type's own. On an iPhone they stay one line:
+///   everything but Copy Link drops to its symbol before the row wraps.
+///
+/// Then the Live switch, the caller's rows (Statistics, Create QR Code)
+/// and the release-window banner. The hero is content on an opaque Studio
+/// row; only its buttons are glass, because they are controls.
 ///
 ///     ResourceHeaderSection(
 ///         state: ResourceState(isEnabled: link.isEnabled, isLapsing: link.isLapsing),
-///         title: "card.site/spring-menu", url: url, cardURL: card,
+///         title: "card.site/spring-menu", subtitle: "example.com/menu",
+///         url: url, cardURL: card,
 ///         toggle: .init(isOn: link.isEnabled, isBusy: busy, set: { … }),
 ///         figures: [.init(title: String(localized: "Clicks · all time"), value: 1_284)]
 ///     ) {
-///         // extra StudioButtons, next to Copy Link
+///         // extra hero buttons (Label-based, so they can drop to a symbol)
 ///     } rows: {
 ///         NavigationLink(value: route) { ResourceVerb.statistics.label }
 ///     }
@@ -24,7 +34,10 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
     var kindLabel: String? = nil
     var didJustSave = false
     let title: String
+    /// A second line in body type under the title (a resource's address,
+    /// when the title is its name).
     var address: String? = nil
+    /// Where it leads: a destination or checkout, shown as host and path.
     var subtitle: String? = nil
     var url: URL? = nil
     var cardURL: URL? = nil
@@ -36,55 +49,13 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
     @ViewBuilder var rows: () -> Rows
 
     @Environment(\.openURL) private var openURL
-    @Environment(\.toasts) private var toasts
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var copied = false
 
     var body: some View {
         Section {
-            VStack(alignment: .leading, spacing: StudioSpace.s3) {
-                HStack(spacing: StudioSpace.s2) {
-                    if let state {
-                        state.pill
-                    }
-                    if let kindLabel {
-                        Text(kindLabel)
-                            .studioText(.uiSm)
-                            .foregroundStyle(Color.studioText3)
-                    }
-                    if didJustSave {
-                        StudioStatusPill(String(localized: "Saved"), tone: .success)
-                            .transition(.opacity)
-                    }
-                }
-                Text(verbatim: Self.breakable(title))
-                    .studioText(.title)
-                    .foregroundStyle(Color.studioText)
-                    .textSelection(.enabled)
-                    .fixedSize(horizontal: false, vertical: true)
-                if let address {
-                    Text(verbatim: address)
-                        .studioText(.uiSm)
-                        .foregroundStyle(Color.studioText3)
-                        .textSelection(.enabled)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                if let subtitle, !subtitle.isEmpty {
-                    Text(verbatim: subtitle)
-                        .studioText(.uiSm)
-                        .foregroundStyle(Color.studioText3)
-                        .lineLimit(2)
-                        .truncationMode(.middle)
-                }
-                // Full row; else Copy Link plus icon buttons on one line (an
-                // iPhone width); else stacked (accessibility sizes).
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: StudioSpace.s2) { buttons }
-                    HStack(spacing: StudioSpace.s2) { compactButtons }
-                    VStack(alignment: .leading, spacing: StudioSpace.s2) { buttons }
-                }
-                .padding(.top, StudioSpace.s1)
-            }
-            .padding(.vertical, StudioSpace.s2)
+            hero
+                .padding(.vertical, StudioSpace.s3)
 
             if let toggle {
                 // Captures values, not the struct: the house pattern for
@@ -110,14 +81,6 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
                 }
             }
 
-            if !figures.isEmpty {
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .top, spacing: StudioSpace.s6) { figureViews }
-                    VStack(alignment: .leading, spacing: StudioSpace.s3) { figureViews }
-                }
-                .padding(.vertical, StudioSpace.s1)
-            }
-
             rows()
 
             if isLapsing {
@@ -131,50 +94,127 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
         .studioRowBackground()
     }
 
-    @ViewBuilder
-    private var buttons: some View {
-        if let url {
-            StudioButton(copied ? String(localized: "Copied") : ResourceVerb.copyLink.title,
-                         systemImage: copied ? "checkmark" : ResourceVerb.copyLink.systemImage,
-                         variant: .primary) {
-                copy(url)
+    // MARK: Hero
+
+    private var hero: some View {
+        VStack(alignment: .leading, spacing: StudioSpace.s4) {
+            statusLine
+
+            VStack(alignment: .leading, spacing: StudioSpace.s2) {
+                Text(verbatim: Self.breakable(title))
+                    .studioText(.display)
+                    .foregroundStyle(Color.studioText)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityLabel(Text(verbatim: title))
+                if let address, !address.isEmpty {
+                    Text(verbatim: address)
+                        .studioText(.ui)
+                        .foregroundStyle(Color.studioText2)
+                        .textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if let subtitle, !subtitle.isEmpty {
+                    Label {
+                        Text(verbatim: subtitle)
+                            .lineLimit(2)
+                            .truncationMode(.middle)
+                    } icon: {
+                        Image(systemName: "arrow.turn.down.right")
+                            .foregroundStyle(Color.studioText3)
+                            .accessibilityHidden(true)
+                    }
+                    .studioText(.ui)
+                    .foregroundStyle(Color.studioText2)
+                    .accessibilityHint(Text("Where the address leads"))
+                }
             }
-            StudioButton(ResourceVerb.openInBrowser.title, systemImage: ResourceVerb.openInBrowser.systemImage,
-                         variant: .outline) {
-                openURL(url)
+
+            if !figures.isEmpty {
+                // Side by side; stacked when they don't fit (AX sizes).
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: StudioSpace.s8) { figureViews }
+                    VStack(alignment: .leading, spacing: StudioSpace.s3) { figureViews }
+                }
+                .padding(.top, StudioSpace.s1)
+            }
+
+            if url != nil || cardURL != nil || Actions.self != EmptyView.self {
+                // The whole row; else Copy Link plus symbols on one line (an
+                // iPhone); else stacked (accessibility sizes).
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: StudioSpace.s2) { buttons(compact: false) }
+                    HStack(spacing: StudioSpace.s2) { buttons(compact: true) }
+                    VStack(alignment: .leading, spacing: StudioSpace.s2) { buttons(compact: false) }
+                }
+                .padding(.top, StudioSpace.s1)
             }
         }
-        if let cardURL {
-            StudioButton(ResourceVerb.showCard.title, systemImage: ResourceVerb.showCard.systemImage,
-                         variant: .ghost) {
-                openURL(cardURL)
-            }
-            .accessibilityHint(cardHint.map { Text($0) } ?? Text(""))
-        }
-        actions()
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
-    private var compactButtons: some View {
+    private var statusLine: some View {
+        if state != nil || kindLabel != nil || didJustSave {
+            HStack(spacing: StudioSpace.s2) {
+                if let state {
+                    state.pill
+                }
+                if let kindLabel {
+                    // A type name ("vCard"), never a sentence: the uppercase
+                    // label style is right here.
+                    Text(kindLabel)
+                        .studioText(.label)
+                        .foregroundStyle(Color.studioText3)
+                }
+                if didJustSave {
+                    StudioStatusPill(String(localized: "Saved"), tone: .success)
+                        .transition(.opacity)
+                }
+            }
+            .animation(reduceMotion ? nil : StudioAnimation.base, value: didJustSave)
+        }
+    }
+
+    // MARK: Actions
+
+    @ViewBuilder
+    private func buttons(compact: Bool) -> some View {
         if let url {
-            StudioButton(copied ? String(localized: "Copied") : ResourceVerb.copyLink.title,
-                         systemImage: copied ? "checkmark" : ResourceVerb.copyLink.systemImage,
-                         variant: .primary) {
+            Button {
                 copy(url)
+            } label: {
+                Label(copied ? String(localized: "Copied") : ResourceVerb.copyLink.title,
+                      systemImage: copied ? "checkmark" : ResourceVerb.copyLink.systemImage)
+                    .contentTransition(.symbolEffect(.replace))
             }
-            StudioIconButton(systemImage: ResourceVerb.openInBrowser.systemImage,
-                             label: ResourceVerb.openInBrowser.title) {
-                openURL(url)
-            }
+            .glassButton(prominent: true)
+            .fixedSize()
         }
-        if let cardURL {
-            StudioIconButton(systemImage: ResourceVerb.showCard.systemImage,
-                             label: ResourceVerb.showCard.title) {
-                openURL(cardURL)
+        Group {
+            if let url {
+                Button {
+                    openURL(url)
+                } label: {
+                    Label(String(localized: "Open"), systemImage: ResourceVerb.openInBrowser.systemImage)
+                }
+                .accessibilityLabel(Text(ResourceVerb.openInBrowser.title))
             }
-            .accessibilityHint(cardHint.map { Text($0) } ?? Text(""))
+            if let cardURL {
+                Button {
+                    openURL(cardURL)
+                } label: {
+                    Label(String(localized: "Card"), systemImage: ResourceVerb.showCard.systemImage)
+                }
+                .accessibilityLabel(Text(ResourceVerb.showCard.title))
+                .accessibilityHint(cardHint.map { Text($0) } ?? Text(""))
+            }
+            actions()
         }
-        actions()
+        .glassButton()
+        .labelStyle(compact ? AnyLabelStyle.iconOnly : AnyLabelStyle.titleAndIcon)
+        .fixedSize()
     }
 
     /// Lets an address wrap after a dot or slash ("links.example.com/
@@ -189,16 +229,18 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
     private var figureViews: some View {
         ForEach(figures) { figure in
             VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                Text(figure.title)
-                    .studioText(.label)
-                    .foregroundStyle(Color.studioText3)
                 Text(verbatim: figure.value?.figure ?? "—")
-                    .studioText(.titleSm)
+                    .studioText(.title)
                     .foregroundStyle(Color.studioText)
                     .monospacedDigit()
                     .contentTransition(.numericText())
+                Text(figure.title)
+                    .studioText(.label)
+                    .foregroundStyle(Color.studioText3)
             }
-            .accessibilityElement(children: .combine)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(figure.title))
+            .accessibilityValue(Text(verbatim: figure.value?.grouped ?? String(localized: "Not known yet")))
         }
     }
 
@@ -209,6 +251,24 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
         Task {
             try? await Task.sleep(for: .seconds(2))
             copied = false
+        }
+    }
+}
+
+/// `labelStyle` needs one concrete type for both branches.
+private struct AnyLabelStyle: LabelStyle {
+    let iconOnlyStyle: Bool
+
+    static let iconOnly = AnyLabelStyle(iconOnlyStyle: true)
+    static let titleAndIcon = AnyLabelStyle(iconOnlyStyle: false)
+
+    func makeBody(configuration: Configuration) -> some View {
+        if iconOnlyStyle {
+            Label(configuration)
+                .labelStyle(.iconOnly)
+        } else {
+            Label(configuration)
+                .labelStyle(.titleAndIcon)
         }
     }
 }
@@ -224,8 +284,8 @@ struct ResourceLiveToggle {
     let set: @MainActor (Bool) -> Void
 }
 
-/// A display figure in the header: a label over the number ("—" while
-/// unknown), printed with `Int.figure`.
+/// A display figure in the header: the number ("—" while unknown),
+/// printed with `Int.figure`, over its label.
 struct ResourceFigure: Identifiable {
     let title: String
     let value: Int?
@@ -249,14 +309,14 @@ extension ResourceHeaderSection where Rows == EmptyView {
             state: .live,
             didJustSave: true,
             title: "card.site/spring-menu",
-            subtitle: "https://example.com/menu",
+            subtitle: "example.com/menu",
             url: URL(string: "https://card.site/spring-menu"),
             cardURL: URL(string: "https://card.site/@spring-menu"),
             toggle: .init(isOn: true, set: { _ in }),
             figures: [
                 .init(title: "Clicks · 30d", value: 412),
                 .init(title: "Visitors · 30d", value: 288),
-                .init(title: "Clicks · all time", value: 128_400),
+                .init(title: "All time", value: 128_400),
             ]
         ) {
             EmptyView()
@@ -265,4 +325,22 @@ extension ResourceHeaderSection where Rows == EmptyView {
         }
     }
     .studioForm()
+}
+
+#Preview("Resource header, AX3") {
+    Form {
+        ResourceHeaderSection(
+            state: .off,
+            kindLabel: "vCard",
+            title: "Augusta Lovelace",
+            address: "card.site/ncv-ada",
+            url: URL(string: "https://card.site/ncv-ada"),
+            cardURL: URL(string: "https://card.site/@ncv-ada"),
+            figures: [.init(title: "All time", value: 128)]
+        ) {
+            Button {} label: { Label("Add to Contacts", systemImage: "person.crop.circle.badge.plus") }
+        }
+    }
+    .studioForm()
+    .environment(\.dynamicTypeSize, .accessibility3)
 }

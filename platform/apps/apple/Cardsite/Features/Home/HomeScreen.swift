@@ -6,72 +6,59 @@ import CardsiteKit
 ///
 /// A greeting with the workspace's headline figures, quick create (paste a
 /// URL, or pick a type), 30 days of traffic with the top performer, and the
-/// recently edited resources. One column on iPhone, two or three on iPad
-/// and Mac, decided by the width the page actually has.
+/// recently edited resources. One column on iPhone, where the stat cards
+/// and create tiles become snapping shelves, and two or three on iPad and
+/// Mac, decided by the width the page actually has.
 ///
-/// On iPhone the page is also the search surface (`.searchable`); on iPad
-/// and Mac search is the ⌘K palette, which the toolbar opens too.
+/// The toolbar is the shell's: the bell (Inbox, badged) and the `+` create
+/// menu in one group, the account avatar alone at the trailing edge. Search
+/// is its own tab; on iPad and Mac the toolbar also opens the ⌘K palette.
+/// The bars are the system's (glass on OS 26); Home paints no bar
+/// background of its own.
 struct HomeScreen: View {
     @Environment(AppModel.self) private var app
     @Environment(HomeModel.self) private var model
-    @Environment(QuickSearchModel.self) private var search
     @Environment(ShellRouter.self) private var router
     @Environment(\.studioViewport) private var viewport
 
     var body: some View {
-        @Bindable var bindableSearch = search
         NavigationStack {
-            Group {
-                if router.isCompact {
-                    content
-                        .searchable(text: $bindableSearch.query, prompt: Text("Search pages, actions and links"))
-                } else {
-                    content
+            content
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier(AppDestination.home.screenIdentifier)
+                .navigationTitle("Home")
+                #if os(iOS) || os(visionOS)
+                .navigationBarTitleDisplayMode(.inline)
+                #endif
+                .shellSubtitle(app.currentWorkspace?.name)
+                .toolbar { toolbar }
+                .navigationDestination(for: Resource.self) { link in
+                    LinkDetailView(link: link)
                 }
-            }
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier(AppDestination.home.screenIdentifier)
-            .navigationTitle("Home")
-            #if os(iOS) || os(visionOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar { toolbar }
-            .navigationDestination(for: Resource.self) { link in
-                LinkDetailView(link: link)
-            }
+                // The bell pushes the Inbox here.
+                .navigationDestination(for: AppDestination.self) { destination in
+                    DestinationView(destination: destination)
+                }
         }
         .task { [model] in await model.loadIfNeeded() }
     }
 
-    @ViewBuilder
     private var content: some View {
-        if router.isCompact, !search.trimmedQuery.isEmpty {
-            QuickSearchResults()
-        } else {
-            ScrollView {
-                HomeDashboard(model: model)
-                    .padding(.horizontal, viewport.contentPadding)
-                    .padding(.top, StudioSpace.s6)
-                    .padding(.bottom, StudioSpace.s12)
-                    .readableWidth(.dashboard)
-            }
-            .background(Color.studioBg)
-            .refreshable { [model] in await model.refresh() }
+        ScrollView {
+            HomeDashboard(model: model)
+                .padding(.horizontal, viewport.contentPadding)
+                .padding(.top, StudioSpace.s6)
+                .padding(.bottom, StudioSpace.s12)
+                .readableWidth(.dashboard)
         }
+        .background(Color.studioBg)
+        .platformScrollEdge()
+        .refreshable { [model] in await model.refresh() }
     }
 
+    /// At most two groups: [search · bell · +] and the avatar on its own.
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        if !router.isCompact {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    router.togglePalette()
-                } label: {
-                    Label("Search", systemImage: "magnifyingglass")
-                }
-                .help("Search pages, actions and links (⌘K)")
-            }
-        }
         #if os(macOS)
         ToolbarItem(placement: .primaryAction) {
             Button {
@@ -84,20 +71,23 @@ struct HomeScreen: View {
             .help("Refresh (⌘R)")
         }
         #endif
-        ToolbarItem(placement: .primaryAction) {
-            Menu {
-                ForEach(CreateAction.allCases) { action in
-                    Button {
-                        app.composer = action.composer
-                    } label: {
-                        Label(action.title, systemImage: action.systemImage)
-                    }
+        ToolbarItemGroup(placement: .primaryAction) {
+            if !router.isCompact {
+                Button {
+                    router.togglePalette()
+                } label: {
+                    Label("Search", systemImage: "magnifyingglass")
                 }
-            } label: {
-                Label("New", systemImage: "plus")
+                .help("Search pages, actions and links (⌘K)")
             }
-            .help("Create something new")
+            #if !os(macOS)
+            InboxBellLink()
+            #endif
+            CreateMenu()
         }
+        #if !os(macOS)
+        AccountToolbarItem()
+        #endif
     }
 }
 
@@ -170,8 +160,8 @@ struct HomeDashboard: View {
 private struct HomePreview: View {
     @State private var app: AppModel
     @State private var home: HomeModel
-    @State private var search: QuickSearchModel
     @State private var links: LinksModel
+    @State private var inbox: InboxModel
     @State private var router: ShellRouter
 
     init(state: Loadable<HomeModel.Snapshot>, compact: Bool) {
@@ -180,8 +170,8 @@ private struct HomePreview: View {
         router.adapt(isCompact: compact)
         _app = State(initialValue: app)
         _home = State(initialValue: HomeModel(client: app.client, state: state))
-        _search = State(initialValue: QuickSearchModel(client: app.client))
         _links = State(initialValue: LinksModel(client: app.client))
+        _inbox = State(initialValue: InboxModel(client: app.client))
         _router = State(initialValue: router)
     }
 
@@ -189,8 +179,8 @@ private struct HomePreview: View {
         HomeScreen()
             .environment(app)
             .environment(home)
-            .environment(search)
             .environment(links)
+            .environment(inbox)
             .environment(router)
             .studioViewport()
     }

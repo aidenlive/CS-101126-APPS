@@ -97,7 +97,35 @@ struct ResourceFileRows: View {
     @State private var pickError: String? = nil
 
     var body: some View {
-        LabeledContent {
+        // The file as a document row: its type's glyph, its name, its type
+        // and size (known for a newly chosen file), and remove / keep.
+        HStack(alignment: .center, spacing: StudioSpace.s3) {
+            FileTypeTile(filename: shownName, isEmpty: shownName == nil)
+            VStack(alignment: .leading, spacing: StudioSpace.s1) {
+                Text(fileLabel)
+                    .studioText(.uiSm)
+                    .foregroundStyle(Color.studioText3)
+                if let shownName {
+                    Text(verbatim: shownName)
+                        .studioText(.ui)
+                        .foregroundStyle(Color.studioText)
+                        .lineLimit(2)
+                        .truncationMode(.middle)
+                    if let meta {
+                        Text(verbatim: meta)
+                            .studioText(.uiSm)
+                            .foregroundStyle(Color.studioText3)
+                            .monospacedDigit()
+                    }
+                } else {
+                    Text("None chosen")
+                        .studioText(.ui)
+                        .foregroundStyle(Color.studioText3)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+
             if isReading {
                 ProgressView()
                     .accessibilityLabel(Text("Reading file"))
@@ -111,35 +139,8 @@ struct ResourceFileRows: View {
                 .buttonStyle(.borderless)
                 .accessibilityLabel(currentName == nil ? Text("Remove the chosen file") : Text("Keep the current file"))
             }
-        } label: {
-            VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                Text(fileLabel)
-                    .studioText(.uiSm)
-                    .foregroundStyle(Color.studioText2)
-                if let picked {
-                    Text(verbatim: picked.filename)
-                        .studioText(.ui)
-                        .foregroundStyle(Color.studioText)
-                        .lineLimit(2)
-                        .truncationMode(.middle)
-                    Text(verbatim: picked.size.formatted(.byteCount(style: .file)))
-                        .studioText(.uiSm)
-                        .foregroundStyle(Color.studioText3)
-                        .monospacedDigit()
-                } else if let currentName, !currentName.isEmpty {
-                    Text(verbatim: currentName)
-                        .studioText(.ui)
-                        .foregroundStyle(Color.studioText)
-                        .lineLimit(2)
-                        .truncationMode(.middle)
-                } else {
-                    Text("None chosen")
-                        .studioText(.ui)
-                        .foregroundStyle(Color.studioText3)
-                }
-            }
-            .accessibilityElement(children: .combine)
         }
+        .padding(.vertical, StudioSpace.s1)
 
         Button {
             isImporting = true
@@ -173,6 +174,25 @@ struct ResourceFileRows: View {
             }
     }
 
+    /// The new file's name, else the stored one's.
+    private var shownName: String? {
+        if let picked { return picked.filename }
+        if let currentName, !currentName.isEmpty { return currentName }
+        return nil
+    }
+
+    /// "PDF · 1.2 MB" for a chosen file; "PDF" for the stored one, whose
+    /// size the server doesn't report.
+    private var meta: String? {
+        guard let shownName else { return nil }
+        let type = FileTypeTile.typeName(for: shownName)
+        if let picked {
+            let size = picked.size.formatted(.byteCount(style: .file))
+            return type.map { "\($0) · \(size)" } ?? size
+        }
+        return type
+    }
+
     private var fileLabel: String {
         if picked != nil { return String(localized: "New file") }
         return currentName == nil ? String(localized: "File") : String(localized: "Current file")
@@ -202,6 +222,42 @@ struct ResourceFileRows: View {
         } catch {
             pickError = error.localizedDescription
         }
+    }
+}
+
+/// A file's type as a glyph on a Studio tile: a document, an image, an
+/// archive, a site.
+struct FileTypeTile: View {
+    let filename: String?
+    var isEmpty = false
+
+    @ScaledMetric(relativeTo: .body) private var side: CGFloat = StudioSpace.s12
+
+    var body: some View {
+        Image(systemName: filename.map(Self.symbol(for:)) ?? "doc.badge.plus")
+            .imageScale(.large)
+            .foregroundStyle(isEmpty ? Color.studioText3 : Color.studioAccentLine)
+            .frame(width: side, height: side)
+            .background(Color.studioSurface2, in: RoundedRectangle(cornerRadius: StudioRadius.md, style: .continuous))
+            .accessibilityHidden(true)
+    }
+
+    static func symbol(for filename: String) -> String {
+        guard let type = UTType(filenameExtension: URL(fileURLWithPath: filename).pathExtension) else { return "doc" }
+        if type.conforms(to: .image) { return "photo" }
+        if type.conforms(to: .pdf) { return "doc.richtext" }
+        if type.conforms(to: .zip) || type.conforms(to: .archive) { return "doc.zipper" }
+        if type.conforms(to: .html) { return "globe" }
+        if type.conforms(to: .commaSeparatedText) { return "tablecells" }
+        if type.conforms(to: .json) { return "curlybraces" }
+        if type.conforms(to: .text) { return "doc.plaintext" }
+        return "doc"
+    }
+
+    /// "PDF", "ZIP": the extension, as people name file types.
+    static func typeName(for filename: String) -> String? {
+        let ext = URL(fileURLWithPath: filename).pathExtension
+        return ext.isEmpty ? nil : ext.uppercased()
     }
 }
 

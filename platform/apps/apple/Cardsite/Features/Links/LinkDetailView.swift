@@ -7,7 +7,13 @@ import CardsiteKit
 /// and destination, schedule and targeting, gating, cloaking and UTM,
 /// advanced, and the danger zone.
 ///
-/// Edits are held until Save (toolbar, ⌘S). Leaving with changes asks first.
+/// The page is the calm-form editor (DESIGN-DIRECTION "Editors"): a hero
+/// with the address in display type, where it leads, its state, figures
+/// and Copy Link / Open / Card; then the grouped form. The bar carries the
+/// title `/slug` with the host under it, one … menu of secondary actions,
+/// and ✓ only while there is something to save.
+///
+/// Edits are held until Save (✓, ⌘S). Leaving with changes asks first.
 /// The enabled switch, delete and the header actions act at once.
 struct LinkDetailView: View {
     @Environment(LinksModel.self) private var links
@@ -15,17 +21,21 @@ struct LinkDetailView: View {
 
     let link: Resource
     var onDeleted: () -> Void
+    /// After Duplicate: the copy, for a list that can select it.
+    var onDuplicated: (Resource) -> Void
     private var suppliedModel: LinkDetailModel?
 
-    init(link: Resource, onDeleted: @escaping () -> Void = {}) {
+    init(link: Resource, onDeleted: @escaping () -> Void = {}, onDuplicated: @escaping (Resource) -> Void = { _ in }) {
         self.link = link
         self.onDeleted = onDeleted
+        self.onDuplicated = onDuplicated
     }
 
     /// Preview seam: a model already holding a link.
     init(model: LinkDetailModel) {
         self.link = model.seed
         self.onDeleted = {}
+        self.onDuplicated = { _ in }
         self.suppliedModel = model
     }
 
@@ -34,7 +44,7 @@ struct LinkDetailView: View {
     var body: some View {
         Group {
             if let model {
-                LinkDetailForm(model: model, options: links.options, onDeleted: onDeleted)
+                LinkDetailForm(model: model, options: links.options, onDeleted: onDeleted, onDuplicated: onDuplicated)
             } else {
                 // The model exists one frame later (`.task`): an empty page
                 // rather than a spinner that flashes.
@@ -55,14 +65,21 @@ struct LinkDetailView: View {
 
 private struct LinkDetailForm: View {
     @Environment(AppModel.self) private var app
+    @Environment(LinksModel.self) private var links
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+    @Environment(\.toasts) private var toasts
     @Bindable var model: LinkDetailModel
     let options: ResourceOptionsModel
     let onDeleted: () -> Void
+    let onDuplicated: (Resource) -> Void
 
     @State private var isConfirmingDelete = false
     @State private var isDeleting = false
     @State private var deleteError: String? = nil
+    @State private var isDuplicating = false
+    @State private var duplicateError: String? = nil
+    @State private var showsStatistics = false
 
     var body: some View {
         Group {
@@ -76,18 +93,11 @@ private struct LinkDetailForm: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("link.detail")
         .navigationTitle(Text(verbatim: "/" + model.slug))
+        .editorSubtitle(publicURL?.host() ?? app.addresses.publicHost)
         #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
-        .toolbar {
-            if let url = publicURL {
-                ToolbarItem(placement: .primaryAction) {
-                    ShareLink(item: url) {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                    }
-                }
-            }
-        }
+        .editorMoreMenu { moreMenu }
         .unsavedChanges(
             isDirty: model.isDirty,
             isSaving: model.isSaving,
@@ -97,6 +107,9 @@ private struct LinkDetailForm: View {
         )
         .navigationDestination(for: StatisticsRoute.self) { route in
             StatisticsScreen(route: route)
+        }
+        .navigationDestination(isPresented: $showsStatistics) {
+            StatisticsScreen(route: statisticsRoute)
         }
         .task { [model] in await model.load() }
         .task { [options] in await options.loadIfNeeded() }
@@ -114,6 +127,53 @@ private struct LinkDetailForm: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(deleteError ?? "")
+        }
+        .alert("Couldn’t duplicate", isPresented: Binding(get: { duplicateError != nil }, set: { if !$0 { duplicateError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(duplicateError ?? "")
+        }
+    }
+
+    // MARK: More menu
+
+    /// The secondary actions, in the standard order (ResourceMenuItems):
+    /// share and card; statistics, QR code and duplicate; delete.
+    @ViewBuilder
+    private var moreMenu: some View {
+        if let url = publicURL {
+            ShareLink(item: url) { ResourceVerb.share.label }
+        }
+        if let card = app.addresses.cardURL(for: model.slug) {
+            Button { openURL(card) } label: { ResourceVerb.showCard.label }
+        }
+        Divider()
+        Button { showsStatistics = true } label: { ResourceVerb.statistics.label }
+        if let url = publicURL {
+            Button { app.composeQRCode(for: url) } label: { Label("Create QR Code", systemImage: "qrcode") }
+        }
+        Button { Task { await duplicate() } } label: { ResourceVerb.duplicate.label }
+            .disabled(isDuplicating || model.detail == nil)
+        Divider()
+        Button(role: .destructive) { isConfirmingDelete = true } label: { ResourceVerb.delete.label }
+            .disabled(isDeleting)
+    }
+
+    private var statisticsRoute: StatisticsRoute {
+        StatisticsRoute(linkID: model.linkID, subtitle: displayAddress)
+    }
+
+    private func duplicate() async {
+        guard !isDuplicating else { return }
+        isDuplicating = true
+        defer { isDuplicating = false }
+        do {
+            let copy = try await links.duplicate(model.seed)
+            Haptics.success()
+            toasts?.show(String(localized: "Duplicated as /\(copy.slug). The copy starts switched off."), variant: .success)
+            onDuplicated(copy)
+        } catch {
+            duplicateError = error.asAPIError.localizedDescription
         }
     }
 
@@ -179,7 +239,7 @@ private struct LinkDetailForm: View {
             state: ResourceState(isEnabled: model.isEnabled, isLapsing: model.isLapsing),
             didJustSave: model.didJustSave,
             title: displayAddress,
-            subtitle: model.destination,
+            subtitle: destinationSummary,
             url: publicURL,
             cardURL: app.addresses.cardURL(for: model.slug),
             cardHint: String(localized: "Opens the summary card at \(app.addresses.display(for: "@" + model.slug))"),
@@ -193,13 +253,13 @@ private struct LinkDetailForm: View {
             figures: [
                 ResourceFigure(title: String(localized: "Clicks · 30d"), value: model.recent?.pageviews),
                 ResourceFigure(title: String(localized: "Visitors · 30d"), value: model.recent?.visitors),
-                ResourceFigure(title: String(localized: "Clicks · all time"), value: model.clicks),
+                ResourceFigure(title: String(localized: "All time"), value: model.clicks),
             ],
             isLapsing: model.isLapsing
         ) {
             EmptyView()
         } rows: {
-            NavigationLink(value: StatisticsRoute(linkID: model.linkID, subtitle: displayAddress)) {
+            NavigationLink(value: statisticsRoute) {
                 ResourceVerb.statistics.label
             }
             if let url = publicURL {
@@ -211,6 +271,13 @@ private struct LinkDetailForm: View {
                 .accessibilityIdentifier("link.detail.qr")
             }
         }
+    }
+
+    /// The destination as host and path ("example.com/menu"); the field
+    /// below has the whole address.
+    private var destinationSummary: String? {
+        let saved = model.savedForm?.destination ?? model.destination
+        return ResourceItem.host(of: saved)
     }
 
     // MARK: Editor sections
@@ -264,6 +331,8 @@ private struct LinkDetailForm: View {
         } footer: {
             if !options.pickersFailed, options.usableDomains().isEmpty {
                 Text("Verified custom domains appear here as address options.")
+            } else {
+                Text("Change the destination any time: the address and its QR codes follow it.")
             }
         }
         .studioRowBackground()
@@ -315,9 +384,7 @@ private struct LinkDetailForm: View {
         } header: {
             EditorSectionHeader(String(localized: "Cloaking & UTM"))
         } footer: {
-            Text("Cloaking shows the destination inside a page at your address. UTM parameters are added to the destination so its analytics see where visits came from.")
-                .studioText(.uiSm)
-                .foregroundStyle(Color.studioText3)
+            Text("Cloaking shows the destination inside a page at your address. UTM parameters tell the destination’s analytics where visits came from.")
         }
         .studioRowBackground()
 
@@ -351,6 +418,8 @@ private struct LinkDetailForm: View {
             }
         } header: {
             EditorSectionHeader(String(localized: "Advanced"))
+        } footer: {
+            Text("How the redirect behaves, a page shown before it, and the project it’s filed under.")
         }
         .studioRowBackground()
 

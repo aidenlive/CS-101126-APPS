@@ -116,12 +116,12 @@ struct StaticPageEditorView: View {
                     error: model.errors[.file]
                 )
             } header: {
-                EditorSectionHeader(model.isNew ? String(localized: "HTML or ZIP file") : String(localized: "Replace file"))
+                EditorSectionHeader(String(localized: "HTML or ZIP file"))
             } footer: {
-                if !model.isNew {
-                    Text("Leave empty to keep the current file and change only the address and settings.")
-                        .studioText(.uiSm)
-                        .foregroundStyle(Color.studioText3)
+                if model.isNew {
+                    Text("The site people see at this address.")
+                } else {
+                    Text("Replace it and the address serves the new site; leave it to keep the current one.")
                 }
             }
             .studioRowBackground()

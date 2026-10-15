@@ -7,8 +7,9 @@ import CardsiteKit
 ///
 /// Each row has the address, destination, all-time clicks and an on/off
 /// switch. The context menu and swipe actions copy, open, show the card,
-/// open statistics, duplicate and delete. Picking another link while the
-/// open one has unsaved changes asks first.
+/// open statistics, duplicate and delete. A filter menu in the toolbar
+/// shows all, live or off links, newest or most clicked first. Picking
+/// another link while the open one has unsaved changes asks first.
 struct LinksScreen: View {
     @Environment(AppModel.self) private var app
     @Environment(LinksModel.self) private var model
@@ -65,6 +66,9 @@ struct LinksScreen: View {
                     }
                     .accessibilityIdentifier("links.create")
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    filterMenu
+                }
             }
             #if os(macOS)
             .navigationSplitViewColumnWidth(min: 300, ideal: 360)
@@ -72,8 +76,12 @@ struct LinksScreen: View {
         } detail: {
             NavigationStack {
                 if let id = selection, let link = model.list.items.first(where: { $0.id == id }) {
-                    LinkDetailView(link: link) { selection = nil }
-                        .id(link.id)
+                    LinkDetailView(link: link, onDeleted: { selection = nil }, onDuplicated: { copy in
+                        // The copy starts off: show it even under "Live".
+                        if model.filter == .live { model.filter = .all }
+                        unsaved.guarding($selection).wrappedValue = copy.id
+                    })
+                    .id(link.id)
                 } else {
                     SplitPlaceholder(systemImage: "link",
                                      title: String(localized: "Select a link"),
@@ -94,8 +102,11 @@ struct LinksScreen: View {
             NavigationStack {
                 StatisticsScreen(linkID: link.id, subtitle: app.addresses.display(for: link.slug))
                     .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { statisticsFor = nil }
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button { statisticsFor = nil } label: {
+                                EditorBarLabel(title: String(localized: "Close"), systemImage: "xmark")
+                            }
+                            .keyboardShortcut(.cancelAction)
                         }
                     }
             }
@@ -133,6 +144,18 @@ struct LinksScreen: View {
             if model.visibleLinks.isEmpty, !model.searchText.isEmpty {
                 ContentUnavailableView.search(text: model.searchText)
                     .studioClearRow()
+            } else if model.visibleLinks.isEmpty, model.isFiltered, !model.list.hasMore {
+                ContentUnavailableView {
+                    Label(model.filter == .live ? String(localized: "No live links") : String(localized: "No links are off"),
+                          systemImage: model.filter.systemImage)
+                } description: {
+                    Text(model.filter == .live
+                         ? String(localized: "Every link is switched off.")
+                         : String(localized: "Every link is live."))
+                } actions: {
+                    Button(String(localized: "Show All Links")) { model.filter = .all }
+                }
+                .studioClearRow()
             }
             ForEach(model.visibleLinks) { link in
                 NavigationLink(value: link.id) {
@@ -161,6 +184,37 @@ struct LinksScreen: View {
         .refreshable { [list = model.list] in await list.refresh() }
     }
 
+    /// Show (All / Live / Off) and Sort By (Newest / Most Clicks), applied
+    /// to the loaded rows. The glyph fills while the list is narrowed.
+    private var filterMenu: some View {
+        @Bindable var model = model
+        return Menu {
+            Picker(selection: $model.filter) {
+                ForEach(LinkFilter.allCases) { filter in
+                    Label(filter.title, systemImage: filter.systemImage).tag(filter)
+                }
+            } label: {
+                Text("Show")
+            }
+            .pickerStyle(.inline)
+            Picker(selection: $model.sort) {
+                ForEach(LinkSort.allCases) { sort in
+                    Label(sort.title, systemImage: sort.systemImage).tag(sort)
+                }
+            } label: {
+                Text("Sort By")
+            }
+            .pickerStyle(.inline)
+        } label: {
+            Label(String(localized: "Filter and Sort"),
+                  systemImage: model.isCustomised
+                    ? "line.3.horizontal.decrease.circle.fill"
+                    : "line.3.horizontal.decrease.circle")
+        }
+        .accessibilityIdentifier("links.filter")
+        .accessibilityValue(Text(verbatim: "\(model.filter.title), \(model.sort.title)"))
+    }
+
     private func actions(for link: Resource) -> ResourceActionSet {
         ResourceActionSet(
             url: app.addresses.url(for: link.slug),
@@ -186,6 +240,8 @@ struct LinksScreen: View {
         do {
             let copy = try await model.duplicate(link)
             Haptics.success()
+            // The copy starts off: show it even under "Live".
+            if model.filter == .live { model.filter = .all }
             unsaved.guarding($selection).wrappedValue = copy.id
         } catch {
             actionError = ActionError(title: String(localized: "Couldn’t duplicate"),

@@ -3,81 +3,61 @@ import WebKit
 import StudioKit
 import CardsiteKit
 
-/// The public page as visitors see it, reloaded after every save.
-struct PagePreviewPane: View {
+/// The public page as visitors see it: the canvas's content. Reloaded
+/// whenever `revision` moves (after every save, and on Reload).
+///
+/// It draws only the page and its own loading and failure states; the
+/// canvas around it (full-bleed on iPhone, an artboard on iPad and Mac)
+/// belongs to the editor.
+struct PageCanvasPreview: View {
     @Environment(AppModel.self) private var app
     let page: BioPage
     let revision: Int
-    /// Phone-width frame on iPad and Mac; edge to edge in a sheet.
-    var isFramed = true
+    /// iPhone: room under the page's last block for the floating palette.
+    var bottomInset: CGFloat = 0
+    let reload: () -> Void
 
     @State private var isLoading = false
     @State private var failure: String? = nil
-    @State private var manualReloads = 0
 
     var body: some View {
-        VStack(spacing: StudioSpace.s4) {
-            if !page.isEnabled {
-                StudioBanner(
-                    lead: String(localized: "This page is off."),
-                    message: String(localized: "Visitors get a not-found page until you turn it on, and so does this preview."),
-                    tone: .warning
-                )
-            }
+        ZStack {
             if let url = app.addresses.url(for: page.slug) {
-                previewFrame(for: url)
-            }
-        }
-        .padding(isFramed ? StudioSpace.s6 : 0)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.studioBg)
-        .toolbar {
-            ToolbarItem(placement: .automatic) {
-                Button {
-                    manualReloads += 1
-                } label: {
-                    Label("Reload Preview", systemImage: "arrow.clockwise")
+                PageWebView(url: url, revision: revision, bottomInset: bottomInset,
+                            isLoading: $isLoading, failure: $failure)
+                    .accessibilityLabel(Text("Preview of \(app.addresses.display(for: page.slug))"))
+                if let failure {
+                    Color.studioBg
+                    StudioEmptyState(
+                        systemImage: "wifi.exclamationmark",
+                        title: String(localized: "Couldn’t load the preview"),
+                        message: failure,
+                        compact: true
+                    ) {
+                        StudioButton(String(localized: "Try Again"), systemImage: "arrow.clockwise", variant: .outline) {
+                            reload()
+                        }
+                    }
+                    .padding(StudioSpace.s5)
+                } else if isLoading {
+                    ProgressView()
+                        .padding(StudioSpace.s3)
+                        .background(Color.studioSurface, in: Capsule())
+                        .studioElevation(.raised)
+                        .accessibilityLabel(Text("Loading preview"))
                 }
-                .keyboardShortcut("r", modifiers: .command)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func previewFrame(for url: URL) -> some View {
-        let web = ZStack {
-            PageWebView(url: url, revision: revision + manualReloads, isLoading: $isLoading, failure: $failure)
-                .accessibilityLabel(Text("Preview of \(app.addresses.display(for: page.slug))"))
-            if let failure {
+            } else {
                 Color.studioBg
                 StudioEmptyState(
-                    systemImage: "wifi.exclamationmark",
-                    title: String(localized: "Couldn’t load the preview"),
-                    message: failure,
+                    systemImage: "eye.slash",
+                    title: String(localized: "No preview"),
+                    message: String(localized: "This page has no public address to show."),
                     compact: true
                 ) {
-                    StudioButton(String(localized: "Try Again"), systemImage: "arrow.clockwise", variant: .outline) {
-                        manualReloads += 1
-                    }
+                    EmptyView()
                 }
-            } else if isLoading {
-                ProgressView()
-                    .padding(StudioSpace.s3)
-                    .background(Color.studioSurface, in: Capsule())
-                    .accessibilityLabel("Loading preview")
+                .padding(StudioSpace.s5)
             }
-        }
-        if isFramed {
-            web
-                .clipShape(RoundedRectangle(cornerRadius: StudioRadius.xl, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: StudioRadius.xl, style: .continuous)
-                        .strokeBorder(Color.studioBorder, lineWidth: 0.5)
-                )
-                .studioElevation(.raised)
-                .readableWidth(.narrow)
-        } else {
-            web
         }
     }
 }
@@ -94,6 +74,7 @@ struct PagePreviewPane: View {
 struct PageWebView {
     let url: URL
     let revision: Int
+    var bottomInset: CGFloat = 0
     @Binding var isLoading: Bool
     @Binding var failure: String?
 
@@ -153,6 +134,7 @@ struct PageWebView {
         configuration.websiteDataStore = .nonPersistent()
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
+        applyInsets(to: webView)
         context.coordinator.load(in: webView)
         return webView
     }
@@ -160,7 +142,19 @@ struct PageWebView {
     @MainActor
     private func updateWebView(_ webView: WKWebView, _ context: Context) {
         context.coordinator.parent = self
+        applyInsets(to: webView)
         context.coordinator.load(in: webView)
+    }
+
+    /// Lets the page's last block scroll clear of the floating palette.
+    @MainActor
+    private func applyInsets(to webView: WKWebView) {
+        #if os(iOS) || os(visionOS)
+        let scrollView = webView.scrollView
+        guard scrollView.contentInset.bottom != bottomInset else { return }
+        scrollView.contentInset.bottom = bottomInset
+        scrollView.verticalScrollIndicatorInsets.bottom = bottomInset
+        #endif
     }
 }
 

@@ -279,7 +279,8 @@ struct ProjectEditorSheet: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button { dismiss() } label: { EditorBarLabel.cancel() }
+                        .keyboardShortcut(.cancelAction)
                         .disabled(isSaving)
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -287,9 +288,10 @@ struct ProjectEditorSheet: View {
                         ProgressView()
                             .accessibilityLabel(Text("Saving"))
                     } else {
-                        Button(project == nil ? String(localized: "Create") : String(localized: "Save")) {
-                            Task { await save() }
+                        Button { Task { await save() } } label: {
+                            project == nil ? EditorBarLabel.create() : EditorBarLabel.save()
                         }
+                        .tint(Color.studioAccentLine)
                         .disabled(!canSave)
                         .keyboardShortcut("s", modifiers: .command)
                         .accessibilityIdentifier("org.projects.editor.save")

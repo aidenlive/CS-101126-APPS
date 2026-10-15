@@ -25,10 +25,6 @@ struct BlockDraft: Equatable, Sendable {
 @MainActor
 @Observable
 final class PageEditorModel {
-    enum DetailMode: String, Hashable {
-        case inspector, preview
-    }
-
     struct Conflict: Identifiable, Equatable {
         let blockID: Int
         let editorName: String?
@@ -40,16 +36,20 @@ final class PageEditorModel {
 
     private(set) var state: Loadable<BioPageDocument> = .idle
     private(set) var refreshError: APIError?
+    /// The block open in the inspector.
     var selection: BioBlock.ID?
-    var detailMode: DetailMode = .inspector
     private(set) var drafts: [Int: BlockDraft] = [:]
     private(set) var savingBlockIDs: Set<Int> = []
     private(set) var busyBlockIDs: Set<Int> = []
+    /// The block whose save just finished, for a moment, so the inspector
+    /// can say "Saved".
+    private(set) var savedBlockID: Int?
     var conflict: Conflict?
     /// Bumped after every write that changes the public page, so the
     /// preview reloads.
     private(set) var previewRevision = 0
 
+    @ObservationIgnored private var savedReset: Task<Void, Never>?
     @ObservationIgnored var onError: @MainActor (any Error) -> Void = { _ in }
     /// Short confirmations and failures, shown as Studio toasts.
     @ObservationIgnored var announce: @MainActor (String, StudioToast.Variant) -> Void = { _, _ in }
@@ -72,8 +72,17 @@ final class PageEditorModel {
 
     var selectedBlock: BioBlock? { block(selection) }
 
+    /// Loaded, with no blocks yet.
+    var isEmpty: Bool { state.value.map { $0.blocks.isEmpty } ?? false }
+
     func blockType(for block: BioBlock) -> BlockType? {
         pages.blockType(block.type)
+    }
+
+    /// A duplicate is a create, so a premium type the plan lacks can't be copied.
+    func isDuplicateLocked(_ block: BioBlock) -> Bool {
+        guard let type = blockType(for: block), type.isPremium else { return false }
+        return !pages.allows(PagesModel.Capability.premiumBlocks)
     }
 
     // MARK: Loading
@@ -131,6 +140,21 @@ final class PageEditorModel {
         previewRevision += 1
     }
 
+    /// Loads the preview again without a write (Reload, Try Again).
+    func reloadPreview() {
+        previewRevision += 1
+    }
+
+    private func markSaved(_ id: Int) {
+        savedBlockID = id
+        savedReset?.cancel()
+        savedReset = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            self?.savedBlockID = nil
+        }
+    }
+
     // MARK: Drafts
 
     func draft(for block: BioBlock) -> BlockDraft {
@@ -163,6 +187,7 @@ final class PageEditorModel {
             draft.settings[field] = value
         }
         drafts[block.id] = draft
+        if savedBlockID == block.id { savedBlockID = nil }
     }
 
     func revert(_ block: BioBlock) {
@@ -193,6 +218,7 @@ final class PageEditorModel {
             // Keep any typing that happened while the request was out.
             if drafts[block.id] == draft { drafts[block.id] = nil }
             pageWasWritten()
+            markSaved(block.id)
             return true
         } catch let conflict as BlockConflictError {
             self.conflict = Conflict(blockID: block.id, editorName: conflict.lastEditorName)
@@ -212,8 +238,10 @@ final class PageEditorModel {
     }
 
     /// After a 409: drop this block's draft and load what is stored now.
-    func reloadAfterConflict() async {
-        if let conflict { drafts[conflict.blockID] = nil }
+    /// Pass the conflict the alert showed: dismissing the alert clears
+    /// `conflict` before this runs.
+    func reloadAfterConflict(_ resolved: Conflict? = nil) async {
+        if let blockID = (resolved ?? conflict)?.blockID { drafts[blockID] = nil }
         conflict = nil
         await load()
     }

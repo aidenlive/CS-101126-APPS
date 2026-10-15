@@ -5,11 +5,15 @@ import CardsiteKit
 /// "Add block": every block type, searchable and grouped by category in the
 /// web palette's order. Types the plan doesn't include are shown, locked,
 /// with one calm sentence about why.
+///
+/// After a successful add the presenter decides what comes next (on
+/// iPhone the new block's inspector replaces this sheet), so the sheet
+/// doesn't dismiss itself then; Cancel does.
 struct BlockLibrarySheet: View {
     @Environment(PagesModel.self) private var pages
     @Environment(\.dismiss) private var dismiss
 
-    let onAdd: (BlockType) async -> Bool
+    let onAdd: @MainActor (BlockType) async -> Bool
 
     @State private var query = ""
     @State private var adding: BlockType.ID? = nil
@@ -88,7 +92,6 @@ struct BlockLibrarySheet: View {
         adding = nil
         if added {
             Haptics.success()
-            dismiss()
         }
     }
 

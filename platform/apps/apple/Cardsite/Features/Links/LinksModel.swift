@@ -22,6 +22,11 @@ final class LinksModel {
         didSet { query.set(searchText) }
     }
 
+    /// Which links the list shows, and in what order. Applied to the
+    /// loaded pages on the device; more pages load as the list scrolls.
+    var filter: LinkFilter = .all
+    var sort: LinkSort = .newest
+
     /// Links whose enabled switch is mid-request.
     private(set) var togglingIDs: Set<Int> = []
 
@@ -44,16 +49,23 @@ final class LinksModel {
         }
     }
 
-    /// Short links only, filtered by the search field (address or destination).
+    /// Short links only, filtered by the search field (address or
+    /// destination) and the filter menu, in the chosen order.
     var visibleLinks: [Resource] {
-        let links = list.items.filter { !$0.isBioPage }
+        var links = list.items.filter { !$0.isBioPage && filter.includes($0) }
         let query = searchText.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else { return links }
-        return links.filter {
-            $0.slug.localizedCaseInsensitiveContains(query)
-                || ($0.destination ?? "").localizedCaseInsensitiveContains(query)
+        if !query.isEmpty {
+            links = links.filter {
+                $0.slug.localizedCaseInsensitiveContains(query)
+                    || ($0.destination ?? "").localizedCaseInsensitiveContains(query)
+            }
         }
+        return sort.sorted(links)
     }
+
+    /// Whether the filter menu is narrowing or reordering the list.
+    var isFiltered: Bool { filter != .all }
+    var isCustomised: Bool { filter != .all || sort != .newest }
 
     func create(slug: String, destination: URL) async throws -> Resource {
         do {
@@ -121,5 +133,77 @@ private final class SearchQuery: Sendable {
 
     func set(_ text: String) {
         storage.withLock { $0 = text }
+    }
+}
+
+/// The Links filter menu's "Show" choice.
+enum LinkFilter: String, CaseIterable, Identifiable, Sendable {
+    case all, live, off
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: return String(localized: "All Links")
+        case .live: return ResourceState.live.title
+        case .off: return ResourceState.off.title
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .all: return "link"
+        case .live: return "dot.radiowaves.left.and.right"
+        case .off: return "pause.circle"
+        }
+    }
+
+    func includes(_ link: Resource) -> Bool {
+        switch self {
+        case .all: return true
+        case .live: return link.isEnabled
+        case .off: return !link.isEnabled
+        }
+    }
+}
+
+/// The Links filter menu's "Sort By" choice.
+enum LinkSort: String, CaseIterable, Identifiable, Sendable {
+    case newest, mostClicks
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .newest: return String(localized: "Newest")
+        case .mostClicks: return String(localized: "Most Clicks")
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .newest: return "clock"
+        case .mostClicks: return "cursorarrow.click"
+        }
+    }
+
+    /// Stable: ties keep the server's order (newest first).
+    func sorted(_ links: [Resource]) -> [Resource] {
+        let indexed = Array(links.enumerated())
+        switch self {
+        case .newest:
+            return indexed.sorted { lhs, rhs in
+                let left = lhs.element.createdAt ?? .distantPast
+                let right = rhs.element.createdAt ?? .distantPast
+                if left != right { return left > right }
+                if lhs.element.id != rhs.element.id { return lhs.element.id > rhs.element.id }
+                return lhs.offset < rhs.offset
+            }.map(\.element)
+        case .mostClicks:
+            return indexed.sorted { lhs, rhs in
+                if lhs.element.clicks != rhs.element.clicks { return lhs.element.clicks > rhs.element.clicks }
+                return lhs.offset < rhs.offset
+            }.map(\.element)
+        }
     }
 }

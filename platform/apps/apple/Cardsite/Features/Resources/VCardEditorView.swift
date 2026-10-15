@@ -88,7 +88,13 @@ struct VCardEditorView: View {
         @Bindable var model = model
         ResourceEditorScaffold(kind: .vcard, model: model, list: list, onCreated: onCreated) { item in
             if let resource = item.link {
-                actions(for: resource)
+                heroAction(for: resource)
+            }
+        } menu: { _ in
+            Button {
+                isExporting = true
+            } label: {
+                Label("Download .vcf", systemImage: "arrow.down.doc")
             }
         } fields: {
             previewSection
@@ -134,28 +140,22 @@ struct VCardEditorView: View {
         return RemoteVCardFile(client: list.client, id: resource.id, name: resource.vcard.fullName)
     }
 
+    /// The type's own hero button, beside Copy Link / Open / Card; the
+    /// .vcf download is in the … menu.
     @ViewBuilder
-    private func actions(for resource: ManagedResource) -> some View {
+    private func heroAction(for resource: ManagedResource) -> some View {
         #if os(iOS)
         Button {
             isAddingContact = true
         } label: {
             Label("Add to Contacts", systemImage: "person.crop.circle.badge.plus")
         }
-        .buttonStyle(StudioButtonStyle(.outline))
         #else
         ShareLink(item: RemoteVCardFile(client: list.client, id: resource.id, name: resource.vcard.fullName),
                   preview: SharePreview(resource.vcard.fullName.isEmpty ? String(localized: "Contact") : resource.vcard.fullName)) {
-            Label("Share .vcf", systemImage: "square.and.arrow.up")
+            Label("Share .vcf", systemImage: "person.crop.square.filled.and.at.rectangle")
         }
-        .buttonStyle(StudioButtonStyle(.outline))
         #endif
-        Button {
-            isExporting = true
-        } label: {
-            Label("Download .vcf", systemImage: "arrow.down.doc")
-        }
-        .buttonStyle(StudioButtonStyle(.outline))
     }
 
     // MARK: Sections
@@ -168,7 +168,9 @@ struct VCardEditorView: View {
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
         } header: {
-            EditorSectionHeader(String(localized: "Card"))
+            EditorSectionHeader(String(localized: "Preview"))
+        } footer: {
+            Text("What people save to their contacts. It updates as you type.")
         }
     }
 
@@ -402,100 +404,145 @@ struct VCardEntryRows: View {
 
 // MARK: - Preview card
 
-/// The card as visitors save it, drawn from Studio surfaces.
+/// The contact card as visitors save it, live as you type: an opaque
+/// Studio card with the monogram, the name, the role and company, then a
+/// row per way to reach them, and the address the card lives at. Before a
+/// name is typed it shows the card's shape in muted ink, so the preview
+/// is never a blank box.
 struct VCardPreviewCard: View {
     let card: VCardSettings
     let address: URL?
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .title) private var monogram: CGFloat = StudioSpace.s16
+
     var body: some View {
-        StudioCard {
-            if card.fullName.isEmpty {
-                Text("Add a name to see the card.")
-                    .studioText(.uiSm)
-                    .foregroundStyle(Color.studioText3)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, StudioSpace.s4)
-            } else {
-                VStack(alignment: .leading, spacing: StudioSpace.s4) {
-                    HStack(alignment: .center, spacing: StudioSpace.s3) {
-                        Text(verbatim: initials)
-                            .studioText(.titleSm)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
-                            .foregroundStyle(Color.studioAccentInk)
-                            .frame(width: StudioSpace.s12, height: StudioSpace.s12)
-                            .background(Color.studioAccent, in: Circle())
-                            .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                            Text(verbatim: card.fullName)
-                                .studioText(.titleSm)
-                                .foregroundStyle(Color.studioText)
-                                .fixedSize(horizontal: false, vertical: true)
-                            if !role.isEmpty {
-                                Text(verbatim: role)
-                                    .studioText(.uiSm)
-                                    .foregroundStyle(Color.studioText2)
-                            }
+        StudioCard(radius: StudioRadius.xl) {
+            VStack(alignment: .leading, spacing: StudioSpace.s5) {
+                identity
+                if !contactRows.isEmpty {
+                    VStack(alignment: .leading, spacing: StudioSpace.s3) {
+                        ForEach(contactRows) { row in
+                            ContactLine(row: row)
                         }
-                    }
-                    VStack(alignment: .leading, spacing: StudioSpace.s2) {
-                        ForEach(card.phoneNumbers.filter { !$0.value.trimmingCharacters(in: .whitespaces).isEmpty }) { phone in
-                            line(phone.value, systemImage: "phone")
-                        }
-                        if !card.email.isEmpty { line(card.email, systemImage: "envelope") }
-                        if !card.website.isEmpty { line(card.website, systemImage: "globe") }
-                        if !postal.isEmpty { line(postal, systemImage: "mappin.and.ellipse") }
-                        ForEach(card.socials.filter { !$0.value.trimmingCharacters(in: .whitespaces).isEmpty }) { social in
-                            line(social.label.isEmpty ? social.value : "\(social.label) · \(social.value)", systemImage: "link")
-                        }
-                    }
-                    if let address {
-                        Divider()
-                        Label {
-                            Text(verbatim: address.host().map { "\($0)\(address.path())" } ?? address.absoluteString)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                        } icon: {
-                            Image(systemName: "qrcode")
-                        }
-                        .studioText(.uiSm)
-                        .foregroundStyle(Color.studioText3)
                     }
                 }
+                if let address {
+                    Divider()
+                    Label {
+                        Text(verbatim: address.host().map { "\($0)\(address.path())" } ?? address.absoluteString)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    } icon: {
+                        Image(systemName: "qrcode")
+                    }
+                    .studioText(.uiSm)
+                    .foregroundStyle(Color.studioText3)
+                }
             }
+            .animation(reduceMotion ? nil : StudioAnimation.base, value: card)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text("Card preview"))
     }
 
+    private var identity: some View {
+        HStack(alignment: .center, spacing: StudioSpace.s4) {
+            Text(verbatim: initials)
+                .studioText(.title)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .foregroundStyle(hasName ? Color.studioAccentInk : Color.studioText3)
+                .frame(width: monogram, height: monogram)
+                .background(hasName ? Color.studioAccent : Color.studioSurface2, in: Circle())
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: StudioSpace.s1) {
+                Text(verbatim: hasName ? card.fullName : String(localized: "Your name"))
+                    .studioText(.title)
+                    .foregroundStyle(hasName ? Color.studioText : Color.studioText3)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !trimmed(card.jobTitle).isEmpty {
+                    Text(verbatim: trimmed(card.jobTitle))
+                        .studioText(.ui)
+                        .foregroundStyle(Color.studioText2)
+                }
+                if !trimmed(card.company).isEmpty {
+                    Text(verbatim: trimmed(card.company))
+                        .studioText(.uiSm)
+                        .foregroundStyle(Color.studioText3)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var hasName: Bool { !card.fullName.isEmpty }
+
     private var initials: String {
-        let letters = [card.firstName, card.lastName].compactMap { $0.trimmingCharacters(in: .whitespaces).first }
+        let letters = [card.firstName, card.lastName].compactMap { trimmed($0).first }
         return letters.isEmpty ? "?" : String(letters).uppercased()
     }
 
-    private var role: String {
-        [card.jobTitle, card.company].map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-            .joined(separator: " · ")
+    private var contactRows: [ContactLine.Row] {
+        var rows: [ContactLine.Row] = []
+        for phone in card.phoneNumbers where !trimmed(phone.value).isEmpty {
+            rows.append(.init(id: "phone-\(phone.id)", kind: String(localized: "Phone"), value: trimmed(phone.value),
+                              systemImage: "phone"))
+        }
+        if !trimmed(card.email).isEmpty {
+            rows.append(.init(id: "email", kind: String(localized: "Email"), value: trimmed(card.email), systemImage: "envelope"))
+        }
+        if !trimmed(card.website).isEmpty {
+            rows.append(.init(id: "website", kind: String(localized: "Website"), value: trimmed(card.website), systemImage: "globe"))
+        }
+        if !postal.isEmpty {
+            rows.append(.init(id: "postal", kind: String(localized: "Address"), value: postal, systemImage: "mappin.and.ellipse"))
+        }
+        for social in card.socials where !trimmed(social.value).isEmpty {
+            let label = trimmed(social.label)
+            rows.append(.init(id: "social-\(social.id)", kind: label.isEmpty ? String(localized: "Profile") : label,
+                              value: trimmed(social.value), systemImage: "link"))
+        }
+        return rows
     }
 
     private var postal: String {
         [card.street, card.city, card.region, card.zip, card.country]
-            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .map(trimmed)
             .filter { !$0.isEmpty }
             .joined(separator: ", ")
     }
 
-    private func line(_ text: String, systemImage: String) -> some View {
-        Label {
-            Text(verbatim: text)
-                .fixedSize(horizontal: false, vertical: true)
-        } icon: {
-            Image(systemName: systemImage)
-                .foregroundStyle(Color.studioAccentLine)
+    private func trimmed(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespaces)
+    }
+}
+
+/// One way to reach the contact: a glyph tile, what it is, the value.
+private struct ContactLine: View {
+    struct Row: Identifiable {
+        let id: String
+        let kind: String
+        let value: String
+        let systemImage: String
+    }
+
+    let row: Row
+
+    var body: some View {
+        HStack(alignment: .top, spacing: StudioSpace.s3) {
+            RowGlyphTile(systemImage: row.systemImage)
+            VStack(alignment: .leading, spacing: StudioSpace.s1) {
+                Text(verbatim: row.kind)
+                    .studioText(.uiSm)
+                    .foregroundStyle(Color.studioText3)
+                Text(verbatim: row.value)
+                    .studioText(.ui)
+                    .foregroundStyle(Color.studioText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .studioText(.ui)
-        .foregroundStyle(Color.studioText)
     }
 }
 

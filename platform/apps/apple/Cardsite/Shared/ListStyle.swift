@@ -209,11 +209,16 @@ extension View {
     /// minimum and ideal frames on the Mac. Apply it to the sheet's
     /// outermost view (usually its `NavigationStack`).
     ///
-    /// On iOS the sheet itself is painted `studioBg`, so the page colour
-    /// reaches the sheet's edges whatever its content measures (a short
-    /// `ScrollView`, the keyboard's safe area, a detent change) and the
-    /// whole sheet is one surface, as `studioForm()` and `studioList()`
-    /// paint a page.
+    /// The sheet's own background:
+    /// - iOS 26 and later: none. The system draws its sheet material
+    ///   (inset glass at partial heights, opaque at full height) and the
+    ///   content's `studioForm()` / `studioList()` / `.background(studioBg)`
+    ///   paints the page, which reaches the edges because a shape-style
+    ///   background ignores the safe areas (DESIGN-DIRECTION: no
+    ///   `presentationBackground`).
+    /// - Before 26: painted `studioBg`, which fixed a white/grey mismatch
+    ///   where short content or the keyboard's safe area showed the
+    ///   system's grouped grey around the Studio page.
     @ViewBuilder
     func cardsiteSheet(_ size: CardsiteSheetSize) -> some View {
         #if os(macOS)
@@ -230,10 +235,23 @@ extension View {
             case .form: self.presentationSizing(.form)
             }
         }
-        .presentationBackground(Color.studioBg)
+        .modifier(LegacySheetBackground())
         #endif
     }
 }
+
+#if !os(macOS)
+/// `studioBg` behind a sheet before iOS 26 only (see `cardsiteSheet`).
+private struct LegacySheetBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, visionOS 26.0, *) {
+            content
+        } else {
+            content.presentationBackground(Color.studioBg)
+        }
+    }
+}
+#endif
 
 #Preview("List page head") {
     NavigationStack {

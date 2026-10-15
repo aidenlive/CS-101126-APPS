@@ -9,14 +9,18 @@ enum PagesPreviewData {
     static let page = BioPage(
         id: 24,
         slug: "alex",
-        settings: ["title": "Alex Rivera", "description": "Designer in Lisbon", "background_type": "color"],
+        settings: ["title": "Alex Rivera", "description": "Designer in Lisbon", "background_type": "color",
+                   "background_color": "#1f2a44", "text_color": "#f4f1ea", "btn_background_color": "#e9b949"],
         clicks: 1_284,
         pixelIDs: [3]
     )
 
     static let pages: [BioPage] = [
         page,
-        BioPage(id: 25, slug: "spring-menu", settings: ["title": "Spring Menu"], clicks: 312),
+        BioPage(id: 25, slug: "spring-menu", settings: [
+            "title": "Spring Menu", "background_type": "gradient",
+            "background_color_one": "#ffd3a5", "background_color_two": "#fd6585",
+        ], clicks: 312),
         BioPage(id: 26, slug: "alex-copy", clicks: 0, isEnabled: false, directoryIsEnabled: false),
     ]
 
@@ -77,11 +81,13 @@ enum PagesPreviewData {
         return model
     }
 
-    static func editor(_ pages: PagesModel) -> PageEditorModel {
+    static func editor(_ pages: PagesModel, blocks: [BioBlock] = blocks, selection: BioBlock.ID? = 7) -> PageEditorModel {
         let editor = PageEditorModel(pageID: page.id, pages: pages, document: BioPageDocument(page: page, blocks: blocks))
-        editor.selection = 7
+        editor.selection = blocks.contains { $0.id == selection } ? selection : nil
         return editor
     }
+
+    static let actions = PageEditorActions(duplicate: { _ in }, delete: { _ in }, close: {})
 }
 
 #Preview("Pages") {
@@ -90,19 +96,70 @@ enum PagesPreviewData {
         .environment(PagesPreviewData.pagesModel())
 }
 
-#Preview("Blocks") {
+#Preview("Canvas, iPhone") {
     let pages = PagesPreviewData.pagesModel()
     NavigationStack {
-        BlockListColumn(editor: PagesPreviewData.editor(pages), isCompact: true)
+        PageCanvasEditor(editor: PagesPreviewData.editor(pages, selection: nil), isCompact: true,
+                         actions: PagesPreviewData.actions)
     }
     .environment(PagesPreviewData.app())
     .environment(pages)
 }
 
+#Preview("Canvas, empty page") {
+    let pages = PagesPreviewData.pagesModel()
+    NavigationStack {
+        PageCanvasEditor(editor: PagesPreviewData.editor(pages, blocks: []), isCompact: true,
+                         actions: PagesPreviewData.actions)
+    }
+    .environment(PagesPreviewData.app())
+    .environment(pages)
+}
+
+#Preview("Canvas, iPad and Mac") {
+    let pages = PagesPreviewData.pagesModel()
+    NavigationStack {
+        PageCanvasEditor(editor: PagesPreviewData.editor(pages), isCompact: false, actions: PagesPreviewData.actions)
+    }
+    .environment(PagesPreviewData.app())
+    .environment(pages)
+}
+
+#Preview("Blocks outline") {
+    let pages = PagesPreviewData.pagesModel()
+    NavigationStack {
+        BlockOutlineView(editor: PagesPreviewData.editor(pages), isInSheet: true, onSelect: { _ in },
+                         onAdd: {}, onClose: {})
+    }
+    .environment(PagesPreviewData.app())
+    .environment(pages)
+}
+
+#Preview("Page rows") {
+    List {
+        ForEach(PagesPreviewData.pages) { page in
+            BioPageRow(page: page)
+        }
+    }
+    .studioList()
+    .environment(PagesPreviewData.app())
+}
+
+#Preview("Page rows, largest text") {
+    List {
+        ForEach(PagesPreviewData.pages) { page in
+            BioPageRow(page: page)
+        }
+    }
+    .studioList()
+    .environment(PagesPreviewData.app())
+    .environment(\.dynamicTypeSize, .accessibility5)
+}
+
 #Preview("Inspector") {
     let pages = PagesPreviewData.pagesModel()
     NavigationStack {
-        BlockInspectorView(editor: PagesPreviewData.editor(pages), blockID: 7)
+        BlockInspectorView(editor: PagesPreviewData.editor(pages), blockID: 7, close: {})
     }
     .environment(PagesPreviewData.app())
     .environment(pages)
@@ -126,6 +183,13 @@ enum PagesPreviewData {
 #Preview("Page Settings") {
     let pages = PagesPreviewData.pagesModel()
     PageSettingsView(editor: PagesPreviewData.editor(pages))
+        .environment(PagesPreviewData.app())
+        .environment(pages)
+}
+
+#Preview("Page Settings, opened on Theme") {
+    let pages = PagesPreviewData.pagesModel()
+    PageSettingsView(editor: PagesPreviewData.editor(pages), initialPane: .theme)
         .environment(PagesPreviewData.app())
         .environment(pages)
 }

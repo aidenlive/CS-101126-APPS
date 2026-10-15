@@ -87,18 +87,19 @@ private struct QREmptyArtwork: View {
     }
 }
 
-/// Two surface tones in squares: the conventional sign for transparency.
+/// Two light tones in squares: the conventional sign for transparency. Fixed
+/// light values, because it always sits on the white QR paper.
 private struct QRCheckerboard: View {
     var body: some View {
         Canvas { context, size in
             let tile = StudioSpace.s2
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color.studioSurface))
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color.StudioPalette.neutral0))
             var row = 0
             var y: CGFloat = 0
             while y < size.height {
                 var x: CGFloat = row.isMultiple(of: 2) ? 0 : tile
                 while x < size.width {
-                    context.fill(Path(CGRect(x: x, y: y, width: tile, height: tile)), with: .color(Color.studioSurface3))
+                    context.fill(Path(CGRect(x: x, y: y, width: tile, height: tile)), with: .color(Color.StudioPalette.neutral200))
                     x += tile * 2
                 }
                 y += tile

@@ -2,11 +2,10 @@ import SwiftUI
 import StudioKit
 import CardsiteKit
 
-/// Bio pages and their editor, as one three-column split view: pages, the
-/// selected page's blocks, then the selected block's inspector (or the
-/// live preview). On iPhone it collapses to a stack: pages → blocks →
-/// inspector. Opening a page on iPad and Mac folds the pages column away to
-/// give the editor the room; the sidebar button brings it back.
+/// Bio pages: a library of pages beside the open page's canvas editor.
+/// On iPhone the split view collapses to a stack (pages → canvas). Opening
+/// a page on iPad folds the pages column away to give the canvas the room;
+/// the sidebar button or ✕ brings it back.
 struct PagesScreen: View {
     @Environment(AppModel.self) private var app
     @Environment(PagesModel.self) private var model
@@ -46,37 +45,26 @@ struct PagesScreen: View {
                 duplicate: { page in Task { await duplicate(page) } }
             )
             #if os(macOS)
-            .navigationSplitViewColumnWidth(min: 240, ideal: 280)
+            .navigationSplitViewColumnWidth(min: 260, ideal: 300)
             #endif
-        } content: {
+        } detail: {
             if let editor {
-                BlockListColumn(editor: editor, isCompact: isCompact)
-                    .accessibilityElement(children: .contain)
-                    .accessibilityIdentifier("page.editor")
-                    .id(editor.pageID)
-                    #if os(macOS)
-                    .navigationSplitViewColumnWidth(min: 300, ideal: 360)
-                    #endif
+                PageCanvasEditor(
+                    editor: editor,
+                    isCompact: isCompact,
+                    actions: PageEditorActions(
+                        duplicate: { page in Task { await duplicate(page) } },
+                        delete: { page in pendingDelete = page },
+                        close: closeEditor
+                    )
+                )
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("page.editor")
+                .id(editor.pageID)
             } else {
                 SplitPlaceholder(systemImage: "person.crop.square",
                                  title: String(localized: "Select a page"),
-                                 message: String(localized: "Its blocks appear here, ready to edit."))
-                    #if os(macOS)
-                    .navigationTitle("Pages")
-                    #endif
-                    #if os(macOS)
-                    .navigationSplitViewColumnWidth(min: 300, ideal: 360)
-                    #endif
-            }
-        } detail: {
-            if let editor {
-                EditorDetailColumn(editor: editor, isCompact: isCompact)
-                    .id(editor.pageID)
-            } else {
-                // The middle column already says what to do; one prompt
-                // reads calmer than two side by side.
-                Color.studioBg
-                    .ignoresSafeArea()
+                                 message: String(localized: "Its live preview opens here, ready to edit."))
                     #if os(macOS)
                     .navigationTitle("Pages")
                     #endif
@@ -110,22 +98,6 @@ struct PagesScreen: View {
             Text("Anyone who opens or scans this address will get a not-found page, and every block on the page is deleted. This can’t be undone.")
         }
         .alert(
-            "This block changed",
-            isPresented: Binding(get: { editor?.conflict != nil }, set: { if !$0 { editor?.conflict = nil } }),
-            presenting: editor?.conflict
-        ) { _ in
-            Button("Reload") {
-                Task { await editor?.reloadAfterConflict() }
-            }
-            Button("Not Now", role: .cancel) { editor?.conflict = nil }
-        } message: { conflict in
-            if let name = conflict.editorName {
-                Text("\(name) changed this block since you opened it. Reload to see their version, then reapply your edit.")
-            } else {
-                Text("Someone changed this block since you opened it. Reload to see their version, then reapply your edit.")
-            }
-        }
-        .alert(
             actionError?.title ?? "",
             isPresented: Binding(get: { actionError != nil }, set: { if !$0 { actionError = nil } }),
             presenting: actionError
@@ -151,9 +123,19 @@ struct PagesScreen: View {
         next.onError = app.handle
         next.announce = { [toasts] message, variant in toasts?.show(message, variant: variant) }
         editor = next
+        #if os(iOS)
+        // iPad: the canvas, rail and inspector need the width. The Mac
+        // keeps its sidebar; the window is the user's to size.
         if !isCompact {
-            withAnimation(StudioAnimation.base) { columns = .doubleColumn }
+            withAnimation(StudioAnimation.base) { columns = .detailOnly }
         }
+        #endif
+    }
+
+    /// iPad's ✕: back to the pages, with the list showing.
+    private func closeEditor() {
+        selection = nil
+        withAnimation(StudioAnimation.base) { columns = .all }
     }
 
     // MARK: Page actions
@@ -287,21 +269,78 @@ private struct PagesListColumn: View {
     }
 }
 
-/// A bio page in the shared row anatomy: the page's name with its state,
-/// its address and clicks underneath.
+/// A bio page in the shared row anatomy, led by a miniature of the page in
+/// its own theme colours: the name with its state, the address and clicks.
+/// At accessibility sizes the row stacks, like ``CardsiteResourceRow``.
 struct BioPageRow: View {
     @Environment(AppModel.self) private var app
+    @Environment(\.dynamicTypeSize) private var typeSize
     let page: BioPage
 
     var body: some View {
-        CardsiteResourceRow(
-            systemImage: "person.crop.square",
-            isLive: page.isEnabled,
-            title: Text(verbatim: page.title ?? app.addresses.display(for: page.slug)),
-            subtitle: page.title == nil ? nil : Text(verbatim: app.addresses.display(for: page.slug)),
-            state: ResourceState(isEnabled: page.isEnabled, isLapsing: page.isLapsing),
-            clicks: page.clicks
-        )
+        let isStacked = typeSize.isAccessibilitySize
+        let layout = isStacked
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: StudioSpace.s2))
+            : AnyLayout(HStackLayout(spacing: StudioSpace.s3))
+        let address = app.addresses.display(for: page.slug)
+        let state = ResourceState(isEnabled: page.isEnabled, isLapsing: page.isLapsing)
+
+        layout {
+            PageThumbnailTile(page: page)
+
+            VStack(alignment: .leading, spacing: StudioSpace.s1) {
+                titleLine(page.title ?? address, state: state, isStacked: isStacked)
+                if page.title != nil {
+                    Text(verbatim: address)
+                        .lineLimit(isStacked ? 4 : 1)
+                        .truncationMode(.middle)
+                }
+                if isStacked {
+                    ClicksFigure(clicks: page.clicks)
+                }
+            }
+            .studioText(.uiSm)
+            .foregroundStyle(Color.studioText3)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+
+            if !isStacked {
+                ClicksFigure(clicks: page.clicks)
+                    .studioText(.uiSm)
+                    .foregroundStyle(Color.studioText3)
+                    .fixedSize()
+            }
+        }
+        .padding(.vertical, Self.verticalPadding)
+        .contentShape(Rectangle())
+    }
+
+    /// The same row height as ``CardsiteResourceRow``.
+    private static var verticalPadding: CGFloat {
+        #if os(macOS)
+        return StudioSpace.s1
+        #else
+        return StudioSpace.s2
+        #endif
+    }
+
+    @ViewBuilder
+    private func titleLine(_ title: String, state: ResourceState, isStacked: Bool) -> some View {
+        let name = Text(verbatim: title)
+            .studioText(.ui)
+            .foregroundStyle(Color.studioText)
+        if isStacked {
+            name.fixedSize(horizontal: false, vertical: true)
+            if state != .live { state.pill }
+        } else {
+            HStack(spacing: StudioSpace.s2) {
+                name
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .layoutPriority(1)
+                if state != .live { state.pill.fixedSize() }
+            }
+        }
     }
 }
 

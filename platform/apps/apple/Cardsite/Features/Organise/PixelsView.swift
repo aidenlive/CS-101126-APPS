@@ -334,7 +334,8 @@ struct PixelEditorSheet: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button { dismiss() } label: { EditorBarLabel.cancel() }
+                        .keyboardShortcut(.cancelAction)
                         .disabled(isSaving)
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -342,9 +343,10 @@ struct PixelEditorSheet: View {
                         ProgressView()
                             .accessibilityLabel(Text("Saving"))
                     } else {
-                        Button(pixel == nil ? String(localized: "Create") : String(localized: "Save")) {
-                            Task { await save() }
+                        Button { Task { await save() } } label: {
+                            pixel == nil ? EditorBarLabel.create() : EditorBarLabel.save()
                         }
+                        .tint(Color.studioAccentLine)
                         .disabled(!canSave)
                         .keyboardShortcut("s", modifiers: .command)
                         .accessibilityIdentifier("org.pixels.editor.save")

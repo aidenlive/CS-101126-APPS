@@ -79,14 +79,9 @@ struct FileLinkEditorView: View {
 
     var body: some View {
         @Bindable var model = model
-        ResourceEditorScaffold(kind: .file, model: model, list: list, onCreated: onCreated) { item in
-            if let url = list.publicURL(for: item, addresses: app.addresses) {
-                Link(destination: url) {
-                    Label("Download", systemImage: "arrow.down.circle")
-                }
-                .buttonStyle(StudioButtonStyle(.outline))
-                .accessibilityHint(Text("Opens the file’s address, as visitors get it"))
-            }
+        // The hero's Open is the download, as visitors get it.
+        ResourceEditorScaffold(kind: .file, model: model, list: list, onCreated: onCreated) { _ in
+            EmptyView()
         } fields: {
             Section {
                 ResourceAddressRows(kind: .file, address: $model.form.address, list: list, isNew: model.isNew,
@@ -119,12 +114,12 @@ struct FileLinkEditorView: View {
                 }
                 .toggleStyle(.switch)
             } header: {
-                EditorSectionHeader(model.isNew ? String(localized: "File") : String(localized: "Replace file"))
+                EditorSectionHeader(String(localized: "File"))
             } footer: {
-                if !model.isNew {
-                    Text("Leave empty to keep the current file and change only the address and settings.")
-                        .studioText(.uiSm)
-                        .foregroundStyle(Color.studioText3)
+                if model.isNew {
+                    Text("The file people get at this address.")
+                } else {
+                    Text("Replace it and the address serves the new file; leave it to keep the current one.")
                 }
             }
             .studioRowBackground()

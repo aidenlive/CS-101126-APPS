@@ -124,12 +124,15 @@ private struct HeadlineFigures: View {
 // MARK: - Create
 
 /// "Start something new": the paste-a-URL card and a tile per type the app
-/// can create.
+/// can create. On iPhone the tiles are a snapping shelf under the paste
+/// card, so the section reads as one deliberate move rather than a tall
+/// stack; at accessibility sizes they stack again.
 struct HomeCreateSection: View {
     let columns: Int
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var tiles: [CreateAction] {
-        // The most-used types only; the New menu and the palette list
+        // The most-used types only; the `+` menu and the palette list
         // them all. The short link has the paste card instead of a tile.
         CreateAction.featured.filter { $0 != .shortLink }
     }
@@ -148,10 +151,20 @@ struct HomeCreateSection: View {
                         tileStack
                     }
                 }
-            } else {
+            } else if typeSize.isAccessibilitySize {
                 VStack(spacing: StudioSpace.s4) {
                     HomePasteCard()
                     tileStack
+                }
+            } else {
+                VStack(alignment: .leading, spacing: StudioSpace.s4) {
+                    HomePasteCard()
+                    SnapShelf {
+                        ForEach(tiles) { action in
+                            HomeCreateTile(action: action, fillsHeight: true)
+                                .containerRelativeFrame(.horizontal, count: 4, span: 3, spacing: StudioSpace.s3)
+                        }
+                    }
                 }
             }
         }
@@ -246,8 +259,10 @@ struct HomePasteCard: View {
 /// One type to create: glyph, name, a line about it.
 struct HomeCreateTile: View {
     @Environment(AppModel.self) private var app
-    @ScaledMetric(relativeTo: .body) private var glyphSize: CGFloat = 40
+    @ScaledMetric(relativeTo: .body) private var glyphSize: CGFloat = StudioSpace.s10
     let action: CreateAction
+    /// In a shelf, every tile is as tall as the tallest.
+    var fillsHeight = false
 
     var body: some View {
         Button {
@@ -278,6 +293,7 @@ struct HomeCreateTile: View {
                         .imageScale(.small)
                         .foregroundStyle(Color.studioText3)
                 }
+                .frame(maxHeight: fillsHeight ? .infinity : nil, alignment: .top)
             }
         }
         .buttonStyle(StudioPressStyle(scale: 0.98))
@@ -290,10 +306,13 @@ struct HomeCreateTile: View {
 // MARK: - Statistics
 
 /// "All your resources": clicks and visitors with 30-day sparklines, and
-/// the top performer.
+/// the top performer. On iPhone the three cards are a snapping shelf, one
+/// card and the edge of the next, so the section stays one screen tall;
+/// at accessibility sizes they stack.
 struct HomeStatsSection: View {
     let snapshot: HomeModel.Snapshot
     let columns: Int
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioSpace.s5) {
@@ -301,26 +320,41 @@ struct HomeStatsSection: View {
                             title: String(localized: "All your "),
                             accent: String(localized: "resources."))
 
-            Grid(horizontalSpacing: StudioSpace.s4, verticalSpacing: StudioSpace.s4) {
-                if columns >= 3 {
-                    GridRow {
+            if columns == 1, !typeSize.isAccessibilitySize {
+                SnapShelf {
+                    Group {
                         clicks
                         visitors
                         top
                     }
-                } else if columns == 2 {
-                    GridRow {
-                        clicks
-                        visitors
-                    }
-                    GridRow {
-                        top.gridCellColumns(2)
-                    }
-                } else {
-                    GridRow { clicks }
-                    GridRow { visitors }
-                    GridRow { top }
+                    .containerRelativeFrame(.horizontal, count: 6, span: 5, spacing: StudioSpace.s3)
                 }
+            } else {
+                grid
+            }
+        }
+    }
+
+    private var grid: some View {
+        Grid(horizontalSpacing: StudioSpace.s4, verticalSpacing: StudioSpace.s4) {
+            if columns >= 3 {
+                GridRow {
+                    clicks
+                    visitors
+                    top
+                }
+            } else if columns == 2 {
+                GridRow {
+                    clicks
+                    visitors
+                }
+                GridRow {
+                    top.gridCellColumns(2)
+                }
+            } else {
+                GridRow { clicks }
+                GridRow { visitors }
+                GridRow { top }
             }
         }
     }

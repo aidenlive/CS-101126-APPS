@@ -73,8 +73,10 @@ The tests find things by accessibility identifier first. If an identifier is mis
 
 | Identifier | On |
 |---|---|
-| `nav.<destination>` | The iPhone "More" row for a destination. Destinations: `home`, `links`, `statistics`, `qrCodes`, `pages`, `account`, `settings`, `workspace`, `inbox`, `uploads`. Sidebar items and tabs are system-drawn `Tab`s with no identifier: the harness finds them by title (`Destination.title` / `tabTitle`, which mirror `AppDestination`). |
-| `screen.<destination>` | The root content of each destination. `DestinationView` stamps it for More/sidebar destinations; the four tab roots (Home, Links, Pages, QR Codes) stamp it on their primary content, because an identifier on a `NavigationStack`/`NavigationSplitView` doesn't surface. A destination also counts as open when its navigation title shows (navigation bar on iOS, window title on Mac), a marker only it has (`links.create`, `qr.create`, `pages.create`, `account.delete`) exists, or its sidebar row is selected. |
+| `nav.<destination>` | The iPhone Library hub row for a destination (`nav.pages`, `nav.qrCodes`, `nav.statistics`, `nav.uploads`, …). `nav.account` is the account avatar on Home and Library. Sidebar items and tabs (Home · Links · Library · Search on iPhone) are system-drawn `Tab`s with no identifier: the harness finds them by title (`Destination.title`, which mirrors `AppDestination`). |
+| `account.sheet.<destination>` | A row in the account sheet: `inbox`, `workspace`, `settings` (Preferences) and `account` (Account & Security). The sheet's list is `account.sheet`, its ✕ `account.sheet.close`, Sign Out `account.sheet.signOut`. |
+| `screen.library`, `screen.search` | The Library hub and the Search tab. `shell.create` is the `+` menu; `home.inbox` is Home's bell. |
+| `screen.<destination>` | The root content of each destination. `DestinationView` stamps it for stack-free destinations (Library, account sheet, sidebar); the screens that own their navigation (Home, Links, Pages, QR Codes) stamp it on their primary content, because an identifier on a `NavigationStack`/`NavigationSplitView` doesn't surface. A destination also counts as open when its navigation title shows (navigation bar on iOS, window title on Mac), a marker only it has (`links.create`, `qr.create`, `pages.create`, `account.delete`) exists, or its sidebar row is selected. |
 | `auth.signIn`, `auth.signUp` | The sign-in and sign-up forms. |
 | `auth.toSignUp` | The "Create an account" button. |
 | `links.row.<n>` | Rows of the Links list. `n` is 0 for the newest. |

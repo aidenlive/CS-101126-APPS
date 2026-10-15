@@ -2,9 +2,10 @@ import SwiftUI
 import StudioKit
 import CardsiteKit
 
-/// Home's search results on iPhone: destinations, create actions and the
-/// workspace's links, in a native list. Links push their detail in Home's
-/// stack.
+/// The Search tab's results: destinations, create actions and the
+/// workspace's links, in a native list. Links push their detail in the
+/// Search tab's stack; a destination opens through the router (its tab, its
+/// sidebar item, or pushed onto Library on iPhone).
 struct QuickSearchResults: View {
     @Environment(AppModel.self) private var app
     @Environment(QuickSearchModel.self) private var search

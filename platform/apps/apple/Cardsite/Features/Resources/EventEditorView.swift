@@ -96,7 +96,7 @@ struct EventEditorView: View {
         @Bindable var model = model
         ResourceEditorScaffold(kind: .event, model: model, list: list, onCreated: onCreated) { item in
             if let resource = item.link {
-                actions(for: resource)
+                heroAction(for: resource)
             }
         } fields: {
             Section {
@@ -104,7 +104,9 @@ struct EventEditorView: View {
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
             } header: {
-                EditorSectionHeader(String(localized: "Event page"))
+                EditorSectionHeader(String(localized: "Preview"))
+            } footer: {
+                Text("The event page as visitors see it, in the event’s own time zone.")
             }
 
             Section {
@@ -174,21 +176,20 @@ struct EventEditorView: View {
         #endif
     }
 
+    /// The type's own hero button, beside Copy Link / Open / Card.
     @ViewBuilder
-    private func actions(for resource: ManagedResource) -> some View {
+    private func heroAction(for resource: ManagedResource) -> some View {
         #if os(iOS)
         Button {
             isAddingToCalendar = true
         } label: {
             Label("Add to Calendar", systemImage: "calendar.badge.plus")
         }
-        .buttonStyle(StudioButtonStyle(.outline))
         #else
         ShareLink(item: RemoteCalendarFile(client: list.client, slug: resource.slug, name: resource.event.name),
                   preview: SharePreview(resource.event.name.isEmpty ? String(localized: "Event") : resource.event.name)) {
             Label("Share .ics", systemImage: "calendar.badge.plus")
         }
-        .buttonStyle(StudioButtonStyle(.outline))
         .disabled(!resource.isEnabled)
         .help(resource.isEnabled
               ? String(localized: "Shares the calendar file visitors download.")
@@ -259,73 +260,98 @@ struct EventEditorView: View {
 
 // MARK: - Preview card
 
-/// The event page as visitors see it, from Studio surfaces: a date tile,
-/// the name, the time range in the event's zone, the place and the note.
+/// The event as a ticket, live as you type: a date block (month, day,
+/// weekday) torn off by a perforation, then the name, the time range with
+/// the event's time zone, and the place. Opaque Studio surfaces; before a
+/// name is typed it shows the ticket's shape in muted ink.
 struct EventPreviewCard: View {
     let event: EventSettings
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .title) private var stubWidth: CGFloat = StudioSpace.s16 + StudioSpace.s4
+
     var body: some View {
-        StudioCard {
-            if event.name.trimmingCharacters(in: .whitespaces).isEmpty {
-                Text("Name the event to see its page.")
-                    .studioText(.uiSm)
-                    .foregroundStyle(Color.studioText3)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, StudioSpace.s4)
-            } else {
-                HStack(alignment: .top, spacing: StudioSpace.s4) {
-                    if let start = event.startDate {
-                        VStack(spacing: StudioSpace.s1) {
-                            Text(start.formatted(Date.FormatStyle(timeZone: zone).month(.abbreviated)))
-                                .studioText(.label)
-                                .foregroundStyle(Color.studioAccentInk)
-                            Text(start.formatted(Date.FormatStyle(timeZone: zone).day()))
-                                .studioText(.titleSm)
-                                .foregroundStyle(Color.studioAccentInk)
-                                .monospacedDigit()
-                        }
-                        .padding(.horizontal, StudioSpace.s3)
-                        .padding(.vertical, StudioSpace.s2)
-                        .background(Color.studioAccent, in: RoundedRectangle(cornerRadius: StudioRadius.md, style: .continuous))
-                        .accessibilityHidden(true)
-                    }
-                    VStack(alignment: .leading, spacing: StudioSpace.s2) {
-                        Text(verbatim: event.name)
-                            .studioText(.titleSm)
-                            .foregroundStyle(Color.studioText)
-                            .fixedSize(horizontal: false, vertical: true)
-                        if let range = timeRange {
-                            line(range, systemImage: "clock")
-                        }
-                        if !event.location.trimmingCharacters(in: .whitespaces).isEmpty {
-                            line(event.location, systemImage: "mappin.and.ellipse")
-                        }
-                        if !event.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            Text(verbatim: event.note)
-                                .studioText(.uiSm)
-                                .foregroundStyle(Color.studioText2)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        Label("Add to calendar", systemImage: "calendar.badge.plus")
-                            .studioText(.uiSm)
-                            .foregroundStyle(Color.studioAccentLine)
-                            .padding(.top, StudioSpace.s1)
-                    }
-                }
-            }
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: 0))
+
+        layout {
+            dateStub
+            Perforation(isVertical: !dynamicTypeSize.isAccessibilitySize)
+            details
         }
+        // Stub, perforation and body share one height.
+        .fixedSize(horizontal: false, vertical: true)
+        .background(Color.studioSurface, in: RoundedRectangle(cornerRadius: StudioRadius.xl, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: StudioRadius.xl, style: .continuous)
+                .strokeBorder(Color.studioBorder, lineWidth: 0.5)
+        }
+        .animation(reduceMotion ? nil : StudioAnimation.base, value: event)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text("Event page preview"))
     }
 
-    private var zone: TimeZone { TimeZone(identifier: event.timezone) ?? .current }
+    // MARK: Parts
 
-    private var timeRange: String? {
-        guard let start = event.startDate else { return nil }
-        var style = Date.FormatStyle(date: .abbreviated, time: .shortened)
-        style.timeZone = zone
-        guard let end = event.endDate, end > start else { return start.formatted(style) }
-        return (start..<end).formatted(Date.IntervalFormatStyle(date: .abbreviated, time: .shortened, timeZone: zone))
+    @ViewBuilder
+    private var dateStub: some View {
+        VStack(spacing: StudioSpace.s1) {
+            if let start = event.startDate {
+                Text(start.formatted(Date.FormatStyle(timeZone: zone).month(.abbreviated)))
+                    .studioText(.label)
+                Text(start.formatted(Date.FormatStyle(timeZone: zone).day()))
+                    .studioText(.display)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                Text(start.formatted(Date.FormatStyle(timeZone: zone).weekday(.abbreviated)))
+                    .studioText(.label)
+            } else {
+                Image(systemName: "calendar")
+                    .imageScale(.large)
+            }
+        }
+        .foregroundStyle(hasName ? Color.studioAccentInk : Color.studioText3)
+        .frame(minWidth: stubWidth)
+        .frame(maxHeight: .infinity)
+        .padding(StudioSpace.s4)
+        .background(hasName ? Color.studioAccent : Color.studioSurface2)
+        .clipShape(UnevenRoundedRectangle(
+            topLeadingRadius: StudioRadius.xl,
+            bottomLeadingRadius: dynamicTypeSize.isAccessibilitySize ? 0 : StudioRadius.xl,
+            bottomTrailingRadius: 0,
+            topTrailingRadius: dynamicTypeSize.isAccessibilitySize ? StudioRadius.xl : 0,
+            style: .continuous
+        ))
+        .accessibilityHidden(true)
+    }
+
+    private var details: some View {
+        VStack(alignment: .leading, spacing: StudioSpace.s2) {
+            Text(verbatim: hasName ? event.name : String(localized: "Your event"))
+                .studioText(.title)
+                .foregroundStyle(hasName ? Color.studioText : Color.studioText3)
+                .fixedSize(horizontal: false, vertical: true)
+            if let when = dateLine {
+                line(when, systemImage: "calendar")
+            }
+            if let time = timeLine {
+                line(time, systemImage: "clock")
+            }
+            if !event.location.trimmingCharacters(in: .whitespaces).isEmpty {
+                line(event.location, systemImage: "mappin.and.ellipse")
+            }
+            if !event.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(verbatim: event.note)
+                    .studioText(.uiSm)
+                    .foregroundStyle(Color.studioText3)
+                    .lineLimit(3)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(StudioSpace.s5)
     }
 
     private func line(_ text: String, systemImage: String) -> some View {
@@ -337,7 +363,74 @@ struct EventPreviewCard: View {
                 .foregroundStyle(Color.studioAccentLine)
         }
         .studioText(.ui)
-        .foregroundStyle(Color.studioText)
+        .foregroundStyle(Color.studioText2)
+    }
+
+    // MARK: Text
+
+    private var hasName: Bool { !event.name.trimmingCharacters(in: .whitespaces).isEmpty }
+
+    private var zone: TimeZone { TimeZone(identifier: event.timezone) ?? .current }
+
+    /// "Wed 20 Nov 2030", or "20 – 22 Nov 2030" across days.
+    private var dateLine: String? {
+        guard let start = event.startDate else { return nil }
+        var calendar = Calendar.current
+        calendar.timeZone = zone
+        if let end = event.endDate, end > start, !calendar.isDate(start, inSameDayAs: end) {
+            return (start..<end).formatted(Date.IntervalFormatStyle(date: .abbreviated, time: .omitted, timeZone: zone))
+        }
+        return start.formatted(Date.FormatStyle(timeZone: zone).weekday(.abbreviated).day().month(.abbreviated).year())
+    }
+
+    /// "18:00 – 21:00 GMT": the range in the event's own zone, named.
+    private var timeLine: String? {
+        guard let start = event.startDate else { return nil }
+        let time = Date.FormatStyle(timeZone: zone).hour().minute()
+        let zoneName = zone.abbreviation(for: start) ?? zone.identifier
+        guard let end = event.endDate, end > start else {
+            return "\(start.formatted(time)) \(zoneName)"
+        }
+        return "\(start.formatted(time)) – \(end.formatted(time)) \(zoneName)"
+    }
+}
+
+/// The tear line between the ticket's stub and its body.
+private struct Perforation: View {
+    let isVertical: Bool
+
+    var body: some View {
+        Group {
+            if isVertical {
+                Line(isVertical: true)
+                    .stroke(Color.studioBorderStrong, style: StrokeStyle(lineWidth: 1, dash: [StudioSpace.s1, StudioSpace.s1]))
+                    .frame(width: 1)
+                    .frame(maxHeight: .infinity)
+                    .padding(.vertical, StudioSpace.s3)
+            } else {
+                Line(isVertical: false)
+                    .stroke(Color.studioBorderStrong, style: StrokeStyle(lineWidth: 1, dash: [StudioSpace.s1, StudioSpace.s1]))
+                    .frame(height: 1)
+                    .padding(.horizontal, StudioSpace.s3)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private struct Line: Shape {
+        let isVertical: Bool
+
+        func path(in rect: CGRect) -> Path {
+            var path = Path()
+            if isVertical {
+                path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+                path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+            } else {
+                path.move(to: CGPoint(x: rect.minX, y: rect.midY))
+                path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+            }
+            return path
+        }
     }
 }
 

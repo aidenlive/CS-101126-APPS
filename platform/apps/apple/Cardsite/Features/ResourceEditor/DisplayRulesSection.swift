@@ -202,7 +202,9 @@ struct MultiSelectSheet: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button { dismiss() } label: {
+                        EditorBarLabel(title: String(localized: "Done"), systemImage: "checkmark")
+                    }
                 }
                 if !selection.isEmpty {
                     ToolbarItem(placement: .destructiveAction) {

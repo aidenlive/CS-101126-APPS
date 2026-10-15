@@ -9,8 +9,10 @@ import CardsiteKit
  and each surface only decides how to draw it:
 
    · the iPad and Mac sidebar (sections by group)
-   · the iPhone tab bar (Home · Links · Pages · QR) and More (the rest, grouped)
-   · the ⌘K command palette and iPhone search on Home
+   · the iPhone tab bar (Home · Links · Library, plus the Search tab) and
+     the Library hub, which lists everything else (LibraryGroup)
+   · the account sheet (Inbox, Workspace, Preferences, Account & Security)
+   · the ⌘K command palette and the Search tab
    · the Go menu and ⌘1…⌘9
 
  Named `AppDestination` rather than `Destination` because CardsiteKit
@@ -19,26 +21,28 @@ import CardsiteKit
 
  ADDING A DESTINATION is one case below plus one line in `DestinationView`.
  Fill in its group, title and glyph (the switches won't compile until you
- do), and `iPhoneTab` if it earns a tab.
+ do), and its Library group if it belongs in the hub.
 
- THE ROOT CONTRACT. A `.tab` destination's view is a self-contained
- screen that owns its navigation (a NavigationStack or NavigationSplitView).
- A `.more` destination's view must NOT contain a NavigationStack: the shell
- wraps it in one when it is a sidebar item, and pushes it onto More's stack
- on iPhone. Nesting stacks is unsupported in SwiftUI. Most feature folders
- already ship both shapes (`WorkspaceScreen` wraps `WorkspaceView`); register
- the inner one.
+ THE ROOT CONTRACT. An `ownsNavigation` destination's view is a
+ self-contained screen that owns its navigation (a NavigationStack or
+ NavigationSplitView). Every other destination's view must NOT contain a
+ NavigationStack: the shell wraps it in one when it is a sidebar item, and
+ pushes it onto the Library stack (or the account sheet's) on iPhone.
+ Nesting stacks is unsupported in SwiftUI. Most feature folders already
+ ship both shapes (`WorkspaceScreen` wraps `WorkspaceView`); register the
+ inner one.
 
  ORDER. `allCases` order is sidebar order within a group, and the groups
  run Overview, Content, Organise, Account, as on the web. Content follows
  the web's order (navigation.ts): vCards, payment links, events, splash
  pages, static pages, file links, then uploads and data records.
 
- IDENTIFIERS. Each More row carries `nav.<rawValue>` and each destination's
- root content `screen.<rawValue>`, which CardsiteUITests finds them by
- (CardsiteUITests/Harness.swift). Sidebar items and tabs are system-drawn
- and carry no identifier; the tests find them by `title` and `tabTitle`, so
- keep those and the raw values in step with the harness's `Destination`.
+ IDENTIFIERS. Each Library row carries `nav.<rawValue>`, each account-sheet
+ row `account.sheet.<rawValue>`, the avatar `nav.account`, and each
+ destination's root content `screen.<rawValue>`, which CardsiteUITests
+ finds them by (CardsiteUITests/Harness.swift). Sidebar items and tabs are
+ system-drawn and carry no identifier; the tests find them by `title`, so
+ keep titles and raw values in step with the harness's `Destination`.
  */
 enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
     case home
@@ -84,7 +88,7 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
             }
         }
 
-        /// The heading in More and in search, where every group is titled.
+        /// The heading in search and the palette, where every group is titled.
         var title: String {
             sidebarTitle ?? String(localized: "Overview")
         }
@@ -95,11 +99,16 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
     }
 
     /// Where a destination sits on iPhone.
-    enum IPhonePlacement: Sendable {
-        /// A tab of its own. Keep these to four, plus More.
+    enum PhonePlacement: Sendable {
+        /// A tab of its own: Home and Links. The tab bar is exactly these,
+        /// Library and the Search tab.
         case tab
-        /// A row in More.
-        case more
+        /// Reached through the Library tab: a hub row, or pushed onto
+        /// Library's stack by `ShellRouter.open(_:)`.
+        case library
+        /// A row in the account sheet (the avatar), and pushed onto
+        /// Library's stack when opened from search, a deep link or a test.
+        case account
     }
 
     var group: Group {
@@ -112,7 +121,7 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         }
     }
 
-    /// The name in the sidebar, the palette, More and the Go menu.
+    /// The name in the sidebar, the palette, Library and the Go menu.
     var title: String {
         switch self {
         case .home: return String(localized: "Home")
@@ -132,14 +141,6 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         case .activity: return String(localized: "Activity Logs")
         case .account: return String(localized: "Account")
         case .preferences: return String(localized: "Preferences")
-        }
-    }
-
-    /// The tab bar's shorter name, where the full one is too wide.
-    var tabTitle: String {
-        switch self {
-        case .qrCodes: return String(localized: "QR")
-        default: return title
         }
     }
 
@@ -165,15 +166,21 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         }
     }
 
-    var iPhoneTab: IPhonePlacement {
+    var phonePlacement: PhonePlacement {
         switch self {
-        case .home, .links, .pages, .qrCodes: return .tab
-        case .statistics, .vcards, .paymentLinks, .events, .splashPages, .staticPages, .fileLinks,
-             .uploads, .data, .projects, .domains, .pixels,
-             .workspace, .inbox, .activity, .account, .preferences:
-            return .more
+        case .home, .links: return .tab
+        case .pages, .qrCodes, .statistics, .vcards, .paymentLinks, .events, .splashPages, .staticPages,
+             .fileLinks, .uploads, .data, .projects, .domains, .pixels, .activity:
+            return .library
+        case .workspace, .inbox, .account, .preferences:
+            return .account
         }
     }
+
+    /// Shown in the tab bar (iPhone, and iPad's tab-bar mode) as well as the
+    /// sidebar. Everything else is sidebar-only on iPad and Mac
+    /// (`defaultVisibility(.hidden, for: .tabBar)`).
+    var isInTabBar: Bool { phonePlacement == .tab }
 
     /// ⌘ plus this key, from the Go menu on Mac and the shortcut HUD on iPad.
     /// ⌘1…⌘9 belong to the main destinations; ⌘N, ⇧⌘N and ⌘K are taken.
@@ -247,12 +254,30 @@ enum AppDestination: String, CaseIterable, Hashable, Identifiable, Sendable {
         }
     }
 
-    /// The tab bar's own roots own their navigation; everything else is
-    /// stack-free content the shell wraps or pushes (see the root contract).
-    var ownsNavigation: Bool { iPhoneTab == .tab }
+    /// Screens that bring their own NavigationStack or NavigationSplitView
+    /// (see the root contract). Everything else is stack-free content the
+    /// shell wraps or pushes.
+    var ownsNavigation: Bool {
+        switch self {
+        case .home, .links, .pages, .qrCodes: return true
+        default: return false
+        }
+    }
 
-    /// `nav.<rawValue>`: the sidebar item, tab or More row.
+    /// True when iPhone can push this destination onto the Library stack.
+    ///
+    /// Pages (a NavigationSplitView) and QR Codes (a NavigationStack) can't
+    /// be pushed without nesting stacks, so until they ship stack-free
+    /// roots the router selects their own tab instead, which the tab bar
+    /// doesn't show (`defaultVisibility(.hidden, for: .tabBar)`). When they
+    /// do, register those roots for iPhone in `DestinationView` and drop
+    /// them from `ownsNavigation` for compact widths.
+    var pushesOntoLibrary: Bool { !ownsNavigation }
+
+    /// `nav.<rawValue>`: the Library hub row (the avatar for `.account`).
     var navIdentifier: String { "nav.\(rawValue)" }
+    /// `account.sheet.<rawValue>`: the account sheet's row.
+    var accountSheetIdentifier: String { "account.sheet.\(rawValue)" }
     /// `screen.<rawValue>`: the destination's root view.
     var screenIdentifier: String { "screen.\(rawValue)" }
 
@@ -331,7 +356,7 @@ struct DestinationRoot: View {
 
 // MARK: - Create actions
 
-/// Everything the app can create, for the File menu, the New menus, the
+/// Everything the app can create, for the File menu, the `+` menus, the
 /// palette, search and Home's quick-create tiles. Add a case when a new
 /// editor lands, with the composer that opens it.
 enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
@@ -350,6 +375,14 @@ enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
     /// The most-used types, for Home's quick-create tiles. The New menus,
     /// the File menu and the palette list every case.
     static let featured: [CreateAction] = [.shortLink, .qrCode, .bioPage, .vcard, .file]
+
+    /// The `+` menu's sections: what you publish, what people save or pay,
+    /// and what you host.
+    static let menuGroups: [[CreateAction]] = [
+        [.shortLink, .qrCode, .bioPage],
+        [.vcard, .event, .paymentLink],
+        [.file, .staticPage, .splash],
+    ]
 
     /// The resource type this action creates, for the six resource kinds.
     var resourceKind: ResourceKind? {
@@ -456,44 +489,77 @@ enum CreateAction: String, CaseIterable, Hashable, Identifiable, Sendable {
 /// The tab bar and sidebar selection.
 enum MainTab: Hashable, Sendable {
     case destination(AppDestination)
-    /// iPhone only: everything that isn't a tab.
-    case more
+    /// The Library hub: a tab on iPhone (and in iPad's tab-bar mode), not
+    /// in the sidebar, which lists every destination itself.
+    case library
+    /// The search tab (`Tab(role: .search)`); the sidebar's search field
+    /// on iPad and Mac.
+    case search
 
     init(storageKey: String) {
         if let destination = AppDestination(rawValue: storageKey) {
             self = .destination(destination)
+        } else if storageKey == Self.searchKey {
+            self = .search
         } else {
-            self = .more
+            self = .library
         }
     }
+
+    static let libraryKey = "library"
+    static let searchKey = "search"
 }
 
-/// Navigation state for one window: the selected tab, More's stack, the
-/// palette and the link opened from it. Lives in `MainView`, reaches the
-/// screens through the environment and the menu bar through
-/// `focusedSceneValue`, so every surface navigates the same way.
+/// Navigation state for one window: the selected tab, Library's stack, the
+/// account sheet, the palette and the link opened from it. Lives in
+/// `MainView`, reaches the screens through the environment and the menu bar
+/// through `focusedSceneValue`, so every surface navigates the same way.
 @MainActor
 @Observable
 final class ShellRouter {
     var tab: MainTab = .destination(.home)
-    var morePath: [AppDestination] = []
+    /// Library's stack on iPhone: destinations (`AppDestination`) and the
+    /// resources opened from the Recently edited shelf (`Resource`).
+    var libraryPath = NavigationPath()
+    /// The destination most recently pushed onto `libraryPath`, so the tab
+    /// can be restored and moved to the sidebar when the width changes.
+    private(set) var libraryTop: AppDestination?
     var isPalettePresented = false
+    /// The account sheet, from the avatar on Home and Library.
+    var isAccountPresented = false
     /// A link opened from the palette, shown in a sheet over any tab.
     var presentedLink: Resource?
     /// True on iPhone and in compact-width iPad windows, where the shell is
-    /// a tab bar with More rather than a sidebar.
+    /// a tab bar (Home · Links · Library · Search) rather than a sidebar.
     private(set) var isCompact = false
 
-    /// Goes to a destination the way the current layout shows it.
+    /// Goes to a destination the way the current layout shows it: its
+    /// sidebar item on iPad and Mac; on iPhone its tab, or pushed onto
+    /// Library's stack. Deep links, the palette, search, the Go menu and
+    /// UI tests' `-CardsiteOpen` all come through here.
     func open(_ destination: AppDestination) {
         isPalettePresented = false
         presentedLink = nil
-        if isCompact && destination.iPhoneTab == .more {
-            morePath = [destination]
-            tab = .more
+        isAccountPresented = false
+        if isCompact && destination.phonePlacement != .tab && destination.pushesOntoLibrary {
+            libraryPath = NavigationPath([destination])
+            libraryTop = destination
+            tab = .library
         } else {
             tab = .destination(destination)
         }
+    }
+
+    /// A Library hub row: pushes the destination onto Library's stack, in
+    /// any layout that shows the hub. Screens that own their navigation
+    /// (Pages, QR Codes) open as their own tab instead.
+    func showFromLibrary(_ destination: AppDestination) {
+        guard destination.pushesOntoLibrary else {
+            open(destination)
+            return
+        }
+        libraryPath.append(destination)
+        libraryTop = destination
     }
 
     func togglePalette() {
@@ -502,28 +568,34 @@ final class ShellRouter {
 
     /// Moves the selection between the two structures when the width
     /// class changes, the way Apple's sidebar-adaptable sample does: a
-    /// More destination becomes More's stack on iPhone, and its own
-    /// sidebar item again on iPad and Mac.
+    /// sidebar-only destination becomes Library's stack on iPhone, and its
+    /// own sidebar item again on iPad and Mac.
     func adapt(isCompact compact: Bool) {
         isCompact = compact
         switch tab {
-        case .destination(let destination) where compact && destination.iPhoneTab == .more:
-            morePath = [destination]
-            tab = .more
-        case .more where !compact:
-            tab = .destination(morePath.last ?? .home)
-            morePath = []
+        case .destination(let destination)
+            where compact && destination.phonePlacement != .tab && destination.pushesOntoLibrary:
+            libraryPath = NavigationPath([destination])
+            libraryTop = destination
+            tab = .library
+        case .library where !compact && !libraryPath.isEmpty:
+            tab = .destination(libraryTop ?? .home)
+            libraryPath = NavigationPath()
+            libraryTop = nil
         default:
             break
         }
     }
 
     /// What `@SceneStorage` keeps: the destination on screen, even when it
-    /// is inside More.
+    /// is inside Library.
     var storageKey: String {
         switch tab {
         case .destination(let destination): return destination.rawValue
-        case .more: return morePath.last?.rawValue ?? "more"
+        case .search: return MainTab.searchKey
+        case .library:
+            guard !libraryPath.isEmpty, let libraryTop else { return MainTab.libraryKey }
+            return libraryTop.rawValue
         }
     }
 }

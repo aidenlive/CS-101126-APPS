@@ -126,8 +126,11 @@ private struct ResourceListView: View {
             NavigationStack {
                 StatisticsScreen(linkID: item.id, subtitle: model.displayAddress(for: item, addresses: app.addresses))
                     .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { statisticsFor = nil }
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button { statisticsFor = nil } label: {
+                                EditorBarLabel(title: String(localized: "Close"), systemImage: "xmark")
+                            }
+                            .keyboardShortcut(.cancelAction)
                         }
                     }
             }
