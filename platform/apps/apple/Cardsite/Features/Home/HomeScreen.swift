@@ -74,15 +74,16 @@ struct HomeScreen: View {
         }
         #endif
         ToolbarItemGroup(placement: .primaryAction) {
-            if !router.isCompact {
-                Button {
-                    router.togglePalette()
-                } label: {
-                    Label("Search", systemImage: "magnifyingglass")
-                }
-                .help("Search pages, actions and links (⌘K)")
+            #if os(macOS)
+            // iPhone and iPad have the Search tab beside the tab bar; this
+            // would be a second magnifier there.
+            Button {
+                router.togglePalette()
+            } label: {
+                Label("Search", systemImage: "magnifyingglass")
             }
-            #if !os(macOS)
+            .help("Search pages, actions and links (⌘K)")
+            #else
             InboxBellLink()
             #endif
             CreateMenu()
