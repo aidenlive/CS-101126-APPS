@@ -254,21 +254,14 @@ jobs:
         run: |
           set -o pipefail
           rm -rf screens.xcresult
-          # Watchdog: when the app pins a core (the iPhone page editor did
-          # under XCTest), sample it once, symbolicated, for the screens
-          # branch.
-          mkdir -p "screens/${{ matrix.device.slug }}/failures"
-          ( n=0; while [ $n -lt 3 ]; do sleep 10
+          # Watchdog: the iPhone page editor left the app's main thread
+          # "busy" for XCTest without using CPU, so sample on a clock and
+          # keep only samples whose main thread isn't idle in its run loop.
+          D="screens/${{ matrix.device.slug }}/failures"; mkdir -p "$D" "$D/samples"
+          ( i=0; while true; do sleep 30
               PID=$(pgrep -f "Cardsite.app/Cardsite" | head -n 1)
               [ -n "$PID" ] || continue
-              CPU=$(ps -o %cpu= -p "$PID" | tr -d ' ' | cut -d. -f1)
-              if [ "${CPU:-0}" -ge 80 ]; then hi=$((${hi:-0}+1)); else hi=0; fi
-              # Two readings in a row (20 s): not a launch or a transition.
-              if [ "${hi:-0}" -ge 2 ]; then
-                n=$((n+1)); hi=0
-                sample "$PID" 4 -file "screens/${{ matrix.device.slug }}/failures/busy-sample-$n.txt" >/dev/null 2>&1 || true
-                sleep 60
-              fi
+              i=$((i+1)); sample "$PID" 1 -file "$D/samples/s-$i.txt" >/dev/null 2>&1 || true
             done ) &
           WATCHDOG=$!
           trap 'kill $WATCHDOG 2>/dev/null || true' EXIT
@@ -307,6 +300,29 @@ jobs:
           ps -o pid,%cpu,etime,command -p "$PID" >> "$D/editor-diagnosis.txt" 2>&1 || true
           [ -n "$PID" ] && sample "$PID" 5 -file "$D/editor-sample.txt" >/dev/null 2>&1 || true
           xcrun simctl terminate "$UDID" com.cardsite.app 2>/dev/null || true
+
+      - name: keep busy samples
+        if: always() && matrix.device.platform == 'iOS'
+        continue-on-error: true
+        run: |
+          D="screens/${{ matrix.device.slug }}/failures"
+          python3 - "$D" <<'PY'
+          import os, re, sys
+          d = sys.argv[1]; src = os.path.join(d, "samples"); kept = 0
+          for name in sorted(os.listdir(src) if os.path.isdir(src) else []):
+              text = open(os.path.join(src, name), errors="replace").read()
+              main = text.split("Thread_", 2)
+              block = main[1] if len(main) > 1 else ""
+              total = re.search(r"\+ (\d+) start", block)
+              idle = re.search(r"(\d+) __CFRunLoopServiceMachPort", block)
+              if total and (not idle or int(idle.group(1)) < 0.9 * int(total.group(1))) and kept < 4:
+                  kept += 1
+                  os.rename(os.path.join(src, name), os.path.join(d, "busy-" + name))
+          for name in os.listdir(src) if os.path.isdir(src) else []:
+              os.remove(os.path.join(src, name))
+          if os.path.isdir(src): os.rmdir(src)
+          print("kept", kept)
+          PY
 
       - name: export screenshots
         if: always()
