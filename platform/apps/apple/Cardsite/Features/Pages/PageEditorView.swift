@@ -77,7 +77,10 @@ struct PageCanvasEditor: View {
 
     var body: some View {
         diagToolbar
-        .background { if !Diag.noShortcuts { BlockShortcuts(editor: editor) } }
+        // Keyboard commands for blocks: iPad and Mac. On iPhone they only
+        // added hidden zero-size buttons to a screen that CI caught in a
+        // layout loop.
+        .background { if !Diag.noShortcuts && !isCompact { BlockShortcuts(editor: editor) } }
         .task { [editor, pages] in
             await editor.loadIfNeeded()
             await pages.loadCatalogIfNeeded()
@@ -410,7 +413,7 @@ struct PageCanvasEditor: View {
             moreItem
         }
         #else
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), !isCompact {
             view.toolbar {
                 closeItem
                 liveItem
