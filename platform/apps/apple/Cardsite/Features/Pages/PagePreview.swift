@@ -23,8 +23,7 @@ struct PageCanvasPreview: View {
     var body: some View {
         ZStack {
             if let url = app.addresses.url(for: page.slug) {
-                PageWebView(url: url, revision: revision, bottomInset: bottomInset,
-                            isLoading: $isLoading, failure: $failure)
+                webPreview(url)
                     // One element, not the page's DOM: the blocks are
                     // edited (and read) from the palette and outline, and a
                     // deep web tree stalled accessibility queries.
@@ -64,6 +63,43 @@ struct PageCanvasPreview: View {
                 .padding(StudioSpace.s5)
             }
         }
+    }
+}
+
+extension PageCanvasPreview {
+    /// The live page. Fixture runs draw a native stand-in instead: CI
+    /// showed XCTest's accessibility snapshots stalling on the iPhone
+    /// while a WKWebView was on screen (the editor itself sat idle when
+    /// opened directly), and a fixture has no live page to show anyway.
+    @ViewBuilder
+    func webPreview(_ url: URL) -> some View {
+        #if DEBUG
+        if FixtureMode.isEnabled {
+            VStack(spacing: StudioSpace.s2) {
+                Text(verbatim: (url.host() ?? "") + url.path())
+                    .studioText(.titleSm)
+                    .foregroundStyle(Color.studioText)
+                Text("Fixture preview. A real build shows the live page here.")
+                    .studioText(.ui)
+                    .foregroundStyle(Color.studioText3)
+            }
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, StudioSpace.s6)
+            .padding(.top, StudioSpace.s12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(Color.studioSurface)
+            .accessibilityElement(children: .combine)
+        } else {
+            liveWebView(url)
+        }
+        #else
+        liveWebView(url)
+        #endif
+    }
+
+    private func liveWebView(_ url: URL) -> some View {
+        PageWebView(url: url, revision: revision, bottomInset: bottomInset,
+                    isLoading: $isLoading, failure: $failure)
     }
 }
 
