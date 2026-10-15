@@ -149,7 +149,15 @@ struct PagesStackView: View {
     #endif
 
     @State private var selection: BioPage.ID? = nil
-    @State private var editor: PageEditorModel? = nil
+    /// The open page's editor. A reference the pushed view observes
+    /// itself: CI showed a `navigationDestination` inside Library's stack
+    /// kept the content it was pushed with, so an editor made a moment
+    /// after the push never replaced the spinner.
+    @State private var slot = PageEditorSlot()
+    private var editor: PageEditorModel? {
+        get { slot.editor }
+        nonmutating set { slot.editor = newValue }
+    }
     @State private var isCreating = false
     @State private var pendingDelete: BioPage? = nil
     @State private var actionError: PageActionError? = nil
@@ -202,28 +210,16 @@ struct PagesStackView: View {
         }
     }
 
-    @ViewBuilder
     private func editorView(for id: BioPage.ID) -> some View {
-        if let editor, editor.pageID == id {
-            PageCanvasEditor(
-                editor: editor,
-                isCompact: isCompact,
-                actions: PageEditorActions(
-                    duplicate: { page in Task { await duplicate(page) } },
-                    delete: { page in pendingDelete = page }
-                )
+        PageEditorDestination(
+            slot: slot,
+            pageID: id,
+            isCompact: isCompact,
+            actions: PageEditorActions(
+                duplicate: { page in Task { await duplicate(page) } },
+                delete: { page in pendingDelete = page }
             )
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("page.editor")
-            .id(editor.pageID)
-        } else {
-            // The editor model is made a moment after the push.
-            ProgressView()
-                .controlSize(.large)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.studioBg)
-                .accessibilityLabel(Text("Loading"))
-        }
+        )
     }
 
     private func setEnabled(_ page: BioPage, _ isOn: Bool) async {
@@ -660,6 +656,37 @@ struct CreatePageSheet: View {
             }
         } catch {
             formError = error.localizedDescription
+        }
+    }
+}
+
+/// Holds the pushed page's editor so the pushed view can observe it.
+@MainActor
+@Observable
+final class PageEditorSlot {
+    var editor: PageEditorModel?
+}
+
+/// The page editor pushed from the iPhone's Pages list: the canvas once
+/// its model exists, a spinner for the moment before.
+private struct PageEditorDestination: View {
+    let slot: PageEditorSlot
+    let pageID: BioPage.ID
+    let isCompact: Bool
+    let actions: PageEditorActions
+
+    var body: some View {
+        if let editor = slot.editor, editor.pageID == pageID {
+            PageCanvasEditor(editor: editor, isCompact: isCompact, actions: actions)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("page.editor")
+                .id(editor.pageID)
+        } else {
+            ProgressView()
+                .controlSize(.large)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.studioBg)
+                .accessibilityLabel(Text("Loading"))
         }
     }
 }

@@ -186,9 +186,15 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
             Button {
                 copy(url)
             } label: {
-                Label(copied ? String(localized: "Copied") : ResourceVerb.copyLink.title,
-                      systemImage: copied ? "checkmark" : ResourceVerb.copyLink.systemImage)
-                    .contentTransition(.symbolEffect(.replace))
+                // Spelled out rather than a `Label`: inside a Form row CI
+                // drew the Label as a tall, title-less capsule.
+                HStack(spacing: StudioSpace.s2) {
+                    Image(systemName: copied ? "checkmark" : ResourceVerb.copyLink.systemImage)
+                        .contentTransition(.symbolEffect(.replace))
+                    Text(copied ? String(localized: "Copied") : ResourceVerb.copyLink.title)
+                        .lineLimit(1)
+                }
+                .fixedSize()
             }
             .buttonStyle(HeroActionStyle(prominent: true))
             .fixedSize()
