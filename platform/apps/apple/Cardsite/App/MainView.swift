@@ -180,12 +180,6 @@ struct MainView: View {
         .tabViewSidebarHeader {
             WorkspaceSwitcher()
                 .padding(.bottom, StudioSpace.s2)
-                #if os(macOS)
-                // A30: SwiftUI has no width API for this sidebar, and it
-                // opened about 150 pt wide. The header's minimum width is
-                // the one lever: the column grows to hold it.
-                .frame(minWidth: StudioLayout.sidebarFull - StudioSpace.s10, alignment: .leading)
-                #endif
         }
         // The Search tab takes the field: the sidebar's field on iPad and
         // Mac.
