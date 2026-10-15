@@ -55,7 +55,11 @@ struct QuickSearchResults: View {
         }
         .overlay {
             if search.hasNoResults, !search.searchesLinks || search.links.value != nil {
-                ContentUnavailableView.search(text: search.trimmedQuery)
+                NoMatchesState(query: search.trimmedQuery, actionTitle: String(localized: "Clear Search")) {
+                    search.query = ""
+                }
+                .padding(StudioSpace.s6)
+                .readableWidth(.sheet)
             }
         }
         .task(id: search.query) { [search] in await search.searchLinks() }

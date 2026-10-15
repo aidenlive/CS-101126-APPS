@@ -85,7 +85,7 @@ private struct ResourceListView: View {
         }
         .background(Color.studioBg)
         .pageHeadNavigationTitle(kind.pluralTitle)
-        .searchable(text: $model.searchText, prompt: Text(kind.searchPrompt))
+        .searchFilter(text: $model.searchText, prompt: Text(kind.searchPrompt))
         .task(id: model.searchText) { [model] in
             // Debounced: the server is asked once typing pauses.
             let text = model.searchText
@@ -121,6 +121,11 @@ private struct ResourceListView: View {
                 }
             }
             .cardsiteSheet(.page)
+            #if os(iOS)
+            // Studio detail sheet: full height, with the grabber.
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            #endif
         }
         .sheet(item: $statisticsFor) { item in
             NavigationStack {
@@ -135,6 +140,11 @@ private struct ResourceListView: View {
                     }
             }
             .cardsiteSheet(.page)
+            #if os(iOS)
+            // Studio detail sheet: full height, with the grabber.
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            #endif
         }
         .confirmationDialog(
             kind.deleteConfirmation,
@@ -167,7 +177,7 @@ private struct ResourceListView: View {
                     .studioClearRow()
             }
             if model.visibleItems.isEmpty, !model.searchText.isEmpty {
-                ContentUnavailableView.search(text: model.searchText)
+                NoMatchesState(query: model.searchText) { model.searchText = "" }
                     .studioClearRow()
             }
             Section {

@@ -61,7 +61,9 @@ public struct StudioPageHead<Actions: View>: View {
     }
 
     public var body: some View {
-        let text = VStack(alignment: .leading, spacing: StudioSpace.s3) {
+        // Studio 1.10 rhythm: s2 between kicker, title and description,
+        // with an extra s1 above the description.
+        let text = VStack(alignment: .leading, spacing: StudioSpace.s2) {
             if let kicker { StudioKicker(kicker) }
             if accent.isEmpty {
                 Text(title).studioText(.display)
@@ -74,6 +76,7 @@ public struct StudioPageHead<Actions: View>: View {
                     .foregroundStyle(Color.studioText2)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: 560, alignment: .leading)
+                    .padding(.top, StudioSpace.s1)
             }
         }
 
@@ -290,6 +293,7 @@ public struct StudioTable<Row: Identifiable>: View {
     private let rows: [Row]
 
     @Environment(\.studioViewport) private var viewport
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     public init(caption: String, columns: [StudioColumn<Row>], rows: [Row]) {
         self.caption = caption
@@ -342,29 +346,71 @@ public struct StudioTable<Row: Identifiable>: View {
     private var stacked: some View {
         VStack(spacing: 0) {
             ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                VStack(alignment: .leading, spacing: StudioSpace.s2) {
-                    ForEach(columns) { column in
-                        HStack(alignment: .firstTextBaseline, spacing: StudioSpace.s3) {
-                            Text(column.title)
-                                .studioText(.label)
-                                .foregroundStyle(Color.studioText3)
-                            Spacer(minLength: StudioSpace.s4)
-                            Text(column.value(row))
-                                .studioText(column.isNumeric ? .mono : .ui)
-                                .foregroundStyle(Color.studioText2)
-                                .multilineTextAlignment(.trailing)
-                        }
+                // Studio 1.10 ROW posture, not a form: the first column is
+                // the row's identity and reads as a title; the rest is one
+                // dotted meta line. Same data, list posture.
+                VStack(alignment: .leading, spacing: StudioSpace.s1) {
+                    Text(columns.first.map { $0.value(row) } ?? "")
+                        .studioText(.ui)
+                        .foregroundStyle(Color.studioText)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if columns.count > 1 {
+                        metaLine(for: row)
                     }
                 }
-                .padding(StudioSpace.s4)
+                .padding(.horizontal, StudioSpace.s4)
+                .padding(.vertical, StudioSpace.s3)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityElement(children: .combine)
+                // The meta line drops the column titles visually, so
+                // VoiceOver reads them back: "Title, Column: value, …".
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(spokenRow(row))
 
                 if index < rows.count - 1 {
                     Divider().overlay(Color.studioBorder)
                 }
             }
         }
+    }
+
+    /// The dotted meta line. At accessibility text sizes one line would
+    /// truncate every value, so the values stack instead.
+    @ViewBuilder private func metaLine(for row: Row) -> some View {
+        let rest = Array(columns.dropFirst())
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: StudioSpace.s1) {
+                ForEach(rest) { column in
+                    Text(column.value(row))
+                        .studioText(column.isNumeric ? .mono : .uiSm)
+                        .foregroundStyle(Color.studioText2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        } else {
+            HStack(spacing: StudioSpace.s2) {
+                ForEach(rest) { column in
+                    if column.id != rest.first?.id {
+                        Text("\u{00B7}")
+                            .studioText(.uiSm)
+                            .foregroundStyle(Color.studioText3)
+                    }
+                    Text(column.value(row))
+                        .studioText(column.isNumeric ? .mono : .uiSm)
+                        .foregroundStyle(Color.studioText2)
+                }
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private func spokenRow(_ row: Row) -> String {
+        var parts: [String] = []
+        if let first = columns.first { parts.append(first.value(row)) }
+        for column in columns.dropFirst() {
+            parts.append("\(column.title): \(column.value(row))")
+        }
+        return parts.joined(separator: ", ")
     }
 }
 

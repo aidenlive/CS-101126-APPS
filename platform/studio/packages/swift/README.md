@@ -284,7 +284,6 @@ are omitted.
 | `.studioFloatInset()`, `.studioElevation(.flat/.raised)` | Float inset; opaque-surface shadow tiers |
 | `StudioAppShell(selection:destinations:brand:brandGlyph:composeTitle:onCompose:content:sidebarFooter:)`, `StudioNavDestination`, `StudioNavItem` | The adaptive Studio shell |
 | `StudioTopbar(page:mark:actions:)`, `StudioScreen(page:mark:content:actions:)`, `StudioActionsPill`, `StudioSearchPill` | Topbar chrome |
-| `StudioAvatar(initial:label:action:)` | Accent avatar button (original) |
 | `StudioAvatar(initial:name:size:presence:)` | Identity portrait (`.xs…xl`, `.online/.busy/.away`) |
 | `StudioAccountButton(initial:name:label:showsCaret:action:)` | Glass account pill |
 | `StudioAccountConfig(name:email:initial:extraRows:)`, `StudioAccountSheet(config:onSignOut:navRows:)`, `StudioAccountRow(systemImage:title:detail:isDestructive:action:)`, `StudioOverflowNavRows(destinations:selection:)` | Account sheet |

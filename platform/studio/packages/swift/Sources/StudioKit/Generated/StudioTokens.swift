@@ -3,7 +3,7 @@
 
 // Source:    tokens/studio.tokens.json
 // Generator: tokens/build.mjs
-// System:    Studio v1.2.0
+// System:    Studio v1.10.0
 // Spec:      docs/DESIGN.md
 
 // Edit the JSON and run `npm run build:tokens`.
@@ -466,8 +466,8 @@ public enum StudioAnimation {
     public static let base = Animation.easeInOut(duration: StudioDuration.fast)
     /// `--ease-out` cubic-bezier(0.16, 1, 0.3, 1) — decelerating reveals, page pushes.
     public static let out = Animation.easeOut(duration: StudioDuration.slow)
-    /// `--ease-spring` cubic-bezier(0.34, 1.56, 0.64, 1) — anything physical.
-    public static let spring = Animation.spring(response: StudioDuration.med, dampingFraction: 0.66)
+    /// Physical overshoot: pills, toggles, toasts, sheets. Studio 1.10 timing.
+    public static let spring = Animation.spring(response: 0.4, dampingFraction: 0.72)
 
     // The motion roles from Studio 1.10. Each names an INTENT, not a curve.
     // Always spell them out in full — `StudioAnimation.snappy`, never a bare
@@ -678,7 +678,7 @@ public enum StudioTextStyle: String, CaseIterable {
 }
 
 public enum StudioTokens {
-    public static let version = "1.2.0"
+    public static let version = "1.10.0"
 }
 
 // MARK: - Accent families

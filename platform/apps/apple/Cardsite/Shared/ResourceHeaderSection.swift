@@ -9,13 +9,13 @@ import StudioKit
 /// - where it leads (the destination's host and path), under it;
 /// - the figures: clicks and visitors over 30 days, and all-time clicks;
 /// - the actions: Copy Link (the one filled accent button), Open and
-///   Card (tonal), plus the type's own. They sit on the content card, so
+///   Card (Studio outline), plus the type's own. They sit on the content card, so
 ///   they are opaque Studio controls, not glass (HIG: glass is chrome). On an iPhone they stay one line:
 ///   everything but Copy Link drops to its symbol before the row wraps.
 ///
 /// Then the Live switch, the caller's rows (Statistics, Create QR Code)
 /// and the release-window banner. The hero is content on an opaque Studio
-/// row; only its buttons are glass, because they are controls.
+/// row, and so are its buttons: opaque Studio capsules, not glass.
 ///
 ///     ResourceHeaderSection(
 ///         state: ResourceState(isEnabled: link.isEnabled, isLapsing: link.isLapsing),
@@ -194,9 +194,11 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
                     Text(copied ? String(localized: "Copied") : ResourceVerb.copyLink.title)
                         .lineLimit(1)
                 }
+                .studioText(.ui)
                 .fixedSize()
             }
-            .buttonStyle(HeroActionStyle(prominent: true))
+            // The view's one accent action (Studio: one primary per view).
+            .buttonStyle(StudioButtonStyle(.primary))
             .fixedSize()
         }
         Group {
@@ -219,8 +221,7 @@ struct ResourceHeaderSection<Actions: View, Rows: View>: View {
             }
             actions()
         }
-        .buttonStyle(HeroActionStyle())
-        .labelStyle(HeroLabelStyle(iconOnly: compact))
+        .buttonStyle(HeroActionStyle(iconOnly: compact))
         .fixedSize()
     }
 
@@ -352,38 +353,31 @@ extension ResourceHeaderSection where Rows == EmptyView {
     .environment(\.dynamicTypeSize, .accessibility3)
 }
 
-/// The hero's actions: opaque Studio capsules on the content card. Unlike
-/// `StudioButtonStyle` it leaves the label style to the caller, so the
-/// compact row can drop to symbols. `.borderless` semantics in a `Form`
-/// row come with any custom style: each button keeps its own tap.
-struct HeroActionStyle: ButtonStyle {
-    var prominent = false
+/// The hero's secondary actions (Open, Card and the type's own): Studio's
+/// outline button, the quiet bordered capsule for secondary actions on a
+/// busy surface. They sit on the content card, so they are opaque Studio
+/// controls, not glass.
+///
+/// `StudioButtonStyle` sets its own label style on its label, which would
+/// override a `.labelStyle` set outside the button and keep the compact
+/// row from dropping to symbols. So this style re-wraps the caller's
+/// label in a `Button` styled by `StudioButtonStyle`, with
+/// ``HeroLabelStyle`` set on the label itself: the innermost label style
+/// wins, for Open and Card and for every caller-supplied action alike.
+/// The caller's accessibility label, hint, role and disabled state carry
+/// through. Any custom style in a `Form` row keeps each button's own tap.
+struct HeroActionStyle: PrimitiveButtonStyle {
+    var iconOnly = false
 
     func makeBody(configuration: Configuration) -> some View {
-        HeroActionBody(configuration: configuration, prominent: prominent)
-    }
-}
-
-private struct HeroActionBody: View {
-    let configuration: ButtonStyleConfiguration
-    let prominent: Bool
-    @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        configuration.label
-            .studioText(.ui)
-            .fontWeight(.semibold)
-            .padding(.horizontal, StudioSpace.s4)
-            .frame(minWidth: StudioLayout.tapTarget, minHeight: StudioLayout.tapTarget)
-            .foregroundStyle(prominent ? Color.studioAccentInk : Color.studioText)
-            .background(prominent ? Color.studioAccent : Color.studioSurface2, in: Capsule())
-            .overlay(Capsule().strokeBorder(prominent ? Color.clear : Color.studioBorder, lineWidth: 0.5))
-            .contentShape(Capsule())
-            .opacity(isEnabled ? 1 : 0.45)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.96 : 1)
-            .opacity(configuration.isPressed && reduceMotion ? 0.7 : 1)
-            .animation(reduceMotion ? nil : StudioAnimation.spring, value: configuration.isPressed)
+        Button(role: configuration.role) {
+            configuration.trigger()
+        } label: {
+            configuration.label
+                .labelStyle(HeroLabelStyle(iconOnly: iconOnly))
+                .studioText(.ui)
+        }
+        .buttonStyle(StudioButtonStyle(.outline))
     }
 }
 

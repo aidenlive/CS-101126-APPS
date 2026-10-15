@@ -267,6 +267,28 @@ struct SplitPlaceholder: View {
     }
 }
 
+/// Nothing matches the typed text: the Studio empty state with its one
+/// way out, which empties the field (Studio demo, Library "Nothing
+/// matches"). A list's filter says Clear Filter; the Search tab says
+/// Clear Search.
+///
+///     NoMatchesState(query: model.searchText) { model.searchText = "" }
+struct NoMatchesState: View {
+    let query: String
+    var actionTitle = String(localized: "Clear Filter")
+    let clear: () -> Void
+
+    var body: some View {
+        StudioEmptyState(
+            systemImage: "magnifyingglass",
+            title: String(localized: "Nothing matches"),
+            message: String(localized: "Nothing here matches “\(query.trimmingCharacters(in: .whitespacesAndNewlines))”. Check the spelling or try fewer words.")
+        ) {
+            StudioButton(actionTitle, systemImage: "xmark.circle", variant: .outline, action: clear)
+        }
+    }
+}
+
 /// A load failure as a Form row: the message, and Try Again trailing.
 /// Every inline load failure inside a Form uses it.
 struct FormRetryRow: View {

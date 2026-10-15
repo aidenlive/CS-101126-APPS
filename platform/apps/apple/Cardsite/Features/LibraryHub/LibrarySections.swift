@@ -5,6 +5,9 @@ import CardsiteKit
 // The Library hub's parts, top to bottom: the Recently edited shelf, then
 // the type rows grouped Content / Organize / Insights. Music Library's type
 // rows crossed with Photos' collection shelves, on opaque Studio surfaces.
+// Section heads are quiet (`StudioSectionHeader`) and the type rows are
+// Studio's neutral catalogue rows: the page head is the one focal element,
+// and the accent is kept for a view's one primary action.
 
 // MARK: - Groups
 
@@ -15,7 +18,9 @@ enum LibraryGroup: String, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
 
-    var kicker: String {
+    /// The section header's label (an uppercase style: a word, not a
+    /// sentence).
+    var title: String {
         switch self {
         case .content: return String(localized: "Content")
         case .organize: return String(localized: "Organize")
@@ -23,12 +28,12 @@ enum LibraryGroup: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    /// The two-tone section title: lead, then the serif accent.
-    var title: (lead: String, accent: String) {
+    /// The section header's note, in sentence case.
+    var note: String {
         switch self {
-        case .content: return (String(localized: "Everything you "), String(localized: "publish."))
-        case .organize: return (String(localized: "Keep it "), String(localized: "tidy."))
-        case .insights: return (String(localized: "See what’s "), String(localized: "working."))
+        case .content: return String(localized: "Everything you publish.")
+        case .organize: return String(localized: "Keep it tidy.")
+        case .insights: return String(localized: "See what’s working.")
         }
     }
 
@@ -76,10 +81,9 @@ struct LibraryRecentSection: View {
     @Environment(\.studioViewport) private var viewport
 
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioSpace.s5) {
-            PageSectionHead(kicker: String(localized: "Recently edited"),
-                            title: String(localized: "Your latest "),
-                            accent: String(localized: "work."))
+        VStack(alignment: .leading, spacing: StudioSpace.s4) {
+            PageSectionHead(String(localized: "Recently edited"),
+                            note: String(localized: "Your latest work, newest first."))
 
             switch model.state {
             case .idle, .loading:
@@ -190,14 +194,24 @@ struct LibraryRecentTile: View {
 
 // MARK: - Type rows
 
-/// One group: the section head, then its rows on one opaque card.
+/// One group: the quiet section header, then its rows on one flush card
+/// with 0.5pt hairlines inset to the text, past the glyph tile.
 struct LibraryGroupSection: View {
     let group: LibraryGroup
     let summary: DashboardSummary?
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @ScaledMetric(relativeTo: .body) private var glyphSide: CGFloat = LibraryTypeRow.glyphBase
+
+    /// Row padding, the tile and the gap after it; flush at accessibility
+    /// sizes, where the row stacks under its tile.
+    private var dividerInset: CGFloat {
+        typeSize.isAccessibilitySize ? StudioSpace.s4 : StudioSpace.s4 + glyphSide + StudioSpace.s4
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioSpace.s5) {
-            PageSectionHead(kicker: group.kicker, title: group.title.lead, accent: group.title.accent)
+        VStack(alignment: .leading, spacing: StudioSpace.s4) {
+            PageSectionHead(group.title, note: group.note)
 
             StudioCard(flush: true) {
                 VStack(spacing: 0) {
@@ -205,9 +219,11 @@ struct LibraryGroupSection: View {
                         LibraryTypeLink(destination: destination,
                                         count: summary.flatMap { LibraryModel.count(for: destination, in: $0) })
                         if index < group.destinations.count - 1 {
-                            Divider()
-                                .overlay(Color.studioBorder)
-                                .padding(.leading, StudioSpace.s16)
+                            Rectangle()
+                                .fill(Color.studioBorder)
+                                .frame(height: 0.5)
+                                .padding(.leading, dividerInset)
+                                .accessibilityHidden(true)
                         }
                     }
                 }
@@ -234,23 +250,28 @@ struct LibraryTypeLink: View {
     }
 }
 
-/// Glyph tile, name and a line about it, the count, a chevron. At
-/// accessibility sizes the count moves under the name so nothing truncates.
+/// Studio's catalogue row: the neutral glyph tile (surface, secondary
+/// ink, never the accent), name and a line about it, the count in `.mono`,
+/// a chevron. At accessibility sizes the count moves under the name so
+/// nothing truncates.
 struct LibraryTypeRow: View {
     let destination: AppDestination
     let count: Int?
 
+    /// The catalogue tile's side before Dynamic Type scales it.
+    nonisolated static let glyphBase: CGFloat = StudioLayout.tapTarget
+
     @Environment(\.dynamicTypeSize) private var typeSize
-    @ScaledMetric(relativeTo: .body) private var glyphSide: CGFloat = StudioSpace.s10
+    @ScaledMetric(relativeTo: .body) private var glyphSide: CGFloat = LibraryTypeRow.glyphBase
 
     var body: some View {
         HStack(alignment: typeSize.isAccessibilitySize ? .top : .center, spacing: StudioSpace.s4) {
             Image(systemName: destination.systemImage)
-                .imageScale(.medium)
-                .foregroundStyle(Color.studioAccentLine)
+                .imageScale(.large)
+                .foregroundStyle(Color.studioText2)
                 .frame(width: glyphSide, height: glyphSide)
-                .background(Color.studioAccentSoft,
-                            in: RoundedRectangle(cornerRadius: StudioRadius.sm, style: .continuous))
+                .background(Color.studioSurface3,
+                            in: RoundedRectangle(cornerRadius: StudioRadius.md, style: .continuous))
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: StudioSpace.s1) {
@@ -277,8 +298,8 @@ struct LibraryTypeRow: View {
                 .foregroundStyle(Color.studioText4)
                 .accessibilityHidden(true)
         }
-        .padding(.horizontal, StudioSpace.s5)
-        .padding(.vertical, StudioSpace.s3)
+        .padding(.horizontal, StudioSpace.s4)
+        .padding(.vertical, StudioComposition.rhythmDetailRow)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
@@ -286,8 +307,7 @@ struct LibraryTypeRow: View {
 
     private func countText(_ count: Int) -> some View {
         Text(count.grouped)
-            .monospacedDigit()
-            .studioText(.ui)
+            .studioText(.mono)
             .foregroundStyle(Color.studioText3)
             .accessibilityLabel(Text("\(count) items"))
     }

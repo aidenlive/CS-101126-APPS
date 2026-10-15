@@ -251,7 +251,7 @@ struct QRTypeSheet: View {
             List {
                 let groups = QRCodeCatalog.grouped(filtered)
                 if groups.isEmpty {
-                    ContentUnavailableView.search(text: query)
+                    NoMatchesState(query: query) { query = "" }
                         .listRowBackground(Color.clear)
                 }
                 ForEach(groups, id: \.group) { group in
@@ -284,7 +284,7 @@ struct QRTypeSheet: View {
                     }
                 }
             }
-            .searchable(text: $query, prompt: Text("Search types"))
+            .searchable(text: $query, prompt: Text("Filter types"))
             .navigationTitle("QR Code Type")
             #if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -296,6 +296,7 @@ struct QRTypeSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 
     private var filtered: [QRCodeTypeInfo] {
