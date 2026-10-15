@@ -177,6 +177,13 @@ final class ScreenshotTests: XCTestCase {
             return ui.find("pages.row.0", labels: ["avery"]) != nil
         case .pageEditor:
             guard ui.open(.pages), ui.tap("pages.row.0", labels: ["avery"]) else { return false }
+            #if os(iOS)
+            // Let the push and the canvas's first layout finish: queried
+            // mid-push, the iPhone app missed XCTest's 30 s main-thread
+            // deadline, while the same editor opened directly answered a
+            // full tree query in under 3 s (DiagnosticsTests).
+            Thread.sleep(forTimeInterval: 4)
+            #endif
             // The editor's own controls first: a label search would walk
             // the web preview's DOM, which timed out on the iPhone.
             return ui.findAny(["page.editor", "page.editor.add", "page.editor.more", "page.editor.status"]) != nil

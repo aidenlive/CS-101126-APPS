@@ -254,17 +254,6 @@ jobs:
         run: |
           set -o pipefail
           rm -rf screens.xcresult
-          # Watchdog: the iPhone page editor left the app's main thread
-          # "busy" for XCTest without using CPU, so sample on a clock and
-          # keep only samples whose main thread isn't idle in its run loop.
-          D="screens/${{ matrix.device.slug }}/failures"; mkdir -p "$D" "$D/samples"
-          ( i=0; while true; do sleep 30
-              PID=$(pgrep -f "Cardsite.app/Cardsite" | head -n 1)
-              [ -n "$PID" ] || continue
-              i=$((i+1)); sample "$PID" 1 -file "$D/samples/s-$i.txt" >/dev/null 2>&1 || true
-            done ) &
-          WATCHDOG=$!
-          trap 'kill $WATCHDOG 2>/dev/null || true' EXIT
           xcodebuild test-without-building \
             -project Cardsite.xcodeproj \
             -scheme Cardsite \
@@ -280,53 +269,21 @@ jobs:
             $SIGNING \
             2>&1 | tee test.log
 
-      # The iPhone page editor left the main thread "busy" for XCTest's
-      # accessibility snapshots, yet sat idle when opened directly. Run the
-      # snapshot probe alone and sample the app while it waits.
+      # The iPhone page editor opened directly, then its accessibility tree
+      # (and how long XCTest took to read it), for the screens branch.
       - name: page editor diagnosis (iPhone)
         if: always() && matrix.device.slug == 'iphone'
         continue-on-error: true
-        timeout-minutes: 8
+        timeout-minutes: 5
         run: |
           D="screens/iphone/failures"; mkdir -p "$D"
-          ( sleep 25; for n in 1 2 3 4; do
-              PID=$(pgrep -f "Cardsite.app/Cardsite" | head -n 1)
-              echo "t=$n pid=$PID $(ps -o %cpu=,etime= -p "$PID" 2>/dev/null)" >> "$D/editor-diagnosis.txt"
-              [ -n "$PID" ] && sample "$PID" 3 -file "$D/editor-sample-$n.txt" >/dev/null 2>&1
-              sleep 7
-            done ) &
-          SAMPLER=$!
           TEST_RUNNER_CARDSITE_DIAG=1 xcodebuild test-without-building \
             -project Cardsite.xcodeproj -scheme Cardsite -configuration Debug \
             -destination "$DESTINATION" -derivedDataPath DerivedData \
             -only-testing:CardsiteUITests/DiagnosticsTests \
             -resultBundlePath diag.xcresult $SIGNING 2>&1 | grep -E "Test Case|error|took" | tail -n 20 >> "$D/editor-diagnosis.txt" || true
-          wait $SAMPLER || true
           xcrun xcresulttool export attachments --path diag.xcresult --output-path diag-att >/dev/null 2>&1 \
             && find diag-att -name "*.txt" -exec cp {} "$D/" \; || true
-
-      - name: keep busy samples
-        if: always() && matrix.device.platform == 'iOS'
-        continue-on-error: true
-        run: |
-          D="screens/${{ matrix.device.slug }}/failures"
-          python3 - "$D" <<'PY'
-          import os, re, sys
-          d = sys.argv[1]; src = os.path.join(d, "samples"); kept = 0
-          for name in sorted(os.listdir(src) if os.path.isdir(src) else []):
-              text = open(os.path.join(src, name), errors="replace").read()
-              main = text.split("Thread_", 2)
-              block = main[1] if len(main) > 1 else ""
-              total = re.search(r"\+ (\d+) start", block)
-              idle = re.search(r"(\d+) __CFRunLoopServiceMachPort", block)
-              if total and (not idle or int(idle.group(1)) < 0.9 * int(total.group(1))) and kept < 4:
-                  kept += 1
-                  os.rename(os.path.join(src, name), os.path.join(d, "busy-" + name))
-          for name in os.listdir(src) if os.path.isdir(src) else []:
-              os.remove(os.path.join(src, name))
-          if os.path.isdir(src): os.rmdir(src)
-          print("kept", kept)
-          PY
 
       - name: export screenshots
         if: always()
