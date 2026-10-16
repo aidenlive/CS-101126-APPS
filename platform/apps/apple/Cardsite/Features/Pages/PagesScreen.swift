@@ -418,7 +418,7 @@ private struct PagesListColumn: View {
         .accessibilityIdentifier(AppDestination.pages.screenIdentifier)
         .background(Color.studioBg)
         .navigationTitle("Pages")
-        .searchFilter(text: $bindable.searchText, prompt: Text("Filter names and addresses"))
+        .searchable(text: $bindable.searchText, prompt: Text("Search names and addresses"))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -444,7 +444,7 @@ private struct PagesListColumn: View {
                 .studioClearRow()
         }
         if model.visiblePages.isEmpty, !model.searchText.isEmpty {
-            NoMatchesState(query: model.searchText) { model.searchText = "" }
+            ContentUnavailableView.search(text: model.searchText)
                 .studioClearRow()
         }
         ForEach(model.visiblePages) { page in

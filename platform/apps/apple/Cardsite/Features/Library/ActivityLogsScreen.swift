@@ -159,7 +159,7 @@ struct ActivityLogsView: View {
         }
         .background(Color.studioBg)
         .pageHeadNavigationTitle(String(localized: "Activity Logs"))
-        .searchFilter(text: $model.searchText, prompt: Text("Filter by IP, city, browser…"))
+        .searchable(text: $model.searchText, prompt: Text("Search by IP, city, browser…"))
         .onSubmit(of: .search) { Task { await model.applySearch() } }
         .onChange(of: model.searchText) { _, text in
             // Clearing the field shows everything again without a submit.

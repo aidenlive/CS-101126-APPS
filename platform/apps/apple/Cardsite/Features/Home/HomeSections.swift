@@ -3,18 +3,16 @@ import Charts
 import StudioKit
 import CardsiteKit
 
-// The four parts of Home, top to bottom (Studio 1.10's editorial home,
-// TodayView): the greeting is the ONE focal element; create, the numbers
-// and recents sit under quiet section headers, and the numbers are a dense
-// rail rather than display-size cards competing with the greeting.
+// The four parts of Home, top to bottom, each a Studio composition:
+// greeting (page head + headline figures), create, statistics, recents.
 
 // MARK: - Greeting
 
-/// The page head and the page's only focal element: date kicker, a
-/// two-line greeting with the first name as the serif accent, and the lead.
-/// The headline figures live in the numbers rail further down.
+/// The page head: date kicker, a two-line greeting with the first name as
+/// the serif accent, the lead, and the three headline figures.
 struct HomeGreeting: View {
     @Environment(AppModel.self) private var app
+    let summary: DashboardSummary?
 
     var body: some View {
         StudioPageHead(
@@ -22,9 +20,9 @@ struct HomeGreeting: View {
             title: greeting + "\n",
             accent: firstName + ".",
             description: String(localized: "Your resources are humming. Pick up where you left off, or start something new below.")
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isHeader)
+        ) {
+            HeadlineFigures(summary: summary)
+        }
     }
 
     private var kicker: String {
@@ -52,12 +50,83 @@ struct HomeGreeting: View {
     }
 }
 
+/// Total clicks · resources · short links, in display type.
+private struct HeadlineFigures: View {
+    let summary: DashboardSummary?
+    @Environment(\.studioViewport) private var viewport
+
+    private struct Figure: Identifiable {
+        let value: Int?
+        let label: String
+        var id: String { label }
+    }
+
+    private var figures: [Figure] {
+        [
+            Figure(value: summary?.totalClicks, label: String(localized: "Total clicks")),
+            Figure(value: summary?.resources, label: String(localized: "Resources")),
+            Figure(value: summary?.links, label: String(localized: "Short links")),
+        ]
+    }
+
+    var body: some View {
+        Group {
+            if viewport == .compact {
+                // Side by side under the greeting; stacked when the text is
+                // too large for three across.
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: StudioSpace.s6) {
+                        ForEach(figures) { figure in
+                            column(figure.value, figure.label)
+                        }
+                    }
+                    rows
+                }
+            } else {
+                rows
+            }
+        }
+        .redacted(reason: summary == nil ? .placeholder : [])
+    }
+
+    private var rows: some View {
+        VStack(alignment: .leading, spacing: StudioSpace.s2) {
+            ForEach(figures) { figure in
+                HStack(alignment: .firstTextBaseline, spacing: StudioSpace.s3) {
+                    number(figure.value)
+                    Text(figure.label)
+                        .studioText(.label)
+                        .foregroundStyle(Color.studioText3)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+    }
+
+    private func column(_ value: Int?, _ label: String) -> some View {
+        VStack(alignment: .leading, spacing: StudioSpace.s1) {
+            number(value)
+            Text(label)
+                .studioText(.label)
+                .foregroundStyle(Color.studioText3)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func number(_ value: Int?) -> some View {
+        Text(value?.figure ?? "—")
+            .monospacedDigit()
+            .studioText(.title)
+            .foregroundStyle(Color.studioText)
+    }
+}
+
 // MARK: - Create
 
-/// Create: the paste-a-URL card and a tile per type the app can create.
-/// On iPhone the tiles are a snapping shelf under the paste card, so the
-/// section reads as one deliberate move rather than a tall stack; at
-/// accessibility sizes they stack again.
+/// "Start something new": the paste-a-URL card and a tile per type the app
+/// can create. On iPhone the tiles are a snapping shelf under the paste
+/// card, so the section reads as one deliberate move rather than a tall
+/// stack; at accessibility sizes they stack again.
 struct HomeCreateSection: View {
     let columns: Int
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -69,9 +138,10 @@ struct HomeCreateSection: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioSpace.s4) {
-            PageSectionHead(String(localized: "Create"),
-                            note: String(localized: "Shorten a link in one move, or start any type."))
+        VStack(alignment: .leading, spacing: StudioSpace.s5) {
+            PageSectionHead(kicker: String(localized: "Create"),
+                            title: String(localized: "Start something "),
+                            accent: String(localized: "new."))
 
             if columns >= 2, !tiles.isEmpty {
                 Grid(horizontalSpacing: StudioSpace.s4, verticalSpacing: StudioSpace.s4) {
@@ -111,8 +181,6 @@ struct HomeCreateSection: View {
 }
 
 /// Paste a long URL, get a short one: opens the link editor prefilled.
-/// Its Shorten button is the page's one accent (primary) action; the card's
-/// own line is plain UI type, not a second display title.
 struct HomePasteCard: View {
     @Environment(AppModel.self) private var app
     @State private var text = ""
@@ -120,12 +188,14 @@ struct HomePasteCard: View {
 
     var body: some View {
         StudioCard {
-            VStack(alignment: .leading, spacing: StudioSpace.s4) {
-                Text("Paste a long URL, get a short one.")
-                    .studioText(.ui)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.studioText)
-                    .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: StudioSpace.s5) {
+                VStack(alignment: .leading, spacing: StudioSpace.s3) {
+                    StudioKicker(String(localized: "Short link · the fast path"))
+                    StudioTwoToneTitle(String(localized: "Paste a long URL, get a "),
+                                       accent: String(localized: "short one."),
+                                       style: .title)
+                        .foregroundStyle(Color.studioText)
+                }
 
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: StudioSpace.s3) {
@@ -186,11 +256,10 @@ struct HomePasteCard: View {
     }
 }
 
-/// One type to create: the neutral catalogue tile (surface, secondary ink,
-/// never the accent), name, a line about it.
+/// One type to create: glyph, name, a line about it.
 struct HomeCreateTile: View {
     @Environment(AppModel.self) private var app
-    @ScaledMetric(relativeTo: .body) private var glyphSide: CGFloat = StudioLayout.tapTarget
+    @ScaledMetric(relativeTo: .body) private var glyphSize: CGFloat = StudioSpace.s10
     let action: CreateAction
     /// In a shelf, every tile is as tall as the tallest.
     var fillsHeight = false
@@ -203,11 +272,11 @@ struct HomeCreateTile: View {
                 HStack(alignment: .top, spacing: StudioSpace.s4) {
                     Image(systemName: action.systemImage)
                         .imageScale(.large)
-                        .foregroundStyle(Color.studioText2)
-                        .frame(width: glyphSide, height: glyphSide)
+                        .foregroundStyle(Color.studioAccentLine)
+                        .frame(width: glyphSize, height: glyphSize)
                         .background(
-                            RoundedRectangle(cornerRadius: StudioRadius.md, style: .continuous)
-                                .fill(Color.studioSurface3)
+                            RoundedRectangle(cornerRadius: StudioRadius.sm, style: .continuous)
+                                .fill(Color.studioAccentSoft)
                         )
                     VStack(alignment: .leading, spacing: StudioSpace.s1) {
                         Text(action.kindTitle)
@@ -234,93 +303,100 @@ struct HomeCreateTile: View {
     }
 }
 
-// MARK: - Numbers
+// MARK: - Statistics
 
-/// "At a glance": the workspace's figures demoted to one dense rail
-/// (Studio's `focal.dense`) — label · value · change per row, hairline
-/// dividers, one flush card — so they inform without competing with the
-/// greeting. The 30-day sparklines stay as secondary detail on the two
-/// traffic rows: inline on wide pages, under the row on iPhone.
+/// "All your resources": clicks and visitors with 30-day sparklines, and
+/// the top performer. On iPhone the three cards are a snapping shelf, one
+/// card and the edge of the next, so the section stays one screen tall;
+/// at accessibility sizes they stack.
 struct HomeStatsSection: View {
     let snapshot: HomeModel.Snapshot
+    let columns: Int
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioSpace.s4) {
-            PageSectionHead(String(localized: "At a glance"),
-                            note: String(localized: "Traffic over the last 30 days, and the workspace in numbers."))
+        VStack(alignment: .leading, spacing: StudioSpace.s5) {
+            PageSectionHead(kicker: String(localized: "Statistics · Last 30 days"),
+                            title: String(localized: "All your "),
+                            accent: String(localized: "resources."))
 
-            StudioCard(flush: true) {
-                VStack(spacing: 0) {
-                    clicks
-                    HomeRailDivider()
-                    visitors
-                    HomeRailDivider()
-                    HomeRailRow(label: String(localized: "Total clicks"),
-                                value: Text(snapshot.summary.totalClicks.figure),
-                                detail: String(localized: "All time"))
-                    HomeRailDivider()
-                    HomeRailRow(label: String(localized: "Resources"),
-                                value: Text(snapshot.summary.resources.figure))
-                    HomeRailDivider()
-                    HomeRailRow(label: String(localized: "Short links"),
-                                value: Text(snapshot.summary.links.figure))
-                    HomeRailDivider()
-                    HomeTopPerformerRow(top: snapshot.top)
+            if columns == 1, !typeSize.isAccessibilitySize {
+                SnapShelf {
+                    Group {
+                        clicks
+                        visitors
+                        top
+                    }
+                    .containerRelativeFrame(.horizontal, count: 6, span: 5, spacing: StudioSpace.s3)
                 }
+            } else {
+                grid
+            }
+        }
+    }
+
+    private var grid: some View {
+        Grid(horizontalSpacing: StudioSpace.s4, verticalSpacing: StudioSpace.s4) {
+            if columns >= 3 {
+                GridRow {
+                    clicks
+                    visitors
+                    top
+                }
+            } else if columns == 2 {
+                GridRow {
+                    clicks
+                    visitors
+                }
+                GridRow {
+                    top.gridCellColumns(2)
+                }
+            } else {
+                GridRow { clicks }
+                GridRow { visitors }
+                GridRow { top }
             }
         }
     }
 
     private var clicks: some View {
-        let trend = Self.trend(snapshot.traffic, \.pageviews)
-        return HomeRailRow(
-            label: String(localized: "Clicks · 30 days"),
-            value: Text(snapshot.clicksInWindow.figure),
-            change: snapshot.hasTraffic ? trend : nil,
-            sparkline: sparkline(\.pageviews, tint: .studioViz1)
-        )
+        HomeStatCard(
+            systemImage: "cursorarrow.click",
+            label: String(localized: "Total clicks"),
+            value: snapshot.summary.totalClicks.figure,
+            detail: String(localized: "All time · \(snapshot.clicksInWindow.figure) in the last 30 days")
+        ) {
+            sparkline(\.pageviews, tint: .studioViz1)
+        }
     }
 
     private var visitors: some View {
-        let trend = Self.trend(snapshot.traffic, \.visitors)
-        return HomeRailRow(
+        HomeStatCard(
+            systemImage: "person.2",
             label: String(localized: "Visitors a day"),
-            value: Text(snapshot.averageDailyVisitors.figure),
-            change: snapshot.hasTraffic ? trend : nil,
-            sparkline: sparkline(\.visitors, tint: .studioViz2)
-        )
+            value: snapshot.averageDailyVisitors.figure,
+            detail: String(localized: "Average unique visitors, last 30 days")
+        ) {
+            sparkline(\.visitors, tint: .studioViz2)
+        }
+    }
+
+    private var top: some View {
+        HomeTopPerformerCard(top: snapshot.top)
     }
 
     /// The chart palette, as the Statistics chart draws the same series
-    /// (clicks `studioViz1`, visitors `studioViz2`). None before traffic.
-    private func sparkline(_ value: KeyPath<DailyTraffic, Int>, tint: Color) -> Sparkline? {
-        guard snapshot.hasTraffic else { return nil }
-        // No spoken trend here: the row's change column already reads it.
-        return Sparkline(days: snapshot.traffic, value: value, tint: tint, fill: tint.opacity(0.22))
-    }
-
-    /// The rail's change column: a short figure ("+12%") for the `.meta`
-    /// style, which is uppercase and so never carries a sentence, plus the
-    /// sentence for VoiceOver.
-    static func trend(_ days: [DailyTraffic], _ value: KeyPath<DailyTraffic, Int>) -> HomeTrend {
-        let spoken = trendSummary(days, value)
-        let half = days.count / 2
-        guard half > 0 else { return HomeTrend(short: "—", spoken: spoken, direction: .level) }
-        let previous = days.prefix(half).reduce(0) { $0 + $1[keyPath: value] }
-        let recent = days.suffix(half).reduce(0) { $0 + $1[keyPath: value] }
-        guard previous > 0 else {
-            return recent > 0
-                ? HomeTrend(short: String(localized: "New"), spoken: spoken, direction: .up)
-                : HomeTrend(short: "—", spoken: spoken, direction: .level)
+    /// (clicks `studioViz1`, visitors `studioViz2`).
+    @ViewBuilder
+    private func sparkline(_ value: KeyPath<DailyTraffic, Int>, tint: Color) -> some View {
+        if snapshot.hasTraffic {
+            Sparkline(days: snapshot.traffic, value: value, tint: tint, fill: tint.opacity(0.22),
+                      trend: Self.trendSummary(snapshot.traffic, value))
+        } else {
+            Text("No traffic yet")
+                .studioText(.uiSm)
+                .foregroundStyle(Color.studioText4)
         }
-        let change = Double(recent - previous) / Double(previous)
-        let percent = abs(change).formatted(.percent.precision(.fractionLength(0)))
-        if change >= 0.005 {
-            return HomeTrend(short: "+\(percent)", spoken: spoken, direction: .up)
-        } else if change <= -0.005 {
-            return HomeTrend(short: "−\(percent)", spoken: spoken, direction: .down)
-        }
-        return HomeTrend(short: String(localized: "Level"), spoken: spoken, direction: .level)
     }
 
     /// "Up 12% on the previous 15 days": the sparkline's shape in words, so
@@ -346,179 +422,89 @@ struct HomeStatsSection: View {
     }
 }
 
-/// A trend for the rail's change column.
-struct HomeTrend {
-    enum Direction { case up, down, level }
-
-    /// A figure, never a sentence: the column is the uppercase `.meta` style.
-    let short: String
-    /// The sentence VoiceOver reads instead.
-    let spoken: String
-    let direction: Direction
-
-    var tint: Color {
-        switch direction {
-        case .up: return .studioSuccess
-        case .down: return .studioWarning
-        case .level: return .studioText3
-        }
-    }
-}
-
-/// The rail's hairline (Studio's 0.5pt border), between rows.
-struct HomeRailDivider: View {
-    var body: some View {
-        Rectangle()
-            .fill(Color.studioBorder)
-            .frame(height: 0.5)
-            .accessibilityHidden(true)
-    }
-}
-
-/// One line of the numbers rail: `.label` in tertiary ink, the value in
-/// `.ui`, the change in `.meta`. A sparkline, when there is one, sits
-/// between label and value on wide pages and under the line on iPhone; at
-/// accessibility sizes the line stacks so nothing truncates.
-struct HomeRailRow: View {
+/// A Studio stat card: label, display figure, detail, then an accessory
+/// (a sparkline) pinned to the bottom so cards in a row line up.
+struct HomeStatCard<Accessory: View>: View {
+    let systemImage: String
     let label: String
-    let value: Text
-    var change: HomeTrend? = nil
-    /// A sentence-case note under the value (`.uiSm`), for context the
-    /// uppercase change column can't carry.
-    var detail: String? = nil
-    var sparkline: Sparkline? = nil
-    /// An address rather than a figure: it loses its middle, not its slug.
-    var isAddress = false
-
-    @Environment(\.dynamicTypeSize) private var typeSize
-    @Environment(\.studioViewport) private var viewport
-    /// The change column's width, so values line up down the rail.
-    @ScaledMetric(relativeTo: .caption) private var changeWidth: CGFloat = StudioSpace.s16
-    @ScaledMetric(relativeTo: .body) private var inlineSparkHeight: CGFloat = StudioSpace.s6
-    @ScaledMetric(relativeTo: .body) private var stackedSparkHeight: CGFloat = StudioSpace.s8
+    let value: String
+    let detail: String
+    /// 1 for a figure; 2 for an address (the top performer), which then
+    /// wraps instead of shrinking, and loses its middle rather than its slug.
+    var valueLineLimit = 1
+    @ViewBuilder var accessory: () -> Accessory
 
     var body: some View {
-        Group {
-            if typeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: StudioSpace.s1) {
-                    labelText
-                    valueText
-                    detailText
-                    changeText
-                    if let sparkline {
-                        sparkline.frame(height: stackedSparkHeight)
-                            .padding(.top, StudioSpace.s1)
-                    }
+        StudioCard {
+            VStack(alignment: .leading, spacing: StudioSpace.s3) {
+                Label {
+                    Text(label)
+                } icon: {
+                    Image(systemName: systemImage)
                 }
-            } else if viewport == .compact {
-                VStack(alignment: .leading, spacing: StudioSpace.s2) {
-                    line(inlineSparkline: false)
-                    if let sparkline {
-                        sparkline.frame(height: stackedSparkHeight)
-                    }
-                }
-            } else {
-                line(inlineSparkline: true)
-            }
-        }
-        .padding(.horizontal, StudioSpace.s4)
-        .padding(.vertical, StudioComposition.rhythmDetailRow)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-    }
-
-    private func line(inlineSparkline: Bool) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: StudioSpace.s4) {
-            labelText
-                .layoutPriority(1)
-            if inlineSparkline, let sparkline {
-                sparkline
-                    .frame(maxWidth: .infinity)
-                    .frame(height: inlineSparkHeight)
-            } else {
-                Spacer(minLength: StudioSpace.s4)
-            }
-            VStack(alignment: .trailing, spacing: 0) {
-                valueText
-                detailText
-            }
-            // A fixed column, present on every row, so values line up
-            // down the rail whether or not a row has a change.
-            changeText
-                .frame(width: changeWidth, alignment: .trailing)
-        }
-    }
-
-    private var labelText: some View {
-        Text(label)
-            .studioText(.label)
-            .foregroundStyle(Color.studioText3)
-            .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
-    }
-
-    private var valueText: some View {
-        value
-            .monospacedDigit()
-            .studioText(.ui)
-            .foregroundStyle(Color.studioText)
-            .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
-            .truncationMode(isAddress ? .middle : .tail)
-            .contentTransition(.numericText())
-    }
-
-    @ViewBuilder
-    private var detailText: some View {
-        if let detail {
-            Text(detail)
-                .studioText(.uiSm)
+                .studioText(.label)
                 .foregroundStyle(Color.studioText3)
-        }
-    }
 
-    /// The change as a short figure; VoiceOver reads the sentence.
-    @ViewBuilder
-    private var changeText: some View {
-        if let change {
-            Text(change.short)
-                .studioText(.meta)
-                .foregroundStyle(change.tint)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .accessibilityLabel(Text(change.spoken))
+                if valueLineLimit == 1 {
+                    Text(value)
+                        .monospacedDigit()
+                        .studioText(.title)
+                        .foregroundStyle(Color.studioText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                } else {
+                    Text(verbatim: value)
+                        .studioText(.title)
+                        .foregroundStyle(Color.studioText)
+                        .lineLimit(valueLineLimit)
+                        .truncationMode(.middle)
+                }
+
+                Text(detail)
+                    .studioText(.uiSm)
+                    .foregroundStyle(Color.studioText3)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Spacer(minLength: 0)
+                accessory()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .accessibilityElement(children: .combine)
         }
     }
 }
 
-/// The resource with the most clicks, as the rail's last row; opens it.
-struct HomeTopPerformerRow: View {
+/// The resource with the most clicks; opens it.
+struct HomeTopPerformerCard: View {
     @Environment(AppModel.self) private var app
     let top: Resource?
 
     var body: some View {
         if let top {
             ResourceOpenLink(resource: top) {
-                row(top)
+                card(top)
             }
         } else {
-            row(nil)
+            card(nil)
         }
     }
 
-    private func row(_ top: Resource?) -> some View {
-        HomeRailRow(
+    private func card(_ top: Resource?) -> some View {
+        HomeStatCard(
+            systemImage: "trophy",
             label: String(localized: "Top performer"),
-            value: Text(verbatim: top.map { app.addresses.display(for: $0.slug) } ?? "—"),
+            value: top.map { app.addresses.display(for: $0.slug) } ?? "—",
             detail: top.map { String(localized: "\($0.clicks.figure) clicks · \($0.kindInfo.title)") }
                 ?? String(localized: "No traffic yet"),
-            isAddress: true
-        )
+            valueLineLimit: 2
+        ) {
+            EmptyView()
+        }
     }
 }
 
-/// A 30-day area sparkline. The row it sits in states the figure; the
-/// sparkline adds the trend, in words, for VoiceOver. The row sets its
-/// height.
+/// A 30-day area sparkline. The card it sits in states the figure; the
+/// sparkline adds the trend, in words, for VoiceOver.
 struct Sparkline: View {
     let days: [DailyTraffic]
     let value: KeyPath<DailyTraffic, Int>
@@ -548,13 +534,13 @@ struct Sparkline: View {
         .chartYAxis(.hidden)
         .chartLegend(.hidden)
         .chartYScale(domain: 0...peak)
+        .frame(height: StudioSpace.s12)
         .accessibilityElement()
         .accessibilityLabel(Text("Trend"))
         .accessibilityValue(Text(trend))
         .accessibilityHidden(trend.isEmpty)
     }
 }
-
 
 // MARK: - Recents
 
@@ -566,9 +552,10 @@ struct HomeRecentsSection: View {
     @State private var statisticsFor: Resource? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioSpace.s4) {
-            PageSectionHead(String(localized: "Recently edited"),
-                            note: String(localized: "Pick up where you left off."))
+        VStack(alignment: .leading, spacing: StudioSpace.s5) {
+            PageSectionHead(kicker: String(localized: "Recently edited"),
+                            title: String(localized: "Pick up where you "),
+                            accent: String(localized: "left off."))
 
             if recent.isEmpty {
                 StudioEmptyState(
@@ -589,7 +576,7 @@ struct HomeRecentsSection: View {
                             }
                             .contextMenu { ResourceActions(resource: resource) { statisticsFor = resource } }
                             if index < recent.count - 1 {
-                                HomeRailDivider()
+                                Divider().overlay(Color.studioBorder)
                             }
                         }
                     }
@@ -637,7 +624,7 @@ struct HomeRecentRow: View {
                 .foregroundStyle(Color.studioText4)
                 .accessibilityHidden(true)
         }
-        .padding(.horizontal, StudioSpace.s4)
+        .padding(.horizontal, StudioSpace.s5)
         .padding(.vertical, StudioSpace.s3)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())

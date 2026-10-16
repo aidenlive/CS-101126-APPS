@@ -107,26 +107,26 @@ struct CreateMenu: View {
 
 // MARK: - Account
 
-/// The signed-in person's identity portrait (`StudioAvatar`, from the
-/// identity tokens, never the accent: the accent belongs to the `+`
-/// action beside it). Opens the account sheet.
-///
-/// A plain toolbar button around the 36pt portrait rather than
-/// `StudioAccountButton`: that control draws its own 52pt glass pill for
-/// Studio's floating chrome, and here the bar is the system's, which
-/// already sizes and backs its items. On OS 26 the item drops the shared
-/// glass background (``SwiftUI/View/accountToolbarItem()``) so the
-/// portrait stands alone, as Books splits its avatar out.
+/// The signed-in person as a circular avatar: their initial on the accent
+/// tile. Opens the account sheet. Identity imagery, so it never takes glass
+/// of its own; on OS 26 its toolbar item drops the shared glass background
+/// (``SwiftUI/View/accountToolbarItem()``).
 struct AccountAvatarButton: View {
     @Environment(AppModel.self) private var app
     @Environment(ShellRouter.self) private var router
     @Environment(InboxModel.self) private var inbox: InboxModel?
+    @ScaledMetric(relativeTo: .body) private var side: CGFloat = StudioSpace.s8
 
     var body: some View {
         Button {
             router.isAccountPresented = true
         } label: {
-            StudioAvatar(initial: app.user?.initial ?? "?", name: app.user?.name, size: .md)
+            Text(app.user?.initial ?? "?")
+                .studioText(.ui)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.studioAccentInk)
+                .frame(width: side, height: side)
+                .background(Circle().fill(Color.studioAccent))
                 .contentShape(Circle())
         }
         .buttonStyle(StudioPressStyle(scale: 0.94))
@@ -148,7 +148,7 @@ struct AccountAvatarButton: View {
 extension View {
     /// The avatar as the trailing toolbar item, in a group of its own: on
     /// iOS 26 the shared glass background is hidden, as Books splits its
-    /// avatar out, so the identity portrait stands alone. Not on the Mac, where
+    /// avatar out, so the accent disc stands alone. Not on the Mac, where
     /// the account lives in the sidebar.
     ///
     /// A view modifier rather than `ToolbarContent`: the iOS 26 branch needs

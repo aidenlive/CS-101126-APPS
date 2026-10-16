@@ -2,7 +2,7 @@ import SwiftUI
 import StudioKit
 
 /// A horizontal shelf that snaps to its items: Library's Recently edited
-/// tiles and, on iPhone, Home's quick-create tiles.
+/// tiles and, on iPhone, Home's stat cards and quick-create tiles.
 ///
 /// It bleeds to the page's edges (the page pads by the viewport's content
 /// padding; the shelf undoes that and puts it back as content margins), so

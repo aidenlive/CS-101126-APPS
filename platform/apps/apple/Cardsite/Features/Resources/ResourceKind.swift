@@ -117,12 +117,12 @@ enum ResourceKind: String, CaseIterable, Hashable, Identifiable, Sendable {
 
     var searchPrompt: String {
         switch self {
-        case .vcard: return String(localized: "Filter names, companies and addresses")
-        case .event: return String(localized: "Filter events, places and addresses")
-        case .paymentLink: return String(localized: "Filter addresses and checkouts")
-        case .file: return String(localized: "Filter files and addresses")
-        case .staticPage: return String(localized: "Filter addresses")
-        case .splash: return String(localized: "Filter splash pages")
+        case .vcard: return String(localized: "Search names, companies and addresses")
+        case .event: return String(localized: "Search events, places and addresses")
+        case .paymentLink: return String(localized: "Search addresses and checkouts")
+        case .file: return String(localized: "Search files and addresses")
+        case .staticPage: return String(localized: "Search addresses")
+        case .splash: return String(localized: "Search splash pages")
         }
     }
 

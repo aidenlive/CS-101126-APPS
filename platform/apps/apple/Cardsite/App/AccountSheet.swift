@@ -108,11 +108,11 @@ struct AccountSheet: View {
     }
 }
 
-/// The sheet's head: the identity portrait (`StudioAvatar`, the largest
-/// size, from the identity tokens rather than the accent), the name in
-/// display type, the email exactly as typed (never an uppercase style).
+/// The sheet's head: the initial on the accent disc, the name in display
+/// type, the email exactly as typed (never an uppercase style).
 private struct AccountSheetHeader: View {
     let user: User
+    @ScaledMetric(relativeTo: .title) private var side: CGFloat = StudioSpace.s16
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
@@ -120,7 +120,11 @@ private struct AccountSheetHeader: View {
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: StudioSpace.s3))
             : AnyLayout(HStackLayout(spacing: StudioSpace.s4))
         layout {
-            StudioAvatar(initial: user.initial, name: user.name, size: .xl)
+            Text(user.initial)
+                .studioText(.title)
+                .foregroundStyle(Color.studioAccentInk)
+                .frame(width: side, height: side)
+                .background(Circle().fill(Color.studioAccent))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: StudioSpace.s1) {
                 Text(user.name.isEmpty ? String(localized: "Your account") : user.name)

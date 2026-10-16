@@ -99,7 +99,6 @@ struct LinkEditorView: View {
         // Half height suits an iPhone; an iPad's form sheet at .medium
         // clipped the address section.
         .presentationDetents(sizeClass == .compact ? [.medium, .large] : [.large])
-        .presentationDragIndicator(.visible)
         #endif
     }
 

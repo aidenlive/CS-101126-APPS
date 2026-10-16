@@ -47,7 +47,7 @@ struct LinksScreen: View {
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AppDestination.links.screenIdentifier)
             .navigationTitle("Links")
-            .searchFilter(text: $bindable.searchText, prompt: Text("Filter addresses and destinations"))
+            .searchable(text: $bindable.searchText, prompt: Text("Search addresses and destinations"))
             .task(id: model.searchText) { [model] in
                 // Debounced: the server is asked once typing pauses.
                 let text = model.searchText
@@ -109,11 +109,6 @@ struct LinksScreen: View {
                     }
             }
             .cardsiteSheet(.page)
-            #if os(iOS)
-            // Studio detail sheet: full height, with the grabber.
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
-            #endif
         }
         .confirmationDialog(
             ResourceKind.shortLinkDeleteConfirmation,
@@ -145,17 +140,18 @@ struct LinksScreen: View {
                     .studioClearRow()
             }
             if model.visibleLinks.isEmpty, !model.searchText.isEmpty {
-                NoMatchesState(query: model.searchText) { model.searchText = "" }
+                ContentUnavailableView.search(text: model.searchText)
                     .studioClearRow()
             } else if model.visibleLinks.isEmpty, model.isFiltered, !model.list.hasMore {
-                StudioEmptyState(
-                    systemImage: model.filter.systemImage,
-                    title: model.filter == .live ? String(localized: "No live links") : String(localized: "No links are off"),
-                    message: model.filter == .live
-                        ? String(localized: "Every link is switched off.")
-                        : String(localized: "Every link is live.")
-                ) {
-                    StudioButton(String(localized: "Show All Links"), variant: .outline) { model.filter = .all }
+                ContentUnavailableView {
+                    Label(model.filter == .live ? String(localized: "No live links") : String(localized: "No links are off"),
+                          systemImage: model.filter.systemImage)
+                } description: {
+                    Text(model.filter == .live
+                         ? String(localized: "Every link is switched off.")
+                         : String(localized: "Every link is live."))
+                } actions: {
+                    Button(String(localized: "Show All Links")) { model.filter = .all }
                 }
                 .studioClearRow()
             }

@@ -51,11 +51,6 @@ struct QRCodeEditorView: View {
             }
         }
         .cardsiteSheet(.page)
-        #if os(iOS)
-        // Studio detail sheet: full height, with the grabber.
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
-        #endif
     }
 }
 

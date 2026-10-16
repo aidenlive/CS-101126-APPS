@@ -44,7 +44,7 @@ struct QRCodesView: View {
             .accessibilityIdentifier(AppDestination.qrCodes.screenIdentifier)
             .background(Color.studioBg)
             .navigationTitle("QR Codes")
-            .searchFilter(text: $bindable.searchText, prompt: Text("Filter QR codes"))
+            .searchable(text: $bindable.searchText, prompt: Text("Search QR codes"))
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button { isComposing = true } label: {
@@ -60,9 +60,7 @@ struct QRCodesView: View {
                                      edit: { editing = code },
                                      requestDelete: { pendingDelete = code })
                 } else {
-                    SplitPlaceholder(systemImage: "qrcode",
-                                     title: String(localized: "This QR code was deleted"),
-                                     message: String(localized: "It’s no longer in your workspace."))
+                    ContentUnavailableView("This QR code was deleted", systemImage: "qrcode")
                 }
             }
             .task { [list = model.list] in await list.loadIfNeeded() }
@@ -140,9 +138,9 @@ struct QRCodesView: View {
                     RefreshErrorBanner(error: error) { model.list.dismissRefreshError() }
                 }
                 if model.visibleCodes.isEmpty, !model.searchText.isEmpty {
-                    NoMatchesState(query: model.searchText) { model.searchText = "" }
-                        .readableWidth(.sheet)
-                        .padding(.top, StudioSpace.s6)
+                    ContentUnavailableView.search(text: model.searchText)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, StudioSpace.s10)
                 }
                 grid {
                     ForEach(model.visibleCodes) { code in

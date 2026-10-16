@@ -1,43 +1,54 @@
 import SwiftUI
 import StudioKit
 
-/// The head of a section within an editorial page (Home, Library): Studio
-/// 1.10's quiet `StudioSectionHeader` — a `.label` title and a sentence-case
-/// note — announced as a heading so VoiceOver's rotor can jump between
-/// sections.
+/// The head of a section within a page: a kicker with the accent dot, a
+/// two-tone title, and an optional trailing action. The web dashboard's
+/// `SecHead`; the section-level partner of `StudioPageHead`.
 ///
-/// It used to be a kicker over a two-tone `.title`, which gave every
-/// section the weight of a page head. The page head is a page's one focal
-/// element (DESIGN.md §Composition); sections sit under it, quietly.
-///
-/// The title is an uppercase style: a word or two, never a sentence. Put
-/// the sentence in `note`.
-///
-///     PageSectionHead(String(localized: "Create"),
-///                     note: String(localized: "Shorten a link, or start any type."))
-struct PageSectionHead: View {
+///     PageSectionHead(kicker: "Create", title: "Start something ", accent: "new.")
+struct PageSectionHead<Trailing: View>: View {
+    let kicker: String
     let title: String
-    var note: String? = nil
-
-    init(_ title: String, note: String? = nil) {
-        self.title = title
-        self.note = note
-    }
+    var accent: String = ""
+    @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
-        StudioSectionHeader(title, note: note)
+        HStack(alignment: .lastTextBaseline, spacing: StudioSpace.s4) {
+            VStack(alignment: .leading, spacing: StudioSpace.s2) {
+                StudioKicker(kicker)
+                if accent.isEmpty {
+                    Text(title)
+                        .studioText(.title)
+                        .foregroundStyle(Color.studioText)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    StudioTwoToneTitle(title, accent: accent, style: .title)
+                        .foregroundStyle(Color.studioText)
+                }
+            }
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
+
+            Spacer(minLength: StudioSpace.s4)
+            trailing()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-#if DEBUG
+extension PageSectionHead where Trailing == EmptyView {
+    init(kicker: String, title: String, accent: String = "") {
+        self.init(kicker: kicker, title: title, accent: accent) { EmptyView() }
+    }
+}
+
 #Preview("Section heads") {
     VStack(alignment: .leading, spacing: StudioSpace.s8) {
-        PageSectionHead("Create", note: "Shorten a link in one move, or start any type.")
-        PageSectionHead("At a glance")
+        PageSectionHead(kicker: "Create", title: "Start something ", accent: "new.")
+        PageSectionHead(kicker: "Statistics · Last 30 days", title: "All your ", accent: "resources.") {
+            Button("All analytics") {}
+        }
     }
     .padding(StudioSpace.s6)
     .background(Color.studioBg)
 }
-#endif

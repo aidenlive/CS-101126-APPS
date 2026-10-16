@@ -450,13 +450,15 @@ public struct StudioSearchPill: View {
 
 /// A person.
 ///
-/// NOT a button, and not accent-filled (Studio 1.10). The old 52pt
-/// accent disc had the same fill, size and shape as the compose action:
-/// two objects of identical visual weight and different consequence.
-/// Identity resolves from the `identity` tokens, so the accent belongs to
-/// the primary action alone. Wrap it in `StudioAccountButton` where it
-/// needs to be pressable, so the hit target and the portrait stay
-/// separate concerns.
+/// Two forms share this type:
+///
+/// · `StudioAvatar(initial:label:action:)` — the original topbar button: a
+///   52pt accent-filled disc. Kept as it was for existing call sites.
+/// · `StudioAvatar(initial:name:size:presence:)` — the identity portrait
+///   from Studio 1.10. NOT a button and NOT accent-filled: identity
+///   resolves from the `identity` tokens, so the accent stays with the
+///   primary action. Wrap it in `StudioAccountButton` where it needs to be
+///   pressable.
 public struct StudioAvatar: View {
     /// The portrait size ramp, mirroring the CSS `--avatar-size` modifiers.
     public enum Size: Sendable {
@@ -506,8 +508,17 @@ public struct StudioAvatar: View {
 
     private let initial: String
     private let label: String
+    private let action: (() -> Void)?
     private let size: Size
     private let presence: Presence?
+
+    public init(initial: String, label: String = "Account menu", action: @escaping () -> Void) {
+        self.initial = initial
+        self.label = label
+        self.action = action
+        self.size = .lg
+        self.presence = nil
+    }
 
     /// The identity portrait. `initial` defaults to the first letter of
     /// `name`; an explicit initial wins for names that don't initialise
@@ -523,11 +534,29 @@ public struct StudioAvatar: View {
             ?? "S"
         self.initial = resolved
         self.label = name ?? resolved
+        self.action = nil
         self.size = size
         self.presence = presence
     }
 
     public var body: some View {
+        if let action {
+            Button(action: action) {
+                Text(initial)
+                    .font(.custom(StudioFontFamily.display, size: 16))
+                    .frame(width: 52, height: 52)
+                    .foregroundStyle(Color.studioAccentInk)
+                    .background(Color.studioAccent, in: Circle())
+                    .studioElevation(.raised)
+            }
+            .buttonStyle(StudioPressStyle(scale: 0.94))
+            .accessibilityLabel(label)
+        } else {
+            portrait
+        }
+    }
+
+    private var portrait: some View {
         Text(initial)
             .font(.custom(StudioFontFamily.display, fixedSize: size.fontSize))
             .foregroundStyle(Color.studioIdentityInk)

@@ -4,13 +4,11 @@ import CardsiteKit
 
 /// Home: the web dashboard (DashboardPage.tsx) as a native page.
 ///
-/// Studio 1.10's editorial home: the greeting is the one focal element;
-/// then quick create (paste a URL, or pick a type), the figures as one
-/// dense rail (30 days of traffic with sparklines, the workspace totals,
-/// the top performer), and the recently edited resources, each under a
-/// quiet section header and separated by Studio's section rhythm. Create
-/// is one column on iPhone, where its tiles become a snapping shelf, and
-/// two or three on iPad and Mac, decided by the width the page has.
+/// A greeting with the workspace's headline figures, quick create (paste a
+/// URL, or pick a type), 30 days of traffic with the top performer, and the
+/// recently edited resources. One column on iPhone, where the stat cards
+/// and create tiles become snapping shelves, and two or three on iPad and
+/// Mac, decided by the width the page actually has.
 ///
 /// The toolbar is the shell's: the bell (Inbox, badged) and the `+` create
 /// menu in one group, the account avatar alone at the trailing edge. Search
@@ -50,9 +48,8 @@ struct HomeScreen: View {
         ScrollView {
             HomeDashboard(model: model)
                 .padding(.horizontal, viewport.contentPadding)
-                // StudioScreen's insets.
-                .padding(.top, StudioSpace.s4)
-                .padding(.bottom, StudioSpace.s10)
+                .padding(.top, StudioSpace.s6)
+                .padding(.bottom, StudioSpace.s12)
                 .readableWidth(.dashboard)
         }
         .background(Color.studioBg)
@@ -116,34 +113,21 @@ struct HomeDashboard: View {
 
     private var columns: Int { HomeLayout.columns(for: width, typeSize: typeSize) }
 
-    /// Studio's sanctioned section break (`rhythm.sectionGap`), tighter on
-    /// iPhone, rather than the uniform grid gap.
-    private var sectionGap: CGFloat {
-        viewport == .compact
-            ? StudioComposition.rhythmSectionGapCompact
-            : StudioComposition.rhythmSectionGap
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: sectionGap) {
-            // The banner belongs to the head, not a section of its own.
-            VStack(alignment: .leading, spacing: StudioSpace.s5) {
-                HomeGreeting()
-                    .studioEntrance()
+        VStack(alignment: .leading, spacing: viewport.sectionGap) {
+            HomeGreeting(summary: model.snapshot?.summary)
 
-                if let error = model.refreshError {
-                    RefreshErrorBanner(error: error) { model.dismissRefreshError() }
-                }
+            if let error = model.refreshError {
+                RefreshErrorBanner(error: error) { model.dismissRefreshError() }
             }
 
             HomeCreateSection(columns: columns)
-                .studioEntrance(delay: 0.06)
 
             switch model.state {
             case .idle, .loading:
                 // The skeleton: the real layout, redacted, so nothing jumps
                 // when the data lands.
-                VStack(alignment: .leading, spacing: sectionGap) {
+                VStack(alignment: .leading, spacing: viewport.sectionGap) {
                     dataSections(.sample)
                 }
                 .redacted(reason: .placeholder)
@@ -167,7 +151,7 @@ struct HomeDashboard: View {
 
     @ViewBuilder
     private func dataSections(_ snapshot: HomeModel.Snapshot) -> some View {
-        HomeStatsSection(snapshot: snapshot)
+        HomeStatsSection(snapshot: snapshot, columns: columns)
         HomeRecentsSection(recent: snapshot.recent)
     }
 }

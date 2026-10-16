@@ -287,8 +287,7 @@ public struct StudioCard<Content: View>: View {
     // corners, and anything it anchors outside itself must not be cut.
     @ViewBuilder private var framed: some View {
         let filled = content
-            // Studio 1.10: a padded card insets its content by s5 (20pt).
-            .padding(isFlush ? 0 : StudioSpace.s5)
+            .padding(isFlush ? 0 : StudioSpace.s6)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(shape.fill(isSelected ? Color.studioAccentSoft : Color.studioSurface))
         if isFlush {
@@ -326,10 +325,7 @@ public enum StudioTone {
         case .warning: return .studioWarning
         case .error: return .studioError
         case .info: return .studioInfo
-        // Studio 1.10's quiet neutral: text-3 ink on surface-2. The repo's
-        // text-3 is darkened for WCAG, so this measures about 5.1:1 in both
-        // light and dark (the 1.10 source text-3 did not reach 4.5:1).
-        case .neutral: return .studioText3
+        case .neutral: return .studioText2
         // Lime is a fill, never ink: --accent-line on --accent-soft is
         // 2.81:1 in light. Matches web `.lk-status--accent` (--text ink,
         // lime dot). The dot carries the hue; see `dot`.
@@ -349,7 +345,7 @@ public enum StudioTone {
         case .warning: return .studioWarningSoft
         case .error: return .studioErrorSoft
         case .info: return .studioInfoSoft
-        case .neutral: return .studioSurface2
+        case .neutral: return .studioSurface3
         case .accent: return .studioAccentSoft
         }
     }

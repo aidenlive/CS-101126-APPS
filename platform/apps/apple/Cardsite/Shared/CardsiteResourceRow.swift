@@ -1,9 +1,8 @@
 import SwiftUI
 import StudioKit
 
-/// The one row anatomy for resources (PARITY-PLAN §6): the type's neutral
-/// glyph tile (``RowGlyphTile``; it names the type, never the state), the
-/// title with its state pill (the row's one state signal), a middle-truncated subtitle (the
+/// The one row anatomy for resources (PARITY-PLAN §6): the type's glyph
+/// tile, the title with its state pill, a middle-truncated subtitle (the
 /// address), an optional detail line, the clicks figure, and a trailing
 /// accessory (the on/off switch, a chevron).
 ///
@@ -97,15 +96,14 @@ struct CardsiteResourceRow<Trailing: View>: View {
         .contentShape(Rectangle())
     }
 
-    /// The row rhythm: a touch row takes Studio 1.10's dense detail-row
-    /// rhythm (the demo's list rows), which with the tile, two lines and
-    /// the system insets lands near Mail's density; a Mac list column
-    /// stays tight, as Finder and Mail's are.
+    /// The row rhythm: a touch row breathes (the tile, two lines and the
+    /// system insets land near Mail's density); a Mac list column stays
+    /// tight, as Finder and Mail's are.
     private static var verticalPadding: CGFloat {
         #if os(macOS)
         return StudioSpace.s1
         #else
-        return StudioComposition.rhythmDetailRow
+        return StudioSpace.s2
         #endif
     }
 

@@ -117,7 +117,11 @@ struct AccountView: View {
     private func profileSection(_ user: User) -> some View {
         Section {
             HStack(spacing: StudioSpace.s3) {
-                StudioAvatar(initial: user.initial, name: user.name, size: .lg)
+                Text(user.initial)
+                    .studioText(.titleSm)
+                    .foregroundStyle(Color.studioAccentInk)
+                    .frame(width: StudioSpace.s12, height: StudioSpace.s12)
+                    .background(Circle().fill(Color.studioAccent))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: StudioSpace.s1) {
                     Text(user.name.isEmpty ? String(localized: "Your account") : user.name)
