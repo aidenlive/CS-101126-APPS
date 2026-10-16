@@ -1,0 +1,4 @@
+after-tap took 60.03592908382416 s
+
+Query chain:
+ →Find: Target Application 'com.cardsite.app'

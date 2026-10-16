@@ -1,0 +1,162 @@
+statistics-ax5 took 1.2731170654296875 s
+
+Attributes: Application, 0x10a041180, pid: 91210, label: 'Cardsite'
+Element subtree:
+ →Application, 0x10a041180, pid: 91210, label: 'Cardsite'
+    Window (Main), 0x10a0412c0, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x10a041400, {{0.0, 0.0}, {440.0, 956.0}}
+        Other, 0x10a041540, {{0.0, 0.0}, {440.0, 956.0}}
+          Other, 0x10a041680, {{0.0, 0.0}, {440.0, 956.0}}
+            Other, 0x10a0417c0, {{0.0, 0.0}, {440.0, 956.0}}
+              Other, 0x10a041900, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x10a041a40, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x10a041b80, {{0.0, 0.0}, {440.0, 956.0}}
+                    Other, 0x10a041cc0, {{0.0, 0.0}, {440.0, 956.0}}
+                      Other, 0x10a041e00, {{0.0, 0.0}, {440.0, 956.0}}
+                        Other, 0x10a041f40, {{0.0, 0.0}, {440.0, 956.0}}
+                          Other, 0x10a042080, {{0.0, 0.0}, {440.0, 956.0}}
+                            NavigationBar, 0x10a0421c0, {{0.0, 62.0}, {440.0, 54.0}}, identifier: '_TtGC7SwiftUI32NavigationStackHosting'
+                              Button, 0x10a042300, {{20.0, 62.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'Back'
+                            Other, 0x10a042440, {{0.0, 0.0}, {440.0, 956.0}}
+                              Other, 0x10a042580, {{0.0, 0.0}, {440.0, 956.0}}
+                                Other, 0x10a0426c0, {{0.0, 0.0}, {440.0, 956.0}}
+                                  Other, 0x10a042800, {{0.0, 0.0}, {440.0, 956.0}}
+                                    ScrollView, 0x10a042940, {{-10.0, 0.0}, {460.3, 956.0}}, identifier: 'screen.statistics'
+                                      Other, 0x10a042a80, {{-10.0, 0.0}, {460.3, 956.0}}
+                                        Other, 0x10a042bc0, {{-10.0, 0.0}, {460.3, 170.8}}
+                                        Other, 0x10a042d00, {{-10.0, 808.2}, {460.3, 147.8}}
+                                      Other, 0x10a040000, {{-10.0, 0.0}, {460.3, 956.0}}
+                                        Other, 0x10a040140, {{-10.0, 808.2}, {460.3, 147.8}}
+                                          Image, 0x10a040280, {{-130.0, 813.0}, {700.3, 286.0}}, identifier: 'AdditionalDimmingOverlay'
+                                          Other, 0x10a0403c0, {{-10.0, 808.2}, {460.3, 147.8}}
+                                            Other, 0x10a040500, {{-10.0, 808.2}, {460.3, 147.8}}
+                                          Other, 0x10a040640, {{-10.0, 808.2}, {460.3, 147.8}}
+                                            Other, 0x10a040780, {{-10.0, 808.2}, {460.3, 147.8}}
+                                            Other, 0x10a0408c0, {{-10.0, 808.2}, {460.3, 147.8}}
+                                      Other, 0x10a040a00, {{-10.0, 116.0}, {460.3, 3062.0}}
+                                        StaticText, 0x10a040b40, {{23.0, 140.0}, {318.0, 71.7}}, label: 'Statistics · Last 30 days'
+                                        StaticText, 0x10a040c80, {{10.0, 219.7}, {406.3, 50.7}}, label: 'The whole workspace.'
+                                        SegmentedControl, 0x10a040dc0, {{10.0, 302.3}, {420.3, 48.0}}
+                                          Button, 0x10a042e40, {{10.0, 302.3}, {0.0, 32.0}}, label: 'Last 7 days'
+                                          Button, 0x10a042f80, {{10.0, 302.3}, {0.0, 32.0}}, label: 'Last 30 days', Selected
+                                          Button, 0x10a0430c0, {{10.0, 302.3}, {0.0, 32.0}}, label: 'Last 90 days'
+                                        StaticText, 0x10a043200, {{43.0, 1202.3}, {138.7, 36.0}}, label: 'Traffic'
+                                        Other, 0x10a043340, {{29.0, 1246.3}, {352.7, 50.7}}, label: 'Solid line: pageviews. Dashed line: visitors.'
+                                          StaticText, 0x10a043480, {{50.0, 1246.3}, {173.7, 50.7}}, label: 'Pageviews'
+                                          StaticText, 0x10a0435c0, {{259.7, 1246.3}, {122.0, 50.7}}, label: 'Visitors'
+                                        Other, 0x10a043700, {{30.0, 1313.0}, {380.3, 620.0}}, label: 'Traffic over time'
+                                          Other, 0x10a043840, {{107.0, 1313.0}, {18.6, 568.0}}, label: 'Sep 16, 2026 at 12 AM to Sep 18, 2026 at 12 AM', value: 49 to 72, 2 values
+                                          Other, 0x10a043980, {{125.6, 1313.0}, {18.6, 568.0}}, label: 'Sep 18, 2026 at 12 AM to Sep 20, 2026 at 12 AM', value: 101 to 117, 2 values
+                                          Other, 0x10a043ac0, {{144.2, 1313.0}, {18.6, 568.0}}, label: 'Sep 20, 2026 at 12 AM to Sep 22, 2026 at 12 AM', value: 114 to 103, 2 values
+                                          Other, 0x10a043c00, {{162.9, 1313.0}, {18.6, 568.0}}, label: 'Sep 22, 2026 at 12 AM to Sep 24, 2026 at 12 AM', value: 102 to 124, 2 values
+                                          Other, 0x10a043d40, {{181.5, 1313.0}, {18.6, 568.0}}, label: 'Sep 24, 2026 at 12 AM to Sep 26, 2026 at 12 AM', value: 161 to 194, 2 values
+                                          Other, 0x10a043e80, {{200.1, 1313.0}, {18.6, 568.0}}, label: 'Sep 26, 2026 at 12 AM to Sep 28, 2026 at 12 AM', value: 205 to 187, 2 values
+                                          Other, 0x106a3b200, {{218.7, 1313.0}, {18.6, 568.0}}, label: 'Sep 28, 2026 at 12 AM to Sep 30, 2026 at 12 AM', value: 154 to 127, 2 values
+                                          Other, 0x106a3b340, {{237.4, 1313.0}, {18.6, 568.0}}, label: 'Sep 30, 2026 at 12 AM to Oct 2, 2026 at 12 AM', value: 119 to 127, 2 values
+                                          Other, 0x106a3b480, {{256.0, 1313.0}, {18.6, 568.0}}, label: 'Oct 2, 2026 at 12 AM to Oct 4, 2026 at 12 AM', value: 134 to 125, 2 values
+                                          Other, 0x106a3b5c0, {{274.6, 1313.0}, {18.6, 568.0}}, label: 'Oct 4, 2026 at 12 AM to Oct 6, 2026 at 12 AM', value: 96 to 62, 2 values
+                                          Other, 0x106a3b700, {{293.2, 1313.0}, {18.6, 568.0}}, label: 'Oct 6, 2026 at 12 AM to Oct 8, 2026 at 12 AM', value: 42 to 50, 2 values
+                                          Other, 0x106a3b840, {{311.8, 1313.0}, {18.6, 568.0}}, label: 'Oct 8, 2026 at 12 AM to Oct 10, 2026 at 12 AM', value: 82 to 118, 2 values
+                                          Other, 0x106a3b980, {{330.5, 1313.0}, {18.6, 568.0}}, label: 'Oct 10, 2026 at 12 AM to Oct 12, 2026 at 12 AM', value: 138 to 138, 2 values
+                                          Other, 0x106a3bac0, {{349.1, 1313.0}, {18.6, 568.0}}, label: 'Oct 12, 2026 at 12 AM to Oct 14, 2026 at 12 AM', value: 127 to 125, 2 values
+                                          Other, 0x106a3bc00, {{367.7, 1313.0}, {18.6, 568.0}}, label: 'Oct 14, 2026 at 12 AM to Oct 16, 2026 at 12 AM', value: 142 to 173, 2 values
+                                        StaticText, 0x106a3bd40, {{43.0, 2005.0}, {208.0, 36.0}}, label: 'Breakdown'
+                                        Button, 0x106a3be80, {{30.0, 2049.0}, {380.3, 77.3}}, identifier: 'flag', label: 'Breakdown dimension'
+                                          StaticText, 0x106a3b0c0, {{128.0, 2056.0}, {218.3, 63.3}}, label: 'Countries'
+                                        Other, 0x10a100000, {{30.0, 2184.7}, {380.3, 125.3}}, label: 'United Kingdom', value: 1,299 pageviews, 3...
+                                          StaticText, 0x10a100140, {{42.0, 2192.7}, {284.7, 54.7}}, label: 'United Kingdom'
+                                          StaticText, 0x10a100280, {{42.0, 2251.3}, {85.3, 50.7}}, label: '1,299'
+                                          StaticText, 0x10a1003c0, {{293.3, 2251.3}, {105.0, 50.7}}, label: '36.0%'
+                                        Other, 0x10a100500, {{30.0, 2318.0}, {380.3, 125.3}}, label: 'United States', value: 794 pageviews, 22.0%
+                                          StaticText, 0x10a100640, {{42.0, 2326.0}, {235.7, 54.7}}, label: 'United States'
+                                          StaticText, 0x10a100780, {{42.0, 2384.7}, {61.3, 50.7}}, label: '794'
+                                          StaticText, 0x10a1008c0, {{295.3, 2384.7}, {103.0, 50.7}}, label: '22.0%'
+                                        Other, 0x10a100a00, {{10.0, 382.3}, {420.3, 2180.7}}
+                                          StaticText, 0x10a100b40, {{10.0, 382.3}, {420.3, 183.0}}, label: 'Pageviews, 3,608, Sep 16 – Oct 15'
+                                            Image, 0x10a100c80, {{32.3, 405.7}, {27.3, 27.7}}, identifier: 'cursorarrow.click', label: 'CURSORARROW.CLICK'
+                                            StaticText, 0x10a100dc0, {{32.3, 402.3}, {218.0, 34.3}}, label: 'Pageviews'
+                                            StaticText, 0x10a100f00, {{30.0, 444.7}, {111.0, 42.0}}, label: '3,608'
+                                            StaticText, 0x10a101040, {{30.0, 494.7}, {246.3, 50.7}}, label: 'Sep 16 – Oct 15'
+                                          StaticText, 0x10a101180, {{10.0, 577.3}, {420.3, 183.0}}, label: 'Visitors, 2,596, 72.0% of pageviews'
+                                            Image, 0x10a1012c0, {{33.3, 601.7}, {38.7, 26.7}}, identifier: 'person.2', label: 'PERSON.2'
+                                            StaticText, 0x10a101400, {{33.3, 597.3}, {194.7, 34.3}}, label: 'Visitors'
+                                            StaticText, 0x10a101540, {{30.0, 639.7}, {111.0, 42.0}}, label: '2,596'
+                                            StaticText, 0x10a101680, {{30.0, 689.7}, {325.0, 50.7}}, label: '72.0% of pageviews'
+                                          StaticText, 0x10a1017c0, {{10.0, 772.3}, {420.3, 183.0}}, label: 'Daily average, 120, pageviews per day'
+                                            Image, 0x10a101900, {{33.3, 796.7}, {29.3, 25.3}}, identifier: 'chart.line.uptrend.xyaxis', label: 'CHART LINE'
+                                            StaticText, 0x10a101a40, {{33.3, 792.3}, {284.3, 34.3}}, label: 'Daily average'
+                                            StaticText, 0x10a101b80, {{30.0, 834.7}, {76.7, 42.0}}, label: '120'
+                                            StaticText, 0x10a101cc0, {{30.0, 884.7}, {305.0, 50.7}}, label: 'pageviews per day'
+                                          StaticText, 0x10a101e00, {{10.0, 2380.0}, {420.3, 183.0}}, label: 'Peak day, 205, Sat, Sep 26'
+                                            Image, 0x10a101f40, {{33.3, 2405.0}, {27.0, 24.7}}, identifier: 'calendar', label: 'CALENDAR'
+                                            StaticText, 0x10a102080, {{33.3, 2400.2}, {192.7, 34.3}}, label: 'Peak day'
+                                            StaticText, 0x10a1021c0, {{30.0, 2442.5}, {76.7, 42.0}}, label: '205'
+                                            StaticText, 0x10a102300, {{30.0, 2492.5}, {186.3, 50.7}}, label: 'Sat, Sep 26'
+                                        Other, 0x10a102440, {{30.0, 2451.3}, {380.3, 125.3}}, label: 'Germany', value: 541 pageviews, 15.0%
+                                          StaticText, 0x10a102580, {{42.0, 2459.3}, {157.7, 54.7}}, label: 'Germany'
+                                          StaticText, 0x10a1026c0, {{42.0, 2518.0}, {56.0, 50.7}}, label: '541'
+                                          StaticText, 0x10a102800, {{302.3, 2518.0}, {96.0, 50.7}}, label: '15.0%'
+                                        Other, 0x10a102940, {{30.0, 2584.7}, {380.3, 125.3}}, label: 'France', value: 397 pageviews, 11.0%
+                                          StaticText, 0x10a102a80, {{42.0, 2592.7}, {119.0, 54.7}}, label: 'France'
+                                          StaticText, 0x10a102bc0, {{42.0, 2651.3}, {61.0, 50.7}}, label: '397'
+                                          StaticText, 0x10a102d00, {{309.3, 2651.3}, {89.0, 50.7}}, label: '11.0%'
+                                        Other, 0x10a102e40, {{30.0, 2718.0}, {380.3, 125.3}}, label: 'Canada', value: 289 pageviews, 8.0%
+                                          StaticText, 0x10a102f80, {{42.0, 2726.0}, {134.3, 54.7}}, label: 'Canada'
+                                          StaticText, 0x10a1030c0, {{42.0, 2784.7}, {63.7, 50.7}}, label: '289'
+                                          StaticText, 0x10a103200, {{315.0, 2784.7}, {83.3, 50.7}}, label: '8.0%'
+                                        Other, 0x10a103340, {{30.0, 2851.3}, {380.3, 125.3}}, label: 'Netherlands', value: 180 pageviews, 5.0%
+                                          StaticText, 0x10a103480, {{42.0, 2859.3}, {211.0, 54.7}}, label: 'Netherlands'
+                                          StaticText, 0x10a1035c0, {{42.0, 2918.0}, {57.7, 50.7}}, label: '180'
+                                          StaticText, 0x10a103700, {{315.7, 2918.0}, {82.7, 50.7}}, label: '5.0%'
+                                        Other, 0x10a103840, {{30.0, 2984.7}, {380.3, 125.3}}, label: 'Australia', value: 108 pageviews, 3.0%
+                                          StaticText, 0x10a103980, {{42.0, 2992.7}, {152.0, 54.7}}, label: 'Australia'
+                                          StaticText, 0x10a103ac0, {{42.0, 3051.3}, {57.7, 50.7}}, label: '108'
+                                          StaticText, 0x10a103c00, {{315.0, 3051.3}, {83.3, 50.7}}, label: '3.0%'
+                                      Other, 0x10a103d40, {{417.3, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 5 pages', value: 0%
+                                        Other, 0x10a103e80, {{444.3, 119.0}, {3.0, 243.3}}
+                                      Other, 0x10a114000, {{417.3, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 5 pages', value: 0%
+                                        Other, 0x10a114140, {{444.3, 119.0}, {3.0, 243.3}}
+                            Other, 0x10a114280, {{0.0, 0.0}, {440.0, 956.0}}
+                              Other, 0x10a1143c0, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x10a114500, {{0.0, 873.0}, {440.0, 83.0}}
+                  Other, 0x10a114640, {{0.0, 0.0}, {440.0, 956.0}}
+                    TabBar, 0x10a114780, {{0.0, 873.0}, {440.0, 83.0}}, label: 'Tab Bar'
+                      Other, 0x10a1148c0, {{21.0, 873.0}, {328.0, 62.0}}
+                        Other, 0x10a114a00, {{21.0, 873.0}, {113.3, 54.0}}
+                        Other, 0x10a114b40, {{21.0, 873.0}, {328.0, 62.0}}
+                          Button, 0x10a114c80, {{25.0, 877.0}, {113.3, 54.0}}, label: 'Home'
+                            Image, 0x10a114dc0, {{65.0, 883.0}, {33.3, 28.0}}, identifier: 'house.fill', label: 'home'
+                          Button, 0x10a114f00, {{128.3, 877.0}, {113.3, 54.0}}, label: 'Links'
+                            Image, 0x10a115040, {{170.3, 882.0}, {29.7, 29.7}}, identifier: 'link', label: 'link'
+                          Button, 0x10a115180, {{231.7, 877.0}, {113.3, 54.0}}, label: 'Library', Selected
+                            Image, 0x10a1152c0, {{275.7, 881.7}, {26.0, 32.3}}, identifier: 'square.stack.fill', label: 'square.stack.fill'
+                        Other, 0x10a115400, {{231.7, 877.0}, {113.3, 54.0}}
+                          Other, 0x10a115540, {{231.7, 877.0}, {113.3, 54.0}}
+                            Other, 0x10a115680, {{231.7, 877.0}, {113.3, 54.0}}
+                            Other, 0x10a1157c0, {{231.7, 877.0}, {113.3, 54.0}}
+                              Other, 0x10a115900, {{231.7, 877.0}, {113.3, 54.0}}
+                                Other, 0x10a115a40, {{231.7, 877.0}, {113.3, 54.0}}
+                                  Other, 0x10a115b80, {{231.7, 877.0}, {113.3, 54.0}}
+                                Other, 0x10a115cc0, {{231.7, 877.0}, {113.3, 54.0}}
+                              Other, 0x10a115e00, {{231.7, 877.0}, {113.3, 54.0}}
+                      Other, 0x10a115f40, {{357.0, 873.0}, {62.0, 62.0}}
+                        Other, 0x10a116080, {{357.0, 873.0}, {62.0, 62.0}}
+                          Other, 0x10a1161c0, {{357.0, 873.0}, {62.0, 62.0}}
+                            Button, 0x10a116300, {{357.0, 873.0}, {62.0, 62.0}}, label: 'Search'
+                              Image, 0x10a116440, {{374.0, 890.7}, {28.0, 26.7}}, identifier: 'magnifyingglass', label: 'Search'
+                  Other, 0x10a116580, {{0.0, 873.0}, {440.0, 83.0}}
+                    Other, 0x10a1166c0, {{0.0, 873.0}, {440.0, 83.0}}
+                      Other, 0x10a116800, {{0.0, 873.0}, {440.0, 83.0}}
+                        Other, 0x10a116940, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x10a116a80, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x10a116bc0, {{0.0, 873.0}, {440.0, 83.0}}
+                        Other, 0x10a116d00, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x10a116e40, {{0.0, 873.0}, {440.0, 83.0}}
+              StaticText, 0x10a116f80, {{220.0, 848.0}, {0.0, 74.0}}
+Path to element:
+ →Application, 0x10a041180, pid: 91210, label: 'Cardsite'
+Query chain:
+ →Find: Target Application 'com.cardsite.app'
+  Output: {
+    Application, 0x10a1170c0, pid: 91210, label: 'Cardsite'
+  }

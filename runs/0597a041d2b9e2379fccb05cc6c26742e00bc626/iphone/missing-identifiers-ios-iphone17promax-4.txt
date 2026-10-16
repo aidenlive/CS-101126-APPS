@@ -1,0 +1,3 @@
+account.delete
+account.sheet.account
+link.detail.destination

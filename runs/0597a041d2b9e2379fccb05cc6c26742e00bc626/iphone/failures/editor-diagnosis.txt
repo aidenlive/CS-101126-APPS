@@ -1,0 +1,70 @@
+t=45 epoch=1792167574 pid=76339 cpu=78.7
+t=93 epoch=1792167622 pid=76339 cpu=98.7
+t=111 epoch=1792167640 pid=76339 cpu=96.2
+t=127 epoch=1792167656 pid=76339 cpu=99.0
+t=130 epoch=1792167659 pid=76339 cpu=96.6
+t=134 epoch=1792167663 pid=76339 cpu=100.0
+t=137 epoch=1792167666 pid=76339 cpu=99.0
+t=140 epoch=1792167669 pid=76339 cpu=99.3
+t=144 epoch=1792167673 pid=76339 cpu=98.9
+t=147 epoch=1792167676 pid=76339 cpu=99.7
+t=150 epoch=1792167679 pid=76339 cpu=98.9
+t=155 epoch=1792167684 pid=76339 cpu=100.0
+t=159 epoch=1792167688 pid=76339 cpu=100.0
+t=162 epoch=1792167692 pid=76339 cpu=99.0
+t=166 epoch=1792167695 pid=76339 cpu=99.2
+t=169 epoch=1792167698 pid=76339 cpu=99.0
+t=172 epoch=1792167701 pid=76339 cpu=99.0
+t=175 epoch=1792167704 pid=76339 cpu=99.7
+t=179 epoch=1792167708 pid=76339 cpu=99.1
+t=182 epoch=1792167711 pid=76339 cpu=98.5
+t=186 epoch=1792167715 pid=81283 cpu=82.5
+t=189 epoch=1792167718 pid=81283 cpu=132.2
+t=193 epoch=1792167722 pid=81283 cpu=49.5
+t=200 epoch=1792167729 pid=81499 cpu=146.9
+t=203 epoch=1792167732 pid=81499 cpu=121.0
+t=207 epoch=1792167736 pid=81499 cpu=82.4
+t=210 epoch=1792167739 pid=81499 cpu=0.0
+t=213 epoch=1792167742 pid=81499 cpu=0.0
+t=216 epoch=1792167745 pid=81499 cpu=0.0
+t=219 epoch=1792167748 pid=81499 cpu=0.0
+t=223 epoch=1792167752 pid=81499 cpu=0.0
+t=230 epoch=1792167759 pid=82952 cpu=109.7
+t=233 epoch=1792167762 pid=82952 cpu=87.0
+t=236 epoch=1792167765 pid=82952 cpu=72.7
+t=240 epoch=1792167769 pid=82952 cpu=0.5
+t=243 epoch=1792167772 pid=82952 cpu=0.0
+t=246 epoch=1792167775 pid=82952 cpu=0.0
+t=249 epoch=1792167778 pid=82952 cpu=0.0
+t=252 epoch=1792167781 pid=82952 cpu=0.0
+t=260 epoch=1792167789 pid=84940 cpu=29.8
+t=264 epoch=1792167793 pid=84940 cpu=146.9
+t=267 epoch=1792167796 pid=84940 cpu=42.0
+t=271 epoch=1792167800 pid=84940 cpu=79.1
+t=274 epoch=1792167803 pid=84940 cpu=0.0
+t=277 epoch=1792167806 pid=84940 cpu=0.0
+t=280 epoch=1792167809 pid=84940 cpu=0.0
+t=283 epoch=1792167812 pid=84940 cpu=0.0
+t=287 epoch=1792167816 pid=84940 cpu=0.0
+Test Case '-[CardsiteUITests.DiagnosticsTests testA_PageEditorAfterTap]' started.
+2026-10-16 16:19:27.201 xcodebuild[74418:194252] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-16 16:19:49.849809+0000 CardsiteUITests-Runner[75650:197274] [diag] tapping the first page row
+2026-10-16 16:20:51.070564+0000 CardsiteUITests-Runner[75650:197274] [diag] after-tap: reading the tree
+2026-10-16 16:21:51.115005+0000 CardsiteUITests-Runner[75650:197274] [diag] after-tap: took 60.047001004219055 s
+Test Case '-[CardsiteUITests.DiagnosticsTests testA_PageEditorAfterTap]' passed (145.917 seconds).
+Test Case '-[CardsiteUITests.DiagnosticsTests testB_StatisticsAX5]' started.
+2026-10-16 16:21:53.164 xcodebuild[74418:194252] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-16 16:22:02.635425+0000 CardsiteUITests-Runner[75650:197274] [diag] statistics-ax5: reading the tree
+2026-10-16 16:22:05.080786+0000 CardsiteUITests-Runner[75650:197274] [diag] statistics-ax5: took 2.446906089782715 s
+Test Case '-[CardsiteUITests.DiagnosticsTests testB_StatisticsAX5]' passed (13.673 seconds).
+Test Case '-[CardsiteUITests.DiagnosticsTests testC_Isolation]' started.
+2026-10-16 16:22:06.376 xcodebuild[74418:194252] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+[diag] variant none launched at 1792167731.6609669
+[diag] variant none done at 1792167753.968925
+2026-10-16 16:22:35.035 xcodebuild[74418:194252] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+[diag] variant DiagNoToolbar launched at 1792167762.8368459
+[diag] variant DiagNoToolbar done at 1792167783.8677812
+2026-10-16 16:23:05.074 xcodebuild[74418:194252] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+[diag] variant none launched at 1792167794.258311
+[diag] variant none done at 1792167816.431525
+Test Case '-[CardsiteUITests.DiagnosticsTests testC_Isolation]' passed (94.992 seconds).

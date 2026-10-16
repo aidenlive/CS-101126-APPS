@@ -1,0 +1,48 @@
+Test Case '-[CardsiteUITests.DiagnosticsTests testA_PageEditorAfterTap]' started.
+Test Case '-[CardsiteUITests.DiagnosticsTests testA_PageEditorAfterTap]' skipped (1.264 seconds).
+Test Case '-[CardsiteUITests.DiagnosticsTests testB_StatisticsAX5]' started.
+Test Case '-[CardsiteUITests.DiagnosticsTests testB_StatisticsAX5]' skipped (0.076 seconds).
+Test Case '-[CardsiteUITests.DiagnosticsTests testC_Isolation]' started.
+Test Case '-[CardsiteUITests.DiagnosticsTests testC_Isolation]' skipped (0.084 seconds).
+Test Case '-[CardsiteUITests.JourneyTests testCreateLinkAppearsInList]' started.
+2026-10-15 18:00:03.409 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+Test Case '-[CardsiteUITests.JourneyTests testCreateLinkAppearsInList]' passed (38.129 seconds).
+Test Case '-[CardsiteUITests.JourneyTests testCreateQRCodeForLink]' started.
+2026-10-15 18:00:42.001 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+Test Case '-[CardsiteUITests.JourneyTests testCreateQRCodeForLink]' passed (35.414 seconds).
+Test Case '-[CardsiteUITests.JourneyTests testDeleteAccountWrongPasswordShowsError]' started.
+2026-10-15 18:01:17.426 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+    t =    29.36s Waiting 10.0s for "account.delete.error" Any to exist
+    t =    30.38s     Checking `Expect predicate `existsNoRetry == 1` for object "account.delete.error" Any`
+    t =    30.39s         Checking existence of `"account.delete.error" Any`
+Test Case '-[CardsiteUITests.JourneyTests testDeleteAccountWrongPasswordShowsError]' passed (32.176 seconds).
+Test Case '-[CardsiteUITests.JourneyTests testEditDestination]' started.
+2026-10-15 18:01:49.613 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+Test Case '-[CardsiteUITests.JourneyTests testEditDestination]' passed (37.020 seconds).
+Test Case '-[CardsiteUITests.JourneyTests testToggleDisabled]' started.
+2026-10-15 18:02:26.544 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+Test Case '-[CardsiteUITests.JourneyTests testToggleDisabled]' passed (29.042 seconds).
+Test Case '-[CardsiteUITests.ScreenshotTests testDark]' started.
+2026-10-15 18:02:55.616 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-15 18:03:15.326 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-15 18:03:57.849 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-15 18:04:25.151 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-15 18:04:47.835 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+Test Case '-[CardsiteUITests.ScreenshotTests testDark]' passed (136.096 seconds).
+Test Case '-[CardsiteUITests.ScreenshotTests testEmptyStates]' started.
+2026-10-15 18:05:10.669 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+Test Case '-[CardsiteUITests.ScreenshotTests testEmptyStates]' passed (17.982 seconds).
+Test Case '-[CardsiteUITests.ScreenshotTests testLargeText]' started.
+2026-10-15 18:05:28.645 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-15 18:05:47.159 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-15 18:06:20.433 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-15 18:06:45.613 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-15 18:07:07.390 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+Test Case '-[CardsiteUITests.ScreenshotTests testLargeText]' passed (120.983 seconds).
+Test Case '-[CardsiteUITests.ScreenshotTests testLight]' started.
+2026-10-15 18:07:29.637 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-15 18:07:48.427 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-15 18:08:24.757 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-15 18:08:50.242 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-15 18:09:12.354 xcodebuild[8553:30078] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+Test Case '-[CardsiteUITests.ScreenshotTests testLight]' passed (125.956 seconds).

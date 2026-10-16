@@ -1,0 +1,300 @@
+2026-10-15 17:59:14.445 Df Cardsite[7267:6630] [com.apple.runningboard:connection] Initializing connection
+2026-10-15 17:59:14.445 Df Cardsite[7267:6630] [com.apple.runningboard:process] Removing all cached process handles
+2026-10-15 17:59:14.445 Df Cardsite[7267:6633] [com.apple.runningboard:connection] Sending handshake request attempt #1 to server
+2026-10-15 17:59:14.445 Df Cardsite[7267:6633] [com.apple.runningboard:connection] Creating connection to com.apple.runningboard
+2026-10-15 17:59:14.445 Df Cardsite[7267:6633] [com.apple.xpc:connection] [0xc4d06cc80] activating connection: mach=true listener=false peer=false name=com.apple.runningboard
+2026-10-15 17:59:14.446 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06c780] Connection returned listener port: 0x4603
+2026-10-15 17:59:14.446 A  Cardsite[7267:6632] (RunningBoardServices) didChangeInheritances
+2026-10-15 17:59:14.447 Df Cardsite[7267:6633] [com.apple.runningboard:connection] Handshake succeeded
+2026-10-15 17:59:14.447 Df Cardsite[7267:6633] [com.apple.runningboard:connection] Identity resolved as anon<Cardsite>(501)
+2026-10-15 17:59:14.447 A  Cardsite[7267:6632] (AppIntents) appintents:register process
+2026-10-15 17:59:14.448 Df Cardsite[7267:6632] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+2026-10-15 17:59:14.448 Df Cardsite[7267:6632] [com.apple.xpc:connection] [0xc4d06cf00] activating connection: mach=true listener=false peer=false name=com.apple.linkd.autoShortcut
+2026-10-15 17:59:14.448 Df Cardsite[7267:6632] [com.apple.appintents:Connection] Activated connection to linkd (ApplicationService)
+2026-10-15 17:59:14.448 Df Cardsite[7267:6632] [com.apple.xpc:connection] [0xc4d06cdc0] activating connection: mach=false listener=true peer=false name=(anonymous)
+2026-10-15 17:59:14.452 Df Cardsite[7267:6632] [com.apple.xpc:connection] [0xc4d06cdc0] Connection returned listener port: 0x6c03
+2026-10-15 17:59:14.455 Df Cardsite[7267:6633] [com.apple.xpc:connection] [0xc4d06cf00] Re-initialization successful; calling out to event handler with XPC_ERROR_CONNECTION_INTERRUPTED
+2026-10-15 17:59:14.455 Df Cardsite[7267:6633] [com.apple.appintents:Connection] Process Instance Registry XPC connection has been interrupted
+2026-10-15 17:59:14.455 Df Cardsite[7267:6633] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+2026-10-15 17:59:14.455 A  Cardsite[7267:6633] (AppIntents) appintents:register process
+2026-10-15 17:59:14.455 Df Cardsite[7267:6633] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+2026-10-15 17:59:14.455 Df Cardsite[7267:6633] [com.apple.xpc:connection] [0xc4d06d180] activating connection: mach=true listener=false peer=false name=com.apple.linkd.autoShortcut
+2026-10-15 17:59:14.456 E  Cardsite[7267:6632] [com.apple.appintents:Connection] Unable to get synchronousRemoteObjectProxy, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-15 17:59:14.456 E  Cardsite[7267:6632] [com.apple.AppKit:Application] Error registering app with intents framework: Error Domain=NSCocoaErrorDomain Code=4097 UserInfo={NSDebugDescription=<private>}
+2026-10-15 17:59:14.456 Df Cardsite[7267:6633] [com.apple.appintents:Connection] Activated connection to linkd (ApplicationService)
+2026-10-15 17:59:14.456 Df Cardsite[7267:6633] [com.apple.xpc:connection] [0xc4d06cdc0] Connection returned listener port: 0x6c03
+2026-10-15 17:59:14.457 Df Cardsite[7267:6638] [com.apple.xpc:connection] [0xc4d06d180] Re-initialization successful; calling out to event handler with XPC_ERROR_CONNECTION_INTERRUPTED
+2026-10-15 17:59:14.457 Df Cardsite[7267:6638] [com.apple.appintents:Connection] Process Instance Registry XPC connection has been interrupted
+2026-10-15 17:59:14.458 E  Cardsite[7267:6633] [com.apple.appintents:Connection] Unable to get synchronousRemoteObjectProxy, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-15 17:59:14.458 E  Cardsite[7267:6633] [com.apple.appintents:Connection] Unable to re-register with Process Instance Registry, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-15 17:59:14.458 Df Cardsite[7267:6632] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+2026-10-15 17:59:14.458 A  Cardsite[7267:6632] (AppIntents) appintents:register process
+2026-10-15 17:59:14.458 Df Cardsite[7267:6632] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+2026-10-15 17:59:14.458 Df Cardsite[7267:6632] [com.apple.xpc:connection] [0xc4d06d400] activating connection: mach=true listener=false peer=false name=com.apple.linkd.autoShortcut
+2026-10-15 17:59:14.458 Df Cardsite[7267:6632] [com.apple.appintents:Connection] Activated connection to linkd (ApplicationService)
+2026-10-15 17:59:14.458 Df Cardsite[7267:6632] [com.apple.xpc:connection] [0xc4d06cdc0] Connection returned listener port: 0x6c03
+2026-10-15 17:59:14.460 Df Cardsite[7267:6638] [com.apple.xpc:connection] [0xc4d06d400] Re-initialization successful; calling out to event handler with XPC_ERROR_CONNECTION_INTERRUPTED
+2026-10-15 17:59:14.460 Df Cardsite[7267:6638] [com.apple.appintents:Connection] Process Instance Registry XPC connection has been interrupted
+2026-10-15 17:59:14.460 E  Cardsite[7267:6632] [com.apple.appintents:Connection] Unable to get synchronousRemoteObjectProxy, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-15 17:59:14.460 E  Cardsite[7267:6632] [com.apple.appintents:Connection] Unable to re-register with Process Instance Registry, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-15 17:59:14.460 Df Cardsite[7267:6633] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+2026-10-15 17:59:14.460 A  Cardsite[7267:6633] (AppIntents) appintents:register process
+2026-10-15 17:59:14.460 Df Cardsite[7267:6633] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+2026-10-15 17:59:14.460 Df Cardsite[7267:6633] [com.apple.xpc:connection] [0xc4d06d680] activating connection: mach=true listener=false peer=false name=com.apple.linkd.autoShortcut
+2026-10-15 17:59:14.460 Df Cardsite[7267:6633] [com.apple.appintents:Connection] Activated connection to linkd (ApplicationService)
+2026-10-15 17:59:14.460 Df Cardsite[7267:6633] [com.apple.xpc:connection] [0xc4d06cdc0] Connection returned listener port: 0x6c03
+2026-10-15 17:59:14.461 Df Cardsite[7267:6638] [com.apple.xpc:connection] [0xc4d06d680] Re-initialization successful; calling out to event handler with XPC_ERROR_CONNECTION_INTERRUPTED
+2026-10-15 17:59:14.461 Df Cardsite[7267:6638] [com.apple.appintents:Connection] Process Instance Registry XPC connection has been interrupted
+2026-10-15 17:59:14.461 E  Cardsite[7267:6638] [com.apple.appintents:Connection] Will NOT re-try to establish the connection
+2026-10-15 17:59:14.461 E  Cardsite[7267:6633] [com.apple.appintents:Connection] Unable to get synchronousRemoteObjectProxy, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-15 17:59:14.461 E  Cardsite[7267:6633] [com.apple.appintents:Connection] Unable to re-register with Process Instance Registry, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-15 17:59:14.461 A  Cardsite[7267:6633] (CoreFoundation) Loading Preferences From User CFPrefsD
+2026-10-15 17:59:14.462 Df Cardsite[7267:6630] [com.apple.dt.xctest:Default] Registering for test daemon availability notify post.
+2026-10-15 17:59:14.462 Df Cardsite[7267:6630] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-10-15 17:59:14.463 Df Cardsite[7267:6630] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-10-15 17:59:14.463 Df Cardsite[7267:6630] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-10-15 17:59:14.552 A  Cardsite[7267:6630] (CoreFoundation) Loading Preferences From System CFPrefsD
+2026-10-15 17:59:14.554 Df Cardsite[7267:6630] (libMobileGestalt.dylib) couldn't load support library
+2026-10-15 17:59:14.554 Df Cardsite[7267:6630] (libMobileGestalt.dylib) called dummy function!
+2026-10-15 17:59:14.555 Df Cardsite[7267:6630] [com.apple.GenerativeModels:availability] registering darwin observer for name: com.apple.gms.availability.notification
+2026-10-15 17:59:14.555 Df Cardsite[7267:6630] [com.apple.GenerativeModels:availability] registering darwin observer for name: com.apple.os-eligibility-domain.change.greymatter
+2026-10-15 17:59:14.555 Df Cardsite[7267:6630] [com.apple.GenerativeModels:availability] registering darwin observer for name: com.apple.language.changed
+2026-10-15 17:59:14.555 Df Cardsite[7267:6630] [com.apple.WritingTools:Default] isAvailable value changed: isMDMAllowed = true, gmAvailable (current) = false
+2026-10-15 17:59:14.558 A  Cardsite[7267:6630] (CoreFoundation) Loading Preferences From User CFPrefsD
+2026-10-15 17:59:14.564 A  Cardsite[7267:6633] (RunningBoardServices) didChangeInheritances
+2026-10-15 17:59:14.565 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06d900] activating connection: mach=true listener=false peer=false name=com.apple.appkit.restoration_storage
+2026-10-15 17:59:14.567 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06da40] activating connection: mach=true listener=false peer=false name=com.apple.coreservices.appleevents
+2026-10-15 17:59:14.568 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06c780] Connection returned listener port: 0x4603
+2026-10-15 17:59:14.569 Df Cardsite[7267:6630] [com.apple.processmanager:front-35286506] SignalReady: pid=7267 asn=0x0-0x37037
+2026-10-15 17:59:14.570 Df Cardsite[7267:6630] [com.apple.processmanager:front-35286506] SIGNAL: pid=7267 asn=0x0x-0x37037
+2026-10-15 17:59:14.574 A  Cardsite[7267:6630] (CoreFoundation) Loading Preferences From System CFPrefsD
+2026-10-15 17:59:14.576 A  Cardsite[7267:6630] (libsystem_info.dylib) Membership API: translate identifier
+2026-10-15 17:59:14.580 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06dcc0] activating connection: mach=false listener=false peer=false name=com.apple.ViewBridgeAuxiliary
+2026-10-15 17:59:14.597 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06db80] activating connection: mach=false listener=false peer=false name=(anonymous)
+2026-10-15 17:59:14.597 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06de00] activating connection: mach=false listener=true peer=false name=(anonymous)
+2026-10-15 17:59:14.597 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06de00] Connection returned listener port: 0x9703
+2026-10-15 17:59:14.598 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06dcc0] invalidated after the last release of the connection object
+2026-10-15 17:59:14.599 Df Cardsite[7267:6630] [com.apple.AppKit:AutomaticTermination] void _NSDisableAutomaticTerminationAndLog(NSString *) Restoring windows
+2026-10-15 17:59:14.599 Df Cardsite[7267:6630] [com.apple.AppKit:StateRestoration] -[NSApplication _reopenWindowsAsNecessaryIncludingRestorableState:withFullFidelity:completionHandler:] shouldRestoreState=1 hasPersistentStateToRestore=0 shouldStillRestoreStateAfterPrompting=0
+2026-10-15 17:59:14.600 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06dcc0] activating connection: mach=true listener=false peer=false name=com.apple.window_proxies
+2026-10-15 17:59:14.600 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06dcc0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-15 17:59:14.614 Df Cardsite[7267:6630] [com.apple.AppKit:Appearance] NSApp cache appearance:
+-NSRequiresAquaSystemAppearance: 0
+-appearance: (null)
+-effectiveAppearance: <NSCompositeAppearance: 0xc4ccd4c80
+ (
+    "<NSAquaAppearance: 0xc4ccd4d20>",
+    "<NSSystemAppearance: 0xc4ccd4960>"
+)>
+2026-10-15 17:59:14.618 A  Cardsite[7267:6630] (CoreFoundation) Loading Preferences From User CFPrefsD
+2026-10-15 17:59:14.618 A  Cardsite[7267:6630] (CoreFoundation) Loading Preferences From User CFPrefsD
+2026-10-15 17:59:14.637 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06e1c0] activating connection: mach=true listener=false peer=false name=com.apple.fonts
+2026-10-15 17:59:14.707 A  Cardsite[7267:6630] (CoreFoundation) Loading Preferences From User CFPrefsD
+2026-10-15 17:59:14.769 Df Cardsite[7267:6630] [com.apple.BoardServices:XPCErrors] [C:1] Alloc <private>
+2026-10-15 17:59:14.769 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06e440] activating connection: mach=false listener=false peer=false name=(anonymous)
+2026-10-15 17:59:14.802 Df Cardsite[7267:6638] [com.apple.xpc:connection] [0xc4d06ea80] activating connection: mach=true listener=false peer=false name=com.apple.dock.fullscreen
+2026-10-15 17:59:14.831 Df Cardsite[7267:6638] [com.apple.corespotlight:index] (<private>) deleteSearchableItemsWithDomainIdentifiers, protectionClass:(null), domainIdentifiers number:1
+2026-10-15 17:59:14.831 A  Cardsite[7267:6638] (CoreSpotlight) delete-domains
+2026-10-15 17:59:14.832 Df Cardsite[7267:6632] [com.apple.corespotlight:index] CSInlineDonation:<private>: Skipping donation (feature flag disabled)
+2026-10-15 17:59:14.832 Df Cardsite[7267:6632] (CoreSpotlight) sConnectionName: com.apple.spotlight.IndexAgent
+2026-10-15 17:59:14.832 Df Cardsite[7267:6632] (CoreSpotlight) Start service name com.apple.spotlight.IndexAgent
+2026-10-15 17:59:14.832 Df Cardsite[7267:6632] [com.apple.xpc:connection] [0xc4d06ebc0] activating connection: mach=true listener=false peer=false name=com.apple.spotlight.IndexAgent
+2026-10-15 17:59:14.890 Df Cardsite[7267:6630] [com.apple.AppKit:AutomaticTermination] void _NSEnableAutomaticTerminationAndLog(NSString *) No windows open yet
+2026-10-15 17:59:14.893 Df Cardsite[7267:6632] [com.apple.UIIntelligenceSupport:xpc] establishing connection to agent
+2026-10-15 17:59:14.893 Df Cardsite[7267:6632] [com.apple.xpc:session] [0xc4d60aa30] Session created.
+2026-10-15 17:59:14.893 Df Cardsite[7267:6632] [com.apple.xpc:session] [0xc4d60aa30] Session created from connection [0xc4d06ed00]
+2026-10-15 17:59:14.893 Df Cardsite[7267:6632] [com.apple.xpc:connection] [0xc4d06ed00] activating connection: mach=true listener=false peer=false name=com.apple.uiintelligencesupport.agent
+2026-10-15 17:59:14.893 Df Cardsite[7267:6632] [com.apple.xpc:session] [0xc4d60aa30] Session activated
+2026-10-15 17:59:14.897 Df Cardsite[7267:6630] [com.apple.AppKit:AutomaticTermination] void _NSEnableAutomaticTerminationAndLog(NSString *) Restoring windows
+2026-10-15 17:59:15.113 Df Cardsite[7267:6630] [com.apple.AppKit:Screen] NSApplication._react(to:) dock
+2026-10-15 17:59:15.113 Df Cardsite[7267:6630] [com.apple.AppKit:Screen] NSApplication._react(to:) reactions=83
+2026-10-15 17:59:15.481 A  Cardsite[7267:6633] (CoreSpotlight) end-index-batch
+2026-10-15 17:59:15.481 Df Cardsite[7267:6633] [com.apple.corespotlight:index] *warn* MailCS ======%%% _setMailMessageAttributes skip:1
+2026-10-15 17:59:15.481 A  Cardsite[7267:6633] (CoreSpotlight) index-items
+2026-10-15 17:59:15.481 Df Cardsite[7267:6633] [com.apple.corespotlight:index] CSInlineDonation:<private>: Skipping donation (feature flag disabled)
+2026-10-15 17:59:19.811 Df Cardsite[7267:6630] [com.apple.AppKit:AutomaticTermination] void _updateToReflectAutomaticTerminationState(void) Setting _kLSApplicationWouldBeTerminatedByTALKey=0
+2026-10-15 17:59:23.614 Df Cardsite[7267:6630] [com.apple.app_launch_measurement:General] Bailing responsive launch check as reached maximum count
+2026-10-15 17:59:25.591 Df Cardsite[7267:6633] [com.apple.launchservices:default] LSExceptions shared instance invalidated for timeout.
+2026-10-15 17:59:26.467 A  Cardsite[7267:6630] (TCC) TCCAccessRequest() IPC
+2026-10-15 17:59:26.467 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06ca00] activating connection: mach=true listener=false peer=false name=com.apple.tccd.system
+2026-10-15 17:59:26.468 Df Cardsite[7267:6630] [com.apple.xpc:connection] [0xc4d06ca00] invalidated after the last release of the connection object
+2026-10-15 17:59:26.472 Df Cardsite[7267:6630] [com.apple.AppKit:AutomaticTermination] void _NSDisableAutomaticTerminationAndLog(NSString *) NSAccessibility Request Received
+2026-10-15 17:59:29.027 A  Cardsite[8155:6f14] (libsystem_info.dylib) Retrieve User by ID
+2026-10-15 17:59:29.028 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0x10516bfc0] activating connection: mach=true listener=false peer=false name=com.apple.cfprefsd.daemon
+2026-10-15 17:59:29.028 Df Cardsite[8155:6f15] [com.apple.xpc:connection] [0x10516c760] activating connection: mach=true listener=false peer=false name=com.apple.cfprefsd.agent
+2026-10-15 17:59:29.032 A  Cardsite[8155:6f14] (Security) SecItemCopyMatching
+2026-10-15 17:59:29.032 A  Cardsite[8155:6f14] (Security) SecItemCopyMatching_ios
+2026-10-15 17:59:29.032 Df Cardsite[8155:6f14] [com.apple.securityd:secitemratelimit] Not internal release, disabling SIRL
+2026-10-15 17:59:29.032 Df Cardsite[8155:6f14] [com.apple.securityd:thread-local-client-debug] SecSecurityClientGet new thread!
+2026-10-15 17:59:29.032 Df Cardsite[8155:6f14] [com.apple.securityd:keychain] Enabling System Keychain Always due to platform
+2026-10-15 17:59:29.032 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0x105170910] activating connection: mach=true listener=false peer=false name=com.apple.securityd.xpc
+2026-10-15 17:59:29.036 A  Cardsite[8155:6f14] (Security) SecItemCopyMatching
+2026-10-15 17:59:29.036 A  Cardsite[8155:6f14] (Security) SecItemCopyMatching_ios
+2026-10-15 17:59:29.037 Df Cardsite[8155:6f14] [com.apple.network:] networkd_settings_read_from_file_locked initialized networkd settings by reading plist directly
+2026-10-15 17:59:29.038 Df Cardsite[8155:6f14] [com.apple.network:] networkd_settings_read_from_file_locked initialized networkd settings by reading plist directly
+2026-10-15 17:59:29.053 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc87098780] activating connection: mach=true listener=false peer=false name=com.apple.lsd.mapdb
+2026-10-15 17:59:29.085 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc870988c0] activating connection: mach=true listener=false peer=false name=com.apple.coreservices.launchservicesd
+2026-10-15 17:59:29.087 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc87098a00] activating connection: mach=true listener=false peer=false name=com.apple.pasteboard.1
+2026-10-15 17:59:29.090 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc87098b40] activating connection: mach=true listener=false peer=false name=com.apple.distributed_notifications@Uv3
+2026-10-15 17:59:29.101 Df Cardsite[8155:6f14] [com.apple.AppKit:AutomaticTermination] void _NSDisableAutomaticTerminationAndLog(NSString *) No windows open yet
+2026-10-15 17:59:29.101 A  Cardsite[8155:6f14] (TCC) TCCAccessRequest() IPC
+2026-10-15 17:59:29.102 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc87098c80] activating connection: mach=true listener=false peer=false name=com.apple.tccd.system
+2026-10-15 17:59:29.104 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc87098c80] invalidated after the last release of the connection object
+2026-10-15 17:59:29.105 Df Cardsite[8155:6f14] [com.apple.SkyLight:default] server port 0x0000400b, session port 0x0000400b
+2026-10-15 17:59:29.110 Df Cardsite[8155:6f14] [com.apple.SkyLight:default] New connection 0x53b93 main
+2026-10-15 17:59:29.114 Df Cardsite[8155:6f14] [com.apple.processmanager:front-35286506] CHECKIN: pid=8155
+2026-10-15 17:59:29.124 Df Cardsite[8155:6f14] [com.apple.processmanager:front-35286506] CHECKEDIN: pid=8155 asn=0x0-0x39039 foreground=1
+2026-10-15 17:59:29.125 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc87098c80] activating connection: mach=true listener=false peer=false name=com.apple.lsd.modifydb
+2026-10-15 17:59:29.125 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc87098dc0] activating connection: mach=false listener=true peer=false name=(anonymous)
+2026-10-15 17:59:29.125 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc87098dc0] Connection returned listener port: 0x4f03
+2026-10-15 17:59:29.126 Df Cardsite[8155:6f15] [com.apple.xpc:connection] [0xc86d2c780] activating connection: mach=false listener=false peer=true name=com.apple.xpc.anonymous.0xc87098dc0.peer[127].0xc86d2c780
+2026-10-15 17:59:29.133 Df Cardsite[8155:6f14] [com.apple.processmanager:front-35286506] FRONTLOGGING: version 1
+2026-10-15 17:59:29.133 Df Cardsite[8155:6f14] [com.apple.processmanager:front-35286506] Registered, pid=8155 ASN=0x0,0x39039
+2026-10-15 17:59:29.134 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc87098f00] activating connection: mach=true listener=false peer=false name=com.apple.analyticsd
+2026-10-15 17:59:29.138 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc87098dc0] Connection returned listener port: 0x4f03
+2026-10-15 17:59:29.139 Df Cardsite[8155:6f14] [com.apple.processmanager:front-35286506] BringForward: pid=8155 asn=0x0-0x39039 bringForward=0 foreground=1 uiElement=0 launchedByLS=0 modifiersCount=0 allDisabled=0
+2026-10-15 17:59:29.141 Df Cardsite[8155:6f14] [com.apple.AppKit:Appearance] Current system appearance, (HLTB: 1), (SLS: 0)
+2026-10-15 17:59:29.150 Df Cardsite[8155:6f14] (libMobileGestalt.dylib) No persisted cache on this platform.
+2026-10-15 17:59:29.153 Df Cardsite[8155:6f16] [com.apple.CoreAnalytics:client] Received configuration update from daemon (initial)
+2026-10-15 17:59:29.155 Df Cardsite[8155:6f14] (libMobileGestalt.dylib) Could not get size of EAN data (IOConnectCallScalarMethod kAppleNVMeEANGetSize returned 0xE00002E2)
+2026-10-15 17:59:29.155 Df Cardsite[8155:6f14] (libMobileGestalt.dylib) Failed to copy 'aptk' from EAN
+2026-10-15 17:59:29.155 Df Cardsite[8155:6f14] (libMobileGestalt.dylib) Failed to copy APTicket properties. Falling back to default policy.
+2026-10-15 17:59:29.155 Df Cardsite[8155:6f14] (libMobileGestalt.dylib) Creating default MGSysConfigPolicy
+2026-10-15 17:59:29.155 Df Cardsite[8155:6f14] (libMobileGestalt.dylib) CFDictionaryRef copySyscfgDictionary(void) enumeration of <private> failed.
+2026-10-15 17:59:29.156 Df Cardsite[8155:6f14] (libMobileGestalt.dylib) Failed to find key <private>
+2026-10-15 17:59:29.172 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc87098dc0] Connection returned listener port: 0x4f03
+2026-10-15 17:59:29.192 Df Cardsite[8155:6f21] [com.apple.launchservices:db] NotifyToken::RegisterDispatch(user.uid.501.com.apple.LaunchServices.database) fired for session key <private>
+2026-10-15 17:59:29.270 Df Cardsite[8155:6f14] [com.apple.AppKit:Appearance] Current system appearance, (HLTB: 1), (SLS: 0)
+2026-10-15 17:59:29.273 Df Cardsite[8155:6f14] [com.apple.AppKit:Appearance] Post-registration system appearance: (HLTB: 1)
+2026-10-15 17:59:29.278 Df Cardsite[8155:6f14] [com.apple.FrontBoard:Common] FBSWorkspace: endpoint monitoring is disabled.
+2026-10-15 17:59:29.278 Df Cardsite[8155:6f14] [com.apple.FrontBoard:Common] FBSWorkspace: default shell endpoint is disabled.
+2026-10-15 17:59:29.278 Df Cardsite[8155:6f14] [com.apple.runningboard:connection] Initializing connection
+2026-10-15 17:59:29.278 Df Cardsite[8155:6f14] [com.apple.runningboard:process] Removing all cached process handles
+2026-10-15 17:59:29.278 Df Cardsite[8155:6f15] [com.apple.runningboard:connection] Sending handshake request attempt #1 to server
+2026-10-15 17:59:29.278 Df Cardsite[8155:6f15] [com.apple.runningboard:connection] Creating connection to com.apple.runningboard
+2026-10-15 17:59:29.278 Df Cardsite[8155:6f15] [com.apple.xpc:connection] [0xc870992c0] activating connection: mach=true listener=false peer=false name=com.apple.runningboard
+2026-10-15 17:59:29.279 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc87098dc0] Connection returned listener port: 0x4f03
+2026-10-15 17:59:29.279 A  Cardsite[8155:6f4c] (RunningBoardServices) didChangeInheritances
+2026-10-15 17:59:29.281 Df Cardsite[8155:6f15] [com.apple.runningboard:connection] Handshake succeeded
+2026-10-15 17:59:29.281 A  Cardsite[8155:6f21] (AppIntents) appintents:register process
+2026-10-15 17:59:29.281 Df Cardsite[8155:6f15] [com.apple.runningboard:connection] Identity resolved as anon<Cardsite>(501)
+2026-10-15 17:59:29.283 Df Cardsite[8155:6f21] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+2026-10-15 17:59:29.283 Df Cardsite[8155:6f21] [com.apple.xpc:connection] [0xc87099400] activating connection: mach=true listener=false peer=false name=com.apple.linkd.autoShortcut
+2026-10-15 17:59:29.284 Df Cardsite[8155:6f21] [com.apple.appintents:Connection] Activated connection to linkd (ApplicationService)
+2026-10-15 17:59:29.284 Df Cardsite[8155:6f21] [com.apple.xpc:connection] [0xc87099540] activating connection: mach=false listener=true peer=false name=(anonymous)
+2026-10-15 17:59:29.286 Df Cardsite[8155:6f21] [com.apple.xpc:connection] [0xc87099540] Connection returned listener port: 0x6d03
+2026-10-15 17:59:29.289 Df Cardsite[8155:6f4c] [com.apple.xpc:connection] [0xc87099400] Re-initialization successful; calling out to event handler with XPC_ERROR_CONNECTION_INTERRUPTED
+2026-10-15 17:59:29.289 Df Cardsite[8155:6f4c] [com.apple.appintents:Connection] Process Instance Registry XPC connection has been interrupted
+2026-10-15 17:59:29.289 Df Cardsite[8155:6f4c] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+2026-10-15 17:59:29.289 A  Cardsite[8155:6f4c] (AppIntents) appintents:register process
+2026-10-15 17:59:29.290 Df Cardsite[8155:6f4c] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+2026-10-15 17:59:29.290 Df Cardsite[8155:6f4c] [com.apple.xpc:connection] [0xc870997c0] activating connection: mach=true listener=false peer=false name=com.apple.linkd.autoShortcut
+2026-10-15 17:59:29.290 Df Cardsite[8155:6f4c] [com.apple.appintents:Connection] Activated connection to linkd (ApplicationService)
+2026-10-15 17:59:29.290 Df Cardsite[8155:6f4c] [com.apple.xpc:connection] [0xc87099540] Connection returned listener port: 0x6d03
+2026-10-15 17:59:29.290 E  Cardsite[8155:6f21] [com.apple.appintents:Connection] Unable to get synchronousRemoteObjectProxy, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-15 17:59:29.290 E  Cardsite[8155:6f21] [com.apple.AppKit:Application] Error registering app with intents framework: Error Domain=NSCocoaErrorDomain Code=4097 UserInfo={NSDebugDescription=<private>}
+2026-10-15 17:59:29.290 Df Cardsite[8155:6f21] [com.apple.xpc:connection] [0xc870997c0] Re-initialization successful; calling out to event handler with XPC_ERROR_CONNECTION_INTERRUPTED
+2026-10-15 17:59:29.290 Df Cardsite[8155:6f21] [com.apple.appintents:Connection] Process Instance Registry XPC connection has been interrupted
+2026-10-15 17:59:29.290 Df Cardsite[8155:6f21] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+2026-10-15 17:59:29.291 A  Cardsite[8155:6f21] (AppIntents) appintents:register process
+2026-10-15 17:59:29.291 E  Cardsite[8155:6f4c] [com.apple.appintents:Connection] Unable to get synchronousRemoteObjectProxy, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-15 17:59:29.291 E  Cardsite[8155:6f4c] [com.apple.appintents:Connection] Unable to re-register with Process Instance Registry, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-15 17:59:29.291 Df Cardsite[8155:6f21] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+2026-10-15 17:59:29.291 Df Cardsite[8155:6f21] [com.apple.xpc:connection] [0xc87099a40] activating connection: mach=true listener=false peer=false name=com.apple.linkd.autoShortcut
+2026-10-15 17:59:29.291 Df Cardsite[8155:6f21] [com.apple.appintents:Connection] Activated connection to linkd (ApplicationService)
+2026-10-15 17:59:29.291 Df Cardsite[8155:6f21] [com.apple.xpc:connection] [0xc87099540] Connection returned listener port: 0x6d03
+2026-10-15 17:59:29.291 Df Cardsite[8155:6f4c] [com.apple.xpc:connection] [0xc87099a40] Re-initialization successful; calling out to event handler with XPC_ERROR_CONNECTION_INTERRUPTED
+2026-10-15 17:59:29.291 Df Cardsite[8155:6f4c] [com.apple.appintents:Connection] Process Instance Registry XPC connection has been interrupted
+2026-10-15 17:59:29.291 E  Cardsite[8155:6f21] [com.apple.appintents:Connection] Unable to get synchronousRemoteObjectProxy, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-15 17:59:29.291 E  Cardsite[8155:6f21] [com.apple.appintents:Connection] Unable to re-register with Process Instance Registry, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-15 17:59:29.291 Df Cardsite[8155:6f4c] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+2026-10-15 17:59:29.291 A  Cardsite[8155:6f4c] (AppIntents) appintents:register process
+2026-10-15 17:59:29.291 Df Cardsite[8155:6f4c] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+2026-10-15 17:59:29.291 Df Cardsite[8155:6f4c] [com.apple.xpc:connection] [0xc87099cc0] activating connection: mach=true listener=false peer=false name=com.apple.linkd.autoShortcut
+2026-10-15 17:59:29.292 Df Cardsite[8155:6f4c] [com.apple.appintents:Connection] Activated connection to linkd (ApplicationService)
+2026-10-15 17:59:29.292 Df Cardsite[8155:6f4c] [com.apple.xpc:connection] [0xc87099540] Connection returned listener port: 0x6d03
+2026-10-15 17:59:29.292 Df Cardsite[8155:6f21] [com.apple.xpc:connection] [0xc87099cc0] Re-initialization successful; calling out to event handler with XPC_ERROR_CONNECTION_INTERRUPTED
+2026-10-15 17:59:29.292 Df Cardsite[8155:6f21] [com.apple.appintents:Connection] Process Instance Registry XPC connection has been interrupted
+2026-10-15 17:59:29.292 E  Cardsite[8155:6f21] [com.apple.appintents:Connection] Will NOT re-try to establish the connection
+2026-10-15 17:59:29.292 E  Cardsite[8155:6f4c] [com.apple.appintents:Connection] Unable to get synchronousRemoteObjectProxy, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-15 17:59:29.292 E  Cardsite[8155:6f4c] [com.apple.appintents:Connection] Unable to re-register with Process Instance Registry, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-15 17:59:29.303 A  Cardsite[8155:6f4c] (CoreFoundation) Loading Preferences From User CFPrefsD
+2026-10-15 17:59:29.305 Df Cardsite[8155:6f14] [com.apple.dt.xctest:Default] Registering for test daemon availability notify post.
+2026-10-15 17:59:29.305 Df Cardsite[8155:6f14] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-10-15 17:59:29.306 Df Cardsite[8155:6f14] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-10-15 17:59:29.306 Df Cardsite[8155:6f14] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-10-15 17:59:29.381 A  Cardsite[8155:6f4c] (RunningBoardServices) didChangeInheritances
+2026-10-15 17:59:29.439 Df Cardsite[8155:6f14] (libMobileGestalt.dylib) couldn't load support library
+2026-10-15 17:59:29.439 Df Cardsite[8155:6f14] (libMobileGestalt.dylib) called dummy function!
+2026-10-15 17:59:29.440 Df Cardsite[8155:6f14] [com.apple.GenerativeModels:availability] registering darwin observer for name: com.apple.gms.availability.notification
+2026-10-15 17:59:29.440 Df Cardsite[8155:6f14] [com.apple.GenerativeModels:availability] registering darwin observer for name: com.apple.os-eligibility-domain.change.greymatter
+2026-10-15 17:59:29.440 Df Cardsite[8155:6f14] [com.apple.GenerativeModels:availability] registering darwin observer for name: com.apple.language.changed
+2026-10-15 17:59:29.440 Df Cardsite[8155:6f14] [com.apple.WritingTools:Default] isAvailable value changed: isMDMAllowed = true, gmAvailable (current) = false
+2026-10-15 17:59:29.442 A  Cardsite[8155:6f14] (CoreFoundation) Loading Preferences From User CFPrefsD
+2026-10-15 17:59:29.447 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc87099f40] activating connection: mach=true listener=false peer=false name=com.apple.appkit.restoration_storage
+2026-10-15 17:59:29.450 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc8709a080] activating connection: mach=true listener=false peer=false name=com.apple.coreservices.appleevents
+2026-10-15 17:59:29.455 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc87098dc0] Connection returned listener port: 0x4f03
+2026-10-15 17:59:29.502 Df Cardsite[8155:6f14] [com.apple.processmanager:front-35286506] SignalReady: pid=8155 asn=0x0-0x39039
+2026-10-15 17:59:29.503 Df Cardsite[8155:6f14] [com.apple.processmanager:front-35286506] SIGNAL: pid=8155 asn=0x0x-0x39039
+2026-10-15 17:59:29.513 A  Cardsite[8155:6f14] (CoreFoundation) Loading Preferences From System CFPrefsD
+2026-10-15 17:59:29.515 A  Cardsite[8155:6f14] (libsystem_info.dylib) Membership API: translate identifier
+2026-10-15 17:59:29.523 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc8709a300] activating connection: mach=false listener=false peer=false name=com.apple.ViewBridgeAuxiliary
+2026-10-15 17:59:29.549 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc8709a1c0] activating connection: mach=false listener=false peer=false name=(anonymous)
+2026-10-15 17:59:29.549 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc8709a440] activating connection: mach=false listener=true peer=false name=(anonymous)
+2026-10-15 17:59:29.549 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc8709a440] Connection returned listener port: 0x9a03
+2026-10-15 17:59:29.550 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc8709a300] invalidated after the last release of the connection object
+2026-10-15 17:59:29.552 Df Cardsite[8155:6f14] [com.apple.AppKit:AutomaticTermination] void _NSDisableAutomaticTerminationAndLog(NSString *) Restoring windows
+2026-10-15 17:59:29.552 Df Cardsite[8155:6f14] [com.apple.AppKit:StateRestoration] -[NSApplication _reopenWindowsAsNecessaryIncludingRestorableState:withFullFidelity:completionHandler:] shouldRestoreState=1 hasPersistentStateToRestore=0 shouldStillRestoreStateAfterPrompting=0
+2026-10-15 17:59:29.552 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc8709a300] activating connection: mach=true listener=false peer=false name=com.apple.window_proxies
+2026-10-15 17:59:29.552 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc8709a300] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-15 17:59:29.565 Df Cardsite[8155:6f14] [com.apple.AppKit:Appearance] NSApp cache appearance:
+-NSRequiresAquaSystemAppearance: 0
+-appearance: (null)
+-effectiveAppearance: <NSCompositeAppearance: 0xc86c60aa0
+ (
+    "<NSAquaAppearance: 0xc86c60a00>",
+    "<NSSystemAppearance: 0xc86c60b40>"
+)>
+2026-10-15 17:59:29.569 A  Cardsite[8155:6f14] (CoreFoundation) Loading Preferences From User CFPrefsD
+2026-10-15 17:59:29.569 A  Cardsite[8155:6f14] (CoreFoundation) Loading Preferences From User CFPrefsD
+2026-10-15 17:59:29.581 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc8709a800] activating connection: mach=true listener=false peer=false name=com.apple.fonts
+2026-10-15 17:59:29.591 A  Cardsite[8155:6f14] (CoreFoundation) Loading Preferences From User CFPrefsD
+2026-10-15 17:59:29.651 Df Cardsite[8155:6f14] [com.apple.BoardServices:XPCErrors] [C:1] Alloc <private>
+2026-10-15 17:59:29.651 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc8709aa80] activating connection: mach=false listener=false peer=false name=(anonymous)
+2026-10-15 17:59:29.689 Df Cardsite[8155:6f21] [com.apple.xpc:connection] [0xc8709b0c0] activating connection: mach=true listener=false peer=false name=com.apple.dock.fullscreen
+2026-10-15 17:59:29.719 Df Cardsite[8155:6f21] [com.apple.corespotlight:index] (<private>) deleteSearchableItemsWithDomainIdentifiers, protectionClass:(null), domainIdentifiers number:1
+2026-10-15 17:59:29.719 A  Cardsite[8155:6f21] (CoreSpotlight) delete-domains
+2026-10-15 17:59:29.722 Df Cardsite[8155:6f4c] [com.apple.corespotlight:index] CSInlineDonation:<private>: Skipping donation (feature flag disabled)
+2026-10-15 17:59:29.723 Df Cardsite[8155:6f4c] (CoreSpotlight) sConnectionName: com.apple.spotlight.IndexAgent
+2026-10-15 17:59:29.723 Df Cardsite[8155:6f4c] (CoreSpotlight) Start service name com.apple.spotlight.IndexAgent
+2026-10-15 17:59:29.723 Df Cardsite[8155:6f4c] [com.apple.xpc:connection] [0xc8709b200] activating connection: mach=true listener=false peer=false name=com.apple.spotlight.IndexAgent
+2026-10-15 17:59:29.776 Df Cardsite[8155:6f14] [com.apple.AppKit:AutomaticTermination] void _NSEnableAutomaticTerminationAndLog(NSString *) No windows open yet
+2026-10-15 17:59:29.778 Df Cardsite[8155:6f4c] [com.apple.UIIntelligenceSupport:xpc] establishing connection to agent
+2026-10-15 17:59:29.778 Df Cardsite[8155:6f4c] [com.apple.xpc:session] [0xc8760aad0] Session created.
+2026-10-15 17:59:29.778 Df Cardsite[8155:6f4c] [com.apple.xpc:session] [0xc8760aad0] Session created from connection [0xc8709b340]
+2026-10-15 17:59:29.778 Df Cardsite[8155:6f4c] [com.apple.xpc:connection] [0xc8709b340] activating connection: mach=true listener=false peer=false name=com.apple.uiintelligencesupport.agent
+2026-10-15 17:59:29.778 Df Cardsite[8155:6f4c] [com.apple.xpc:session] [0xc8760aad0] Session activated
+2026-10-15 17:59:29.784 A  Cardsite[8155:6f14] (Security) SecItemCopyMatching
+2026-10-15 17:59:29.784 A  Cardsite[8155:6f14] (Security) SecItemCopyMatching_ios
+2026-10-15 17:59:29.785 A  Cardsite[8155:6f14] (Security) SecItemDelete
+2026-10-15 17:59:29.785 A  Cardsite[8155:6f14] (Security) SecItemDelete_ios
+2026-10-15 17:59:29.796 Df Cardsite[8155:6f14] [com.apple.chrono:widget] Creating WidgetCenter connection.
+2026-10-15 17:59:29.814 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc8709b480] activating connection: mach=true listener=false peer=false name=com.apple.chrono.widgetcenterconnection
+2026-10-15 17:59:29.815 Df Cardsite[8155:6f14] [com.apple.AppKit:AutomaticTermination] void _NSEnableAutomaticTerminationAndLog(NSString *) Restoring windows
+2026-10-15 17:59:29.820 Df Cardsite[8155:6f21] [com.apple.xpc:connection] [0xc8709b700] activating connection: mach=true listener=false peer=false name=com.apple.linkd.autoShortcut
+2026-10-15 17:59:29.831 Df Cardsite[8155:6f15] [com.apple.xpc:connection] [0xc8709b700] Re-initialization successful; calling out to event handler with XPC_ERROR_CONNECTION_INTERRUPTED
+2026-10-15 17:59:29.836 E  Cardsite[8155:6f15] [com.apple.appintents:General] Failed to connect to linkd to request update AppShortcut parameters, error: <private>
+2026-10-15 17:59:29.837 Df Cardsite[8155:6f21] [com.apple.chrono:widget] reloadAllTimelines() - reloaded all timelines
+2026-10-15 17:59:30.183 Df Cardsite[8155:6f14] [com.apple.AppKit:Screen] NSApplication._react(to:) dock
+2026-10-15 17:59:30.183 Df Cardsite[8155:6f14] [com.apple.AppKit:Screen] NSApplication._react(to:) reactions=83
+2026-10-15 17:59:30.222 A  Cardsite[8155:6f4c] (CoreSpotlight) end-index-batch
+2026-10-15 17:59:30.222 Df Cardsite[8155:6f4c] [com.apple.corespotlight:index] *warn* MailCS ======%%% _setMailMessageAttributes skip:1
+2026-10-15 17:59:30.222 A  Cardsite[8155:6f4c] (CoreSpotlight) index-items
+2026-10-15 17:59:30.222 Df Cardsite[8155:6f4c] [com.apple.corespotlight:index] CSInlineDonation:<private>: Skipping donation (feature flag disabled)
+2026-10-15 17:59:34.653 Df Cardsite[8155:6f21] [com.apple.launchservices:db] NotifyToken::RegisterDispatch(user.uid.501.com.apple.LaunchServices.database) fired for session key <private>
+2026-10-15 17:59:34.781 Df Cardsite[8155:6f14] [com.apple.AppKit:AutomaticTermination] void _updateToReflectAutomaticTerminationState(void) Setting _kLSApplicationWouldBeTerminatedByTALKey=0
+2026-10-15 17:59:40.432 Df Cardsite[8155:6f4c] [com.apple.launchservices:default] LSExceptions shared instance invalidated for timeout.
+2026-10-15 17:59:41.274 A  Cardsite[8155:6f14] (TCC) TCCAccessRequest() IPC
+2026-10-15 17:59:41.274 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc878a0280] activating connection: mach=true listener=false peer=false name=com.apple.tccd.system
+2026-10-15 17:59:41.276 Df Cardsite[8155:6f14] [com.apple.xpc:connection] [0xc878a0280] invalidated after the last release of the connection object
+2026-10-15 17:59:41.285 Df Cardsite[8155:6f14] [com.apple.AppKit:AutomaticTermination] void _NSDisableAutomaticTerminationAndLog(NSString *) NSAccessibility Request Received

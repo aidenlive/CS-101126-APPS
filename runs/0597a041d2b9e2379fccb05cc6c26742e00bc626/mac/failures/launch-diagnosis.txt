@@ -1,0 +1,7 @@
+app: DerivedData/Build/Products/Debug/Cardsite.app
+launch 1 [-CardsiteFixtures] windows: Home – Personal 
+launch 2 [-CardsiteFixtures YES] windows:  
+launch 3 [-CardsiteFixturesEmpty -CardsiteFixtures] windows:  
+launch 4 [-CardsiteFixtures -CardsiteFixturesEmpty] windows:  
+launch 5 [-CardsiteFixturesSignedOut] windows:  
+launch 6 [-NSQuitAlwaysKeepsWindows NO] windows:  
